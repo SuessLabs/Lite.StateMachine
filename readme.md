@@ -1,8 +1,10 @@
 # Lite State Machine for .NET
 
-Copyright 2022 Xeno Innovations, Inc.
-Created by: Damian Suess (aka: Suess labs)
-Date: 2022-06-07
+Small finite state machine for .NET
+
+Copyright 2022 Xeno Innovations, Inc. (aka. Suess Labs)<br />
+Created by: Damian Suess<br />
+Date: 2022-06-07<br />
 
 A flexible lightweight state machine for .NET which suports a shared context, passing parameters, and thread safe. The system must be cross-platform compatible and entriprise ready.
 
