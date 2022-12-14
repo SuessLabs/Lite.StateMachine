@@ -10,9 +10,10 @@ Date: 2022-12-14<br />
 
 ## Target Features
 
-* State transitions
+* Transition triggers
+* State Handlers
   * OnEnter - Initial entry of the state
-  * OnHandle -
+  * OnHandle - Resting (idle) place for state.
   * OnExit - (Optional) Thrown during transitioning. Used for housekeeping or exiting activity.
   * OnTimeout - (Optional) Thrown when the state is auto-transitioning due to timout exceeded
 
@@ -20,5 +21,6 @@ Date: 2022-12-14<br />
 
 * Passing of parameters between state transitions
 * Composite (sub) States
+* OnMessage handler
 
 ## References

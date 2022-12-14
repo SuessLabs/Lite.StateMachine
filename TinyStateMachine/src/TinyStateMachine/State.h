@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef TINY_STATE_H
-#define TINY_STATE_H
+#ifndef STATE_H
+#define STATE_H
 
 #include <string>
 
@@ -16,6 +16,7 @@ protected:
   int _id;
   static int _nextId;
   std::string _name = "";
+
   CallbackFunction OnEnter = NULL;
   CallbackFunction OnHandle = NULL;
   CallbackFunction OnExit = NULL;
