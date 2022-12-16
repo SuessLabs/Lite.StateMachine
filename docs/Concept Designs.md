@@ -8,6 +8,20 @@
 * [ ] Builder design pattern for defining a state? (aka: Fluent)
   * [ ] What is the overhead of a C++ Fluent design pattern?
   * Sample: `State(StateId.Init, ...).AllowNext(Opened).AllowNext(Closed);`
+* [ ] Passing parameters
+  * A: Context as a ParameterSet passed everytime?
+  * B: Context as a singleton?
+    * PRO: It's small and don't care if a parameter
+* [ ] CoAP Messaging needs to interact with State Machine.
+
+### Follow-ups
+
+* [ ] OnMessage
+  * Wait for message to come back before allowing a transition.
+* [ ] Example with Failover state
+* [ ] Mutex and Thread.Join on the Machine thread - _mainAppLoop_
+* [ ] Allow for State Based Message Processing - _StateClass SBMP_
+* [ ] Exportable to GraphViz DotGraph, PlantUML
 
 ## Model A - State Defined Transitions
 
@@ -71,41 +85,79 @@ The Builder Design (aka: Fluent) Pattern allows cleaner construction of the Stat
 
 The transitions here are use the `StateId` transition to the next state.
 
+### Pros/Cons
+
+* How should we catch/handle an invalid state transition?
+
+### Sample
+
 ```cpp
 enum StateId =
 {
+  Uninitialized,
   Init,
   Opening,
   Opened,
   Closing,
   Closed,
+  // Faulting,
+  // Faulted,
 };
 
-// TODO: Add locks to door
-State doorStates[] =
+StateMachine _machine;
+
+void Builder()
 {
+  // TODO: Add locks to door
   // State("NameGraphViz", OnEnter, OnHandle, OnTimeout, OnExit, <int>msTimeout),
-  State(StateId.Init, "Init", InitOnEnter, NULL, NULL, InitOnExit)
-      .AllowNext(StateId.Opened)
-      .AllowNext(StateId.Closed),
-  State(StateId.Opening, "Opening", OpeningOnEnter, NULL, OpeningOnTimeout, NULL, 5000)  // OnTimout: Failed to open, go to Closed state
-      .AllowNext(StateId.Opened)
-      .AllowNext(StateId.Closed),
-  State(StateId.Opened, "Opened", OpenedOnEnter),
-      .AllowNext(StateId.Closing),
-  State(StateId.Closing, "Closing", ClosingOnEnter, NULL, ClosingOnTimeout, NULL, 5000),  // OnTimeout: Failed to close, go to Opened state
-      .AllowNext(StateId.Opened)
-      .AllowNext(StateId.Closed),
-  State(StateId.Closed, "Closed", ClosedOnEnter),
-      .AllowNext(StateId.Opening),
-};
+  _machine.State(StateId.Uninitialized, "Uninitialized", UninitializedOnEnter, NULL, NULL, InitOnExit)
+          .AllowNext(StateId.Opened)
+          .AllowNext(StateId.Closed);
+
+  _machine.State(StateId.Init, "Init", InitOnEnter, NULL, NULL, InitOnExit)
+          .AllowNext(StateId.Opened)
+          .AllowNext(StateId.Closed);
+
+  _machine.State(StateId.Opening, "Opening", OpeningOnEnter, NULL, OpeningOnTimeout, NULL, 5000)  // OnTimout: Failed to open, go to Closed state
+          .AllowNext(StateId.Opened)
+          .AllowNext(StateId.Closed),
+
+  _machine.State(StateId.Opened, "Opened", OpenedOnEnter),
+          .OnMessage(DoorOpened_OnMessage)            //  If (msg.Id == "DoorClose") state.Next(StateId.Closing)
+          .AllowNext(StateId.Closing),
+
+  _machine.State(StateId.Closing, "Closing", ClosingOnEnter, NULL, ClosingOnTimeout, NULL, 5000)  // OnTimeout: Failed to close, go to Opened state
+          .AllowNext(StateId.Opened)
+          .AllowNext(StateId.Closed),
+
+  _machine.State(StateId.Closed, "Closed", ClosedOnEnter),
+          .AllowNext(StateId.Opening),
+}
 
 void app_main()
 {
-  machine.Transitions(&doorTransitions);
+  _machine.Transitions(&doorTransitions);
+
+  // Validate configuration
+  auto success = machine.Validate();
+
   // Begin running the state machine
-  machine.Start();
+  auto machine.Start();
   // machine.Stop();
+
+  Lifetime();
+}
+
+void Lifetime()
+{
+  // Mutex if we're doing a thread.join.
+  // thread.Join on the machine thread
+
+  for(;;)
+  {
+    _machine.WaitFor()
+  }
+
 }
 
 StateId InitOnEnter()
@@ -113,17 +165,14 @@ StateId InitOnEnter()
   // If `bool ret = State.Next(BadTrans)` is invalid, it will return false
   // If the return value of "_state.Next(...) == -1" then the transition is not allowed.
   if (1 == 1)
-    return _state.Next(Stateid.Opened);
+    return _state.Next(StateId.Opened);
   else
-    return _state.Next(Stateid.Closed);
+    return _state.Next(StateId.Closed);
+
+  // ---OR---
+  // _state.Trigger(TriggerId.OpenDoor);
 }
-
 ```
-
-### PROS/CONS
-
-* [ ] How should we catch/handle an invalid state transition?
-
 
 ## Model C - Strongly Defined States and Transitions
 
@@ -164,15 +213,15 @@ State doorStates[] =
 // If `bool ret = State.Next(BadTrans)` is invalid, it will return false
 Transition doorTransitions[] =
 {
-  // Transition(fromStateId, toStateId),
-  Transition(TriggerId.Open,  StateId.Init,     StateId.Opened),
-  Transition(TriggerId.Close, StateId.Init,     StateId.Closed),
-  Transition(TriggerId.Open,  StateId.Closed,   StateId.Opening),
-  Transition(TriggerId.Open,  StateId.Opening,  StateId.Opened),
-  Transition(TriggerId.Close, StateId.Opening,  StateId.Closed),  // Action: Failure to open
-  Transition(TriggerId.Close, StateId.Opened,   StateId.Closing).
-  Transition(TriggerId.Close, StateId.Closing,  StateId.Closed),
-  Transition(TriggerId.Open,  StateId.Closing,  StateId.Opened),  // Failure to close
+  // Transition(TriggerName,    fromStateId, toStateId, TriggeredMethod),
+  Transition(TriggerId.Open,    StateId.Init,     StateId.Opened,   NULL),
+  Transition(TriggerId.Close,   StateId.Init,     StateId.Closed,   TriggeredMethod),
+  Transition(TriggerId.Open,    StateId.Closed,   StateId.Opening,  TriggeredMethod),
+  Transition(TriggerId.Open,    StateId.Opening,  StateId.Opened,   TriggeredMethod),
+  Transition(TriggerId.Close,   StateId.Opening,  StateId.Closed,   TriggeredMethod),  // Action: Failure to open
+  Transition(TriggerId.Close,   StateId.Opened,   StateId.Closing,  TriggeredMethod).
+  Transition(TriggerId.Close,   StateId.Closing,  StateId.Closed,   TriggeredMethod),
+  Transition(TriggerId.Open,    StateId.Closing,  StateId.Opened,   TriggeredMethod),  // Failure to close
 };
 
 void app_main()
@@ -205,4 +254,3 @@ void app_main()
 * PRO: You can transition anywhere based on internal logic changes. i.e. `NextState(someStateId)`.
 * CON: Harder to generate GraphViz diagrams to preview errors
 * CON: You can accidentially transition somewhere else.
-*
