@@ -23,11 +23,22 @@ protected:
 
 public:
   State();
-  State(std::string name,
-            CallbackFunction onEnter,
-            CallbackFunction onHandle = NULL,
-            CallbackFunction onExit = NULL,
-            bool isFinal = false);
+  State(int stateId,
+        std::string name,
+        CallbackFunction onEnter,
+        // CallbackFunction onHandle = NULL,
+        CallbackFunction onExit = NULL,
+        int msTimeout = 0,
+        bool isFinal = false);
+
+  State(int stateId, std::string name);
+
+  State& AllowNext(int nextStateId);
+  State& OnEnter(CallbackFunction methodHandler);
+  // State& OnMessage(CallbackFunction methodHandler);
+  // State& OnTimeout(CallbackFunction methodHandler, int msTimeout);
+  State& OnExit(CallbackFunction methodHandler);
+
   ~State();
 
   void Setup(std::string name,
@@ -37,10 +48,10 @@ public:
              bool isFinal = false);
 
   void Name(std::string name);
-  void OnEnter(CallbackFunction method);
-  void OnHandle(CallbackFunction method);
-  // void OnMessage(CallbackFunction method);
-  void OnExit(CallbackFunction method);
+  void SetOnEnter(CallbackFunction method);
+  // void SetOnHandle(CallbackFunction method);
+  // void SetOnMessage(CallbackFunction method);
+  void SetOnExit(CallbackFunction method);
 
   int Id() const;
   bool IsFinal() const;

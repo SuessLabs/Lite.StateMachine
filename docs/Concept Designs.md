@@ -1,5 +1,10 @@
 # Concept Designs
 
+## Design Patterns
+
+* Director/Builder - Separate the construction of a complex object from its representation.
+* Fluent - design relies extensively on method chaining to increase code legibility.
+
 ## Design Questions
 
 * [ ] Is it better to pre-define transition (strict rules) or allow a state to decide where it wants to go (free-floating, code driven).
@@ -9,21 +14,132 @@
   * [ ] What is the overhead of a C++ Fluent design pattern?
   * Sample: `State(StateId.Init, ...).AllowNext(Opened).AllowNext(Closed);`
 * [ ] Passing parameters
-  * A: Context as a ParameterSet passed everytime?
-  * B: Context as a singleton?
-    * PRO: It's small and don't care if a parameter
+  * A: Context as a singleton?
+    * Context would live in the main StateMachine class, being passed to each `State(Context)`.
+    * PRO: It's small and don't care if a parameter is forgotten
+    * CON: How to clean out Parameters? The same param isn't needed for everything.
+  * B: Context as a ParameterSet passed everytime?
+    * PRO: Params are passed and not maintained. Allowing for minimal memory overhead.
+    * CON: Requires dev to grab and repush params onto context every time.
 * [ ] CoAP Messaging needs to interact with State Machine.
+  * The `observed` events would then be passed to the active state's OnMessage.
 
-### Follow-ups
+### Follow-up Features
 
 * [ ] OnMessage
   * Wait for message to come back before allowing a transition.
+  * Once
+  * May require a main loop to be hit
+* [ ] State Timeout
+  * May require a main loop to call `_fsm.WaitFor()`
 * [ ] Example with Failover state
 * [ ] Mutex and Thread.Join on the Machine thread - _mainAppLoop_
 * [ ] Allow for State Based Message Processing - _StateClass SBMP_
 * [ ] Exportable to GraphViz DotGraph, PlantUML
 
-## Model A - State Defined Transitions
+## Model A - States with Builder Design Pattern
+
+The state's construction leverages the Builder and Fluent design patterns to provide legiable construction and chaining of methods.
+
+Allowable state transitions are defined upfront providing the `StateId` and transitioning is performed by providing where to go next before exiting the state.
+
+The transitions here are use the `StateId` transition to the next state.
+
+### Pros/Cons and QnA
+
+* How should we catch/handle an invalid state transition?
+  * Should the StateMachine class provide a master "OnError" callback to allow the system to reset?
+  * Or, should States provided their own "OnError" callbacks?
+
+### Sample
+
+```cpp
+enum StateId =
+{
+  Uninitialized,
+  Init,
+  Opening,
+  Opened,
+  Closing,
+  Closed,
+  // Faulting,
+  // Faulted,
+};
+
+StateMachine _machine;
+
+void Builder()
+{
+  // TODO: Add locks to door
+  // State("NameGraphViz", OnEnter, OnHandle, OnTimeout, OnExit, <int>msTimeout),
+  _machine.State(StateId.Uninitialized, "Uninitialized", UninitializedOnEnter, NULL, NULL, InitOnExit)
+          .AllowNext(StateId.Opened)
+          .AllowNext(StateId.Closed);
+
+  _machine.State(StateId.Init, "Init", InitOnEnter, NULL, NULL, InitOnExit)
+          .AllowNext(StateId.Opened)
+          .AllowNext(StateId.Closed);
+
+  _machine.State(StateId.Opening, "Opening", OpeningOnEnter, NULL, OpeningOnTimeout, NULL, 5000)  // OnTimout: Failed to open, go to Closed state
+          .AllowNext(StateId.Opened)
+          .AllowNext(StateId.Closed),
+
+  _machine.State(StateId.Opened, "Opened", OpenedOnEnter),
+          .OnMessage(DoorOpened_OnMessage)            //  If (msg.Id == "DoorClose") state.Next(StateId.Closing)
+          .AllowNext(StateId.Closing),
+
+  _machine.State(StateId.Closing, "Closing", ClosingOnEnter, NULL, ClosingOnTimeout, NULL, 5000)  // OnTimeout: Failed to close, go to Opened state
+          .AllowNext(StateId.Opened)
+          .AllowNext(StateId.Closed),
+
+  _machine.State(StateId.Closed, "Closed", ClosedOnEnter),
+          .AllowNext(StateId.Opening),
+}
+
+void app_main()
+{
+  _machine.Transitions(&doorTransitions);
+
+  // Validate configuration
+  auto success = machine.Validate();
+
+  // Create GraphViz graph
+  std:string dotGraph = machine.BuildGraphviz();
+
+  // Begin running the state machine
+  auto machine.Start();
+  // machine.Stop();
+
+  Lifetime();
+}
+
+void Lifetime()
+{
+  // Mutex if we're doing a thread.join.
+  // thread.Join on the machine thread
+
+  for(;;)
+  {
+    _machine.WaitFor()
+  }
+
+}
+
+StateId InitOnEnter()
+{
+  // If `bool ret = State.Next(BadTrans)` is invalid, it will return false
+  // If the return value of "_state.Next(...) == -1" then the transition is not allowed.
+  if (1 == 1)
+    return _state.Next(StateId.Opened);
+  else
+    return _state.Next(StateId.Closed);
+
+  // ---OR---
+  // _state.Trigger(TriggerId.OpenDoor);
+}
+```
+
+## Model B - State Defined Transitions
 
 ```cpp
 enum StateId =
@@ -78,101 +194,6 @@ void app_main()
 * PRO: You get tightly-coupled rules
 * CON: It's adds complication of an additional "Trigger" enumeration.
 * CON: You're bounded to tightly-coupled rules (YES, duplicate)
-
-## Model B - States with Builder Design Pattern
-
-The Builder Design (aka: Fluent) Pattern allows cleaner construction of the States and their allowed transitions.
-
-The transitions here are use the `StateId` transition to the next state.
-
-### Pros/Cons
-
-* How should we catch/handle an invalid state transition?
-
-### Sample
-
-```cpp
-enum StateId =
-{
-  Uninitialized,
-  Init,
-  Opening,
-  Opened,
-  Closing,
-  Closed,
-  // Faulting,
-  // Faulted,
-};
-
-StateMachine _machine;
-
-void Builder()
-{
-  // TODO: Add locks to door
-  // State("NameGraphViz", OnEnter, OnHandle, OnTimeout, OnExit, <int>msTimeout),
-  _machine.State(StateId.Uninitialized, "Uninitialized", UninitializedOnEnter, NULL, NULL, InitOnExit)
-          .AllowNext(StateId.Opened)
-          .AllowNext(StateId.Closed);
-
-  _machine.State(StateId.Init, "Init", InitOnEnter, NULL, NULL, InitOnExit)
-          .AllowNext(StateId.Opened)
-          .AllowNext(StateId.Closed);
-
-  _machine.State(StateId.Opening, "Opening", OpeningOnEnter, NULL, OpeningOnTimeout, NULL, 5000)  // OnTimout: Failed to open, go to Closed state
-          .AllowNext(StateId.Opened)
-          .AllowNext(StateId.Closed),
-
-  _machine.State(StateId.Opened, "Opened", OpenedOnEnter),
-          .OnMessage(DoorOpened_OnMessage)            //  If (msg.Id == "DoorClose") state.Next(StateId.Closing)
-          .AllowNext(StateId.Closing),
-
-  _machine.State(StateId.Closing, "Closing", ClosingOnEnter, NULL, ClosingOnTimeout, NULL, 5000)  // OnTimeout: Failed to close, go to Opened state
-          .AllowNext(StateId.Opened)
-          .AllowNext(StateId.Closed),
-
-  _machine.State(StateId.Closed, "Closed", ClosedOnEnter),
-          .AllowNext(StateId.Opening),
-}
-
-void app_main()
-{
-  _machine.Transitions(&doorTransitions);
-
-  // Validate configuration
-  auto success = machine.Validate();
-
-  // Begin running the state machine
-  auto machine.Start();
-  // machine.Stop();
-
-  Lifetime();
-}
-
-void Lifetime()
-{
-  // Mutex if we're doing a thread.join.
-  // thread.Join on the machine thread
-
-  for(;;)
-  {
-    _machine.WaitFor()
-  }
-
-}
-
-StateId InitOnEnter()
-{
-  // If `bool ret = State.Next(BadTrans)` is invalid, it will return false
-  // If the return value of "_state.Next(...) == -1" then the transition is not allowed.
-  if (1 == 1)
-    return _state.Next(StateId.Opened);
-  else
-    return _state.Next(StateId.Closed);
-
-  // ---OR---
-  // _state.Trigger(TriggerId.OpenDoor);
-}
-```
 
 ## Model C - Strongly Defined States and Transitions
 
