@@ -10,6 +10,7 @@
 typedef void (*CallbackHandler) ();
 ////typedef bool (*TransitionCondition) ();
 
+// ? rename to 'StateBuilder'?
 class State
 {
   // Allow calling the Iot StateMachine class

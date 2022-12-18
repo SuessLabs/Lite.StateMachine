@@ -15,6 +15,7 @@
 typedef void (*CallbackHandler) ();
 ////typedef bool (*TransitionCondition) ();
 
+class State;
 class StateMachine
 {
 private:
@@ -28,17 +29,40 @@ protected:
 
   /// @brief Initialize the state machine
   /// @return True on success, false on failure.
-  bool Initialize();
+  bool Initialize()
+  {
+    if (!_isInitialized)
+    {
+      _isInitialized = true;
+
+      // auto initialState = PULL FIRST ITEM IN STACK
+      // ret = Next(initialState);
+    }
+  }
 public:
+  friend class State;
+
   StateMachine();
   StateMachine(int initialStateId);
 
-  /// @brief Add state to the collection.
-  void State()
+  ~StateMachine()
   {
-    // Add state to the collection
+    // free(...);
+    // _timed = NULL;
   }
 
+  // TOOD: Rename class, State, to "StateBuilder". Otherwise, we need to call this "AddState()"
+  /// @brief Add state to the collection.
+  static State AddState(int stateId, std::string name) // StateBuilder State()
+  {
+    // Actual Usage:
+    //  return StateBuilder{};
+
+    // TODO: Add state to the collection
+    auto state = State(stateId, name);
+
+    return NULL;  // CONSIDER: return true;
+  }
 
   /// @brief Start the state machine
   /// @return True on success, false on failure.
@@ -55,6 +79,28 @@ public:
   /// @brief Fire the next default state
   /// @return True on success.
   bool Next();
+
+  void WaitFor()
+  {
+    //// unsigned long now = millis();
+
+    if (!_isInitialized)
+      Initialize();
+
+    if (_currentState != NULL)
+    {
+      ////if (_currentState->OnState != NULL)
+      ////  _currentState->OnState();
+
+      // The state timed out
+      /*
+        if (_currentState->HasTimeout() &&
+            now >= _timeoutStarted + _timeoutDuration)
+        {
+        }
+      */
+    }
+  }
 };
 
 #endif
