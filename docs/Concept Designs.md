@@ -23,14 +23,19 @@
     * CON: Requires dev to grab and repush params onto context every time.
 * [ ] CoAP Messaging needs to interact with State Machine.
   * The `observed` events would then be passed to the active state's OnMessage.
+* [ ] ON_STATE: Should we transition to (A) "In State" or (B) "Entering the State", and why would we need, "B"?
+  * A: "OnEnter > OnMessage > OnTimeout > OnExit"
+  * B: "OnEntering > OnEntered > OnMessage > OnTimeout > OnExit"
+* [ ] Composite (sub) States?
 
 ### Follow-up Features
 
-* [ ] OnMessage
+* [ ] OnMessage Handler
   * Wait for message to come back before allowing a transition.
   * Once
   * May require a main loop to be hit
-* [ ] State Timeout
+* [ ] OnError/OnFatal Handler
+* [ ] OnTimeout Handler
   * May require a main loop to call `_fsm.WaitFor()`
 * [ ] Example with Failover state
 * [ ] Mutex and Thread.Join on the Machine thread - _mainAppLoop_
