@@ -68,7 +68,7 @@ void Builder()
   _machine.State(StateId.Opening, "Opening")
           .OnEnter(OpeningOnEnter)
           .OnTimeout(OpeningOnTimeout, 5000)
-          .AllowNext(StateId.Opened)
+          .AllowNext(StateId.Opened, true)    // Default Next state. Usage: `_state.Next();
           .AllowNext(StateId.Closed),
 
   _machine.State(StateId.Opened, "Opened")
