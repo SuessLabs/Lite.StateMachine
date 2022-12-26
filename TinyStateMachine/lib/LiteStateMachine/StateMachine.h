@@ -3,8 +3,8 @@
 #define IOT_STATEMACHINE_H
 
 /*
-  Copyright 2022 Xeno Innovations, Inc. DBA, SuessLabs
-  Internet of Things State Machine (aka: Tiny State Machine)
+  Copyright 2022-2023 Xeno Innovations, Inc. DBA: Suess Labs
+  Light (IoT) State Machine (aka: Tiny State Machine)
   Author: Damian Suess
   Reviewed by: Jason Soll
   Date: 2022-12-13
@@ -61,7 +61,7 @@ public:
     // TODO: Add state to the collection
     auto state = State(stateId, name);
 
-    return NULL;  // CONSIDER: return true;
+    return state;  // CONSIDER: return true;
   }
 
   /// @brief Start the state machine
