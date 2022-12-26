@@ -1,0 +1,32 @@
+{
+  "name": "LiteStateMachine",
+  "version": "0.0.1",
+  "description": "",
+  "keywords": "state-machine, statemachine, state, fsm",
+  "repository":
+  {
+    "type": "git",
+    "url": ""
+  },
+  "authors":
+  [
+    {
+      "name": "Damian Suess",
+      "url": "https://suesslabs.com"
+    }
+  ],
+  "license": "MIT",
+  "homepage": "https://suesslabs.com",
+  "frameworks": "*",
+  "platforms": "*",
+  "examples":
+  [
+    {
+      "name": "Basic",
+      "base": "examples/basic",
+      "files": [
+        "main.c"
+      ]
+    }
+  ]
+}
