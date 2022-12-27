@@ -11,6 +11,7 @@
 */
 
 #include "State.h"
+#include <list>
 
 typedef void (*CallbackHandler) ();
 ////typedef bool (*TransitionCondition) ();
@@ -24,6 +25,7 @@ protected:
   bool _isInitialized = false;
   State* _currentState = NULL;
   State* _previousState = NULL;
+  std::list<State> _states;
 
   std::string _dotGraphViz = "";
 
@@ -33,6 +35,8 @@ protected:
   {
     if (!_isInitialized)
     {
+      _states.clear();
+
       _isInitialized = true;
 
       // auto initialState = PULL FIRST ITEM IN STACK
