@@ -24,3 +24,6 @@ Date: 2022-12-14<br />
 * OnMessage handler
 
 ## References
+
+* [Builder Pattern](https://en.wikipedia.org/wiki/Builder_pattern)
+* [Fluent Interface](https://en.wikipedia.org/wiki/Fluent_interface#C++)

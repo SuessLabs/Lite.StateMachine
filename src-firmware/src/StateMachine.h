@@ -10,11 +10,15 @@
   Date: 2022-12-13
 */
 
-#include "State.h"
+#include <string>
 #include <list>
+#include <map>
+#include "State.h"
+
+using namespace std;
 
 typedef void (*CallbackHandler) ();
-////typedef bool (*TransitionCondition) ();
+// typedef bool (*TransitionCondition) (); // Optional state transitioning guard event handler
 
 class State;
 class StateMachine
@@ -25,24 +29,15 @@ protected:
   bool _isInitialized = false;
   State* _currentState = NULL;
   State* _previousState = NULL;
-  std::list<State> _states;
+  std::list<State> _states;  // Consider using a `map<int, State>` or `vector<State>`
+  // std::map<int, State> _stateMap;
 
   std::string _dotGraphViz = "";
 
   /// @brief Initialize the state machine
   /// @return True on success, false on failure.
-  bool Initialize()
-  {
-    if (!_isInitialized)
-    {
-      _states.clear();
+  bool Initialize();
 
-      _isInitialized = true;
-
-      // auto initialState = PULL FIRST ITEM IN STACK
-      // ret = Next(initialState);
-    }
-  }
 public:
   friend class State;
 
@@ -57,16 +52,7 @@ public:
 
   // TOOD: Rename class, State, to "StateBuilder". Otherwise, we need to call this "AddState()"
   /// @brief Add state to the collection.
-  static State AddState(int stateId, std::string name) // StateBuilder State()
-  {
-    // Actual Usage:
-    //  return StateBuilder{};
-
-    // TODO: Add state to the collection
-    auto state = State(stateId, name);
-
-    return state;  // CONSIDER: return true;
-  }
+  static State AddState(int stateId, std::string name); // StateBuilder State()
 
   /// @brief Start the state machine
   /// @return True on success, false on failure.
@@ -84,27 +70,7 @@ public:
   /// @return True on success.
   bool Next();
 
-  void WaitFor()
-  {
-    //// unsigned long now = millis();
-
-    if (!_isInitialized)
-      Initialize();
-
-    if (_currentState != NULL)
-    {
-      ////if (_currentState->OnState != NULL)
-      ////  _currentState->OnState();
-
-      // The state timed out
-      /*
-        if (_currentState->HasTimeout() &&
-            now >= _timeoutStarted + _timeoutDuration)
-        {
-        }
-      */
-    }
-  }
+  void WaitFor();
 };
 
 #endif

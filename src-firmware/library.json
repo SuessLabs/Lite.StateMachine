@@ -6,13 +6,14 @@
   "repository":
   {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/SuessLabs/LiteState.git"
   },
   "authors":
   [
     {
       "name": "Damian Suess",
-      "url": "https://suesslabs.com"
+      "url": "https://suesslabs.com",
+      "maintainer": true
     }
   ],
   "license": "MIT",

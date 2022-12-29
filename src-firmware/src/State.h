@@ -8,7 +8,7 @@
 #include <list>
 
 typedef void (*CallbackHandler) ();
-////typedef bool (*TransitionCondition) ();
+////typedef bool (*TransitionCondition) (); // Optional state transitioning guard event handler
 
 // ? rename to 'StateBuilder'?
 class State
@@ -23,8 +23,7 @@ protected:
   std::string _name = "";
 
   int _defaultNextState;
-  //std::vector<int> _nextStates;
-  std::list<int> _nextStates;
+  std::list<int> _nextStates; // std::vector<int>
   int _timeoutDuration;
 
   CallbackHandler OnEnterHandler = NULL;
@@ -45,8 +44,11 @@ public:
         CallbackHandler onEnter,
         // CallbackHandler onTimeout = NULL,
         CallbackHandler onExit = NULL,
-        int msTimeout = 0);
+        int msTimeout = 0)
         // bool isFinal = false);
+  {
+    // NOT IMPLEMENTED
+  }
 
   State(int stateId, std::string name)
   {

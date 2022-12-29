@@ -280,3 +280,75 @@ void app_main()
 * PRO: You can transition anywhere based on internal logic changes. i.e. `NextState(someStateId)`.
 * CON: Harder to generate GraphViz diagrams to preview errors
 * CON: You can accidentially transition somewhere else.
+
+## Model D - State Classes
+
+Above focuses on defining the state machine and directing the state's handling to a user-defined method.  This may work well with smaller projects, however, in larger projects it can benificial to use classes which may have their own uniquie private methods.
+
+See file, `Sample State Class.md` for more information.
+
+```cpp
+class StateTemplate
+{
+  public:
+    int Id;
+    std::string Name;
+
+    // Handlers
+    virtual void OnEnter(StateContext*);
+    virtual void OnMessage(StateContext*);
+    virtual void OnTimeout(StateContext*);
+    virtual void OnExit(StateContext*);
+    virtual void OnError(StateContext*);
+};
+
+void main()
+{
+  StateMachine sm;
+
+  sm.State(StateId::Uninitialized, "Unitialized", new Uninitialized())
+    .Timeout(5000)
+    .AllowNext(StateId.Initialize);
+
+  sm.State(StateId::Init, "Initialize", new Initialize())
+    .Timeout(5000)
+    .AllowNext(StateId.Opened)
+    .AllowNext(StateId.Closed);
+
+  sm.State(StateId::Opened, "Opened", new Opened())
+    .AllowNext(StateId.Opening);
+
+  sm.State(StateId::Closed, "Closed", new Closed())
+    .AllowNext(StateId.Closing);
+
+  sm.State(StateId::Opening, "Opening", new Opening())
+    .Timeout(5000)                          // Timeout after 5 seconds
+    .AllowNext(StateId.Opened)              // Allow transitioning to Opened state
+    .AllowNext(StateId.Closed)              // Allow transitioning to Closed state
+    .MessageType(MessageType::DoorOpened);  // Filter incoming message types for "DoorOpened"
+
+  for(;;)
+  {
+    sm.WaitFor();
+  }
+}
+
+class Uninitialized : State
+{
+  void OnEnter(StateContext* context)
+  {
+    context->Next(StateId.Init);
+  }
+}
+
+class Initialize : State
+{
+  void OnEnter(StateContext* context)
+  {
+    if (0 == 0)
+      context->Next(StateId.Opened);
+    else
+      context->Next(StateId.Closed)
+  }
+}
+```
