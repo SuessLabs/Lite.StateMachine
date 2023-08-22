@@ -15,7 +15,7 @@ Date: 2022-12-14<br />
   * OnEnter - Initial entry of the state
   * OnHandle - Resting (idle) place for state.
   * OnExit - (Optional) Thrown during transitioning. Used for housekeeping or exiting activity.
-  * OnTimeout - (Optional) Thrown when the state is auto-transitioning due to timout exceeded
+  * OnTimeout - (Optional) Thrown when the state is auto-transitioning due to timeout exceeded
 
 ### Future Features
 
