@@ -1,6 +1,7 @@
-#pragma once
 #ifndef IOT_STATEMACHINE_H
 #define IOT_STATEMACHINE_H
+
+// #pragma once
 
 /*
   Copyright 2022-2023 Xeno Innovations, Inc. DBA: Suess Labs
@@ -10,25 +11,25 @@
   Date: 2022-12-13
 */
 
-#include <string>
-#include <list>
-#include <map>
 #include "State.h"
+// #include <string>
+// #include <list>
+// #include <map>
 
 using namespace std;
 
 typedef void (*CallbackHandler) ();
 // typedef bool (*TransitionCondition) (); // Optional state transitioning guard event handler
 
-class State;
+// class State;
 class StateMachine
 {
 private:
 
 protected:
   bool _isInitialized = false;
-  State* _currentState = NULL;
-  State* _previousState = NULL;
+  State* _currentState = nullptr;
+  State* _previousState = nullptr;
   std::list<State> _states;  // Consider using a `map<int, State>` or `vector<State>`
   // std::map<int, State> _stateMap;
 
@@ -47,12 +48,12 @@ public:
   ~StateMachine()
   {
     // free(...);
-    // _timed = NULL;
+    // _timed = nullptr;
   }
 
   // TOOD: Rename class, State, to "StateBuilder". Otherwise, we need to call this "AddState()"
   /// @brief Add state to the collection.
-  static State AddState(int stateId, std::string name); // StateBuilder State()
+  State& AddState(int stateId, std::string name); // StateBuilder State()
 
   /// @brief Start the state machine
   /// @return True on success, false on failure.

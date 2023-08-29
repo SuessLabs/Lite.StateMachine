@@ -25,13 +25,13 @@ bool StateMachine::Initialize()
 
   // TOOD: Rename class, State, to "StateBuilder". Otherwise, we need to call this "AddState()"
   /// @brief Add state to the collection.
-  static State AddState(int stateId, std::string name) // StateBuilder State()
+  State& StateMachine::AddState(int stateId, std::string name) // StateBuilder State()
   {
     // Actual Usage:
     //  return StateBuilder{};
 
     // TODO: Add state to the collection
-    auto state = State(stateId, name);
+    State* state(stateId, name);
 
     return state;  // CONSIDER: return true;
   }
