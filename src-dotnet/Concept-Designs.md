@@ -186,3 +186,48 @@ public class Phone
   ////}
 }
 ```
+
+## MK-2 SubState Class
+
+Questions:
+
+* Create methodology to cleanly exit the substate after it completes all of it's duties
+
+```cs
+public enum Kitchen
+{
+  Init,
+  CloseAllCabinets,
+  OpenCabinet,
+
+}
+
+[SubState(Kitchen.CloseAllCabinets, description = "Sample SubState 1")]
+public class CloseAllCabinets : Arm
+{
+  public LeftArm()
+  {
+  }
+
+  public override void OnEntry()
+  {
+    // Entrypoint
+    // Optionally define substates
+    // Begin substate action
+  }
+
+  public override void OnEnter()
+  {
+  }
+
+  public override void OnExit()
+  {
+    // Return back to parent state
+  }
+
+  [State(CloseCabinet.)]
+}
+
+[SubState()]
+
+```
