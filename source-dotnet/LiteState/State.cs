@@ -1,13 +1,18 @@
 ﻿namespace LiteState;
 
-public interface IState
+public abstract class State
 {
   /// <summary>State is about to enter.</summary>
-  void OnEntry();
+  public virtual void OnEntry()
+  {
+  }
 
   /// <summary>State entered and is being handled.</summary>
   /// <returns></returns>
-  IState OnEnter();
+  public virtual State? OnEnter()
+  {
+    return null;
+  }
 
   ///// <summary>Message received.</summary>
   // void OnMessage(Context eventContext);

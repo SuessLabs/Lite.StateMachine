@@ -2,10 +2,11 @@
 
 namespace SamplePhone;
 
-public enum State
+public enum PhoneState
 {
   Idle,
-  Running,
+  Ringing,
+  HangUp,
 }
 
 internal class Program
@@ -18,8 +19,13 @@ internal class Program
   }
 }
 
-
-public class IdleState: IState
+public class IdleState : State
 {
+  public State OnEnter()
+  {
+  }
 
+  public void OnEntry()
+  {
+  }
 }

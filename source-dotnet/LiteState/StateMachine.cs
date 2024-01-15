@@ -2,9 +2,18 @@
 
 public class StateMachine
 {
-  private IState _currentState;
+  private State _currentState;
 
-  public StateMachine(IState initialState)
+  public StateMachine()
+  {
+  }
+
+  public StateMachine(State initialState)
+  {
+    InitialState(initialState);
+  }
+
+  public void InitialState(State initialState)
   {
     _currentState = initialState;
   }
