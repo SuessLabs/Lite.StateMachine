@@ -2,7 +2,6 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using LiteState.Mk2;
 
@@ -29,17 +28,18 @@ internal class Program
 
     var processingState = new CompositeState(StateId.Processing)
     {
-      OnEnter = async ctx => Console.WriteLine("-- Processing (OnEnter)."),
+      OnEnter = async ctx => Console.WriteLine("**Processing (OnEnter)."),
       InitialSubState = StateId.SubProcessing
     };
 
     var subProcessingState = new StateDefinition(StateId.SubProcessing)
     {
-      OnEnter = async ctx => Console.WriteLine("--[ Sub-processing (OnEnter)"),
+      OnEnter = async ctx => Console.WriteLine("--[ SubProcessing (OnEnter)"),
       OnMessage = async (msg, ctx) => Console.WriteLine($"--[ SubProcessing (OnMessage): {msg}")
     };
 
     processingState.AddSubState(subProcessingState);
+
     rootState.AddSubState(loadingState);
     rootState.AddSubState(processingState);
 
@@ -47,6 +47,7 @@ internal class Program
     fsm.AddState(processingState);
 
     var context = new Context();
+    context.Set("JobId", 12345);
 
     await fsm.TransitionToAsync(StateId.Root, context);
     await Task.Delay(2000);

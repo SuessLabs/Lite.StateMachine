@@ -17,7 +17,13 @@ public enum StateId
   Error
 }
 
-public class Context : Dictionary<string, object>;
+public class Context : Dictionary<string, object>
+{
+  // Optional: Add convenience methods
+  public T Get<T>(string key) => ContainsKey(key) ? (T)this[key] : default!;
+
+  public void Set<T>(string key, T value) => this[key] = value!;
+}
 
 public class StateDefinition
 {
@@ -39,6 +45,7 @@ public class StateDefinition
 public class CompositeState : StateDefinition
 {
   public Dictionary<StateId, StateDefinition> SubStates { get; } = new();
+
   public StateId? InitialSubState { get; set; }
 
   public CompositeState(StateId id) : base(id)

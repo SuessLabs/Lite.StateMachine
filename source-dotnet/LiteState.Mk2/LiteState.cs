@@ -18,7 +18,7 @@ public class AsyncStateMachine
   private CancellationTokenSource? _timeoutCts;
 
   private readonly Channel<(string message, Context context)> _messageChannel =
-      Channel.CreateUnbounded<(string, Context)>();
+    Channel.CreateUnbounded<(string, Context)>();
 
   public AsyncStateMachine()
   {
@@ -69,8 +69,10 @@ public class AsyncStateMachine
   {
     if (_currentSubState?.OnExit != null)
       await _currentSubState.OnExit(context);
+
     if (_currentState?.OnExit != null)
       await _currentState.OnExit(context);
+
     _timeoutCts?.Cancel();
   }
 
