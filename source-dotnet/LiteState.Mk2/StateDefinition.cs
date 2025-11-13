@@ -17,14 +17,21 @@ public enum StateId
   Error
 }
 
+public class Context : Dictionary<string, object>;
+
 public class StateDefinition
 {
   public StateId Id { get; }
-  public Func<Dictionary<string, object>, Task>? OnEntering { get; set; }
-  public Func<Dictionary<string, object>, Task>? OnEnter { get; set; }
-  public Func<string, Dictionary<string, object>, Task>? OnMessage { get; set; }
-  public Func<Dictionary<string, object>, Task>? OnTimeout { get; set; }
-  public Func<Dictionary<string, object>, Task>? OnExit { get; set; }
+
+  public Func<Context, Task>? OnEntering { get; set; }
+
+  public Func<Context, Task>? OnEnter { get; set; }
+
+  public Func<string, Context, Task>? OnMessage { get; set; }
+
+  public Func<Context, Task>? OnTimeout { get; set; }
+
+  public Func<Context, Task>? OnExit { get; set; }
 
   public StateDefinition(StateId id) => Id = id;
 }

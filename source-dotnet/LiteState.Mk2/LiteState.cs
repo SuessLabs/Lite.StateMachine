@@ -17,8 +17,8 @@ public class AsyncStateMachine
   private StateDefinition? _currentSubState;
   private CancellationTokenSource? _timeoutCts;
 
-  private readonly Channel<(string message, Dictionary<string, object> context)> _messageChannel =
-      Channel.CreateUnbounded<(string, Dictionary<string, object>)>();
+  private readonly Channel<(string message, Context context)> _messageChannel =
+      Channel.CreateUnbounded<(string, Context)>();
 
   public AsyncStateMachine()
   {
@@ -27,7 +27,7 @@ public class AsyncStateMachine
 
   public void AddState(StateDefinition state) => _states[state.Id] = state;
 
-  public async Task TransitionToAsync(StateId newStateId, Dictionary<string, object> context)
+  public async Task TransitionToAsync(StateId newStateId, Context context)
   {
     if (!_states.TryGetValue(newStateId, out var newState))
       throw new InvalidOperationException($"State {newStateId} not defined.");
@@ -50,7 +50,7 @@ public class AsyncStateMachine
     SetupTimeout(newState, context);
   }
 
-  private async Task TransitionToSubStateAsync(StateId subStateId, Dictionary<string, object> context)
+  private async Task TransitionToSubStateAsync(StateId subStateId, Context context)
   {
     if (_currentState is CompositeState composite && composite.SubStates.TryGetValue(subStateId, out var subState))
     {
@@ -65,7 +65,7 @@ public class AsyncStateMachine
     }
   }
 
-  private async Task ExitCurrentStateAsync(Dictionary<string, object> context)
+  private async Task ExitCurrentStateAsync(Context context)
   {
     if (_currentSubState?.OnExit != null)
       await _currentSubState.OnExit(context);
@@ -74,7 +74,7 @@ public class AsyncStateMachine
     _timeoutCts?.Cancel();
   }
 
-  private void SetupTimeout(StateDefinition state, Dictionary<string, object> context)
+  private void SetupTimeout(StateDefinition state, Context context)
   {
     if (state.OnTimeout != null)
     {
@@ -88,7 +88,7 @@ public class AsyncStateMachine
     }
   }
 
-  public async Task SendMessageAsync(string message, Dictionary<string, object> context)
+  public async Task SendMessageAsync(string message, Context context)
   {
     await _messageChannel.Writer.WriteAsync((message, context));
   }

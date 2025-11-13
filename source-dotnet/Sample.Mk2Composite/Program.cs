@@ -46,7 +46,7 @@ internal class Program
     fsm.AddState(rootState);
     fsm.AddState(processingState);
 
-    var context = new Dictionary<string, object>();
+    var context = new Context();
 
     await fsm.TransitionToAsync(StateId.Root, context);
     await Task.Delay(2000);
