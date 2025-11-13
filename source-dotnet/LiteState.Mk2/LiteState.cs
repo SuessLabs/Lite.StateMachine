@@ -1,14 +1,13 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
-namespace LiteState.Mk2;
-
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+
+namespace LiteState.Mk2;
 
 public class AsyncStateMachine
 {
@@ -58,8 +57,10 @@ public class AsyncStateMachine
       _currentSubState = subState;
       if (subState.OnEntering != null)
         await subState.OnEntering(context);
+
       if (subState.OnEnter != null)
         await subState.OnEnter(context);
+
       SetupTimeout(subState, context);
     }
   }
@@ -79,11 +80,11 @@ public class AsyncStateMachine
     {
       _timeoutCts = new CancellationTokenSource();
       _ = Task.Delay(TimeSpan.FromSeconds(10), _timeoutCts.Token)
-          .ContinueWith(async t =>
-          {
-            if (!t.IsCanceled)
-              await state.OnTimeout(context);
-          });
+        .ContinueWith(async t =>
+        {
+          if (!t.IsCanceled)
+            await state.OnTimeout(context);
+        });
     }
   }
 

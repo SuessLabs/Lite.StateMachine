@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/Samples/">
+    <Project Path="Sample.Mk2Composite/Sample.Mk2Composite.csproj" />
     <Project Path="Sample.Phone/Sample.Phone.csproj" />
   </Folder>
   <Folder Name="/Tests/" />

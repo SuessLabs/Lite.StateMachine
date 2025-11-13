@@ -1,6 +1,7 @@
-﻿// Copyright Xeno Innovations, Inc. 2025
+// Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
+using System;
 using LiteState;
 
 namespace Sample.Phone;
@@ -24,11 +25,12 @@ internal class Program
 
 public class IdleState : State
 {
-  public State OnEnter()
+  public override State? OnEnter()
   {
+    return null;
   }
 
-  public void OnEntry()
+  public override void OnEntry()
   {
   }
 }
