@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="LiteState/LiteState.csproj" />
+  <Project Path="LiteState.Mk2/LiteState.Mk2.csproj" />
+  <Project Path="Sample.Phone/Sample.Phone.csproj" />
+</Solution>

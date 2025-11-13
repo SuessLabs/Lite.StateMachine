@@ -1,6 +1,6 @@
 ﻿using LiteState;
 
-namespace SamplePhone;
+namespace Sample.Phone;
 
 public enum PhoneState
 {
