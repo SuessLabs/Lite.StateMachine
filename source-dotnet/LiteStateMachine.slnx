@@ -1,5 +1,8 @@
 <Solution>
-  <Project Path="LiteState/LiteState.csproj" />
+  <Folder Name="/Samples/">
+    <Project Path="Sample.Phone/Sample.Phone.csproj" />
+  </Folder>
+  <Folder Name="/Tests/" />
   <Project Path="LiteState.Mk2/LiteState.Mk2.csproj" />
-  <Project Path="Sample.Phone/Sample.Phone.csproj" />
+  <Project Path="LiteState/LiteState.csproj" />
 </Solution>
