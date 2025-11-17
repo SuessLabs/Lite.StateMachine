@@ -11,7 +11,8 @@ A flexible lightweight state machine for .NET which supports a shared context, p
 ## C# Target Features
 
 * Shared Context objects
-* Passing of parameters between state transitions
+  * Passing of parameters between state transitions
+* Lazy-load states
 * Basic Linear state machine
 * Sub-states
 * State Handlers
@@ -26,5 +27,27 @@ A flexible lightweight state machine for .NET which supports a shared context, p
 
 * Actor model state machine (>=1 sub-actors)
 * Transition triggers
+* Add UML-Style Triggers and guards
+* Export state transition UML
+
+## MK2
+
+1. Optional State History Tracking
+   * Composite states can remember the last active sub-state.
+   * Controlled by a flag EnableHistory in CompositeState.
+2. Sample Program - Demonstrates:
+   * Simple states
+   * Composite states
+   * State history
+   * Timeout handling
+   * Message queue
+   * Event-driven transitions
+3. Unit Tests (MSTest)
+   * For a lightweight version called LiteState (basic FSM without composite states).
+   * Tests cover:
+     * Transition logic
+     * Timeout behavior
+     * Message handling
+     * Context propagation
 
 ## References
