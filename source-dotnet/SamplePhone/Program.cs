@@ -1,4 +1,4 @@
-﻿using LiteState;
+using LiteState;
 
 namespace SamplePhone;
 
@@ -13,19 +13,23 @@ internal class Program
 {
   static void Main(string[] args)
   {
+    /*
     Console.WriteLine("Sample phone state machine!");
-
     var machine = new StateMachine();
+    */
   }
 }
 
+/*
 public class IdleState : State
 {
-  public State OnEnter()
+  public override State? OnEnter()
   {
+    return null;
   }
 
   public void OnEntry()
   {
   }
 }
+*/

@@ -7,13 +7,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LiteState", "LiteState\Lite
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{BE9AA713-B8C1-4E27-B460-D1619A806392}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SamplePhone", "SamplePhone\SamplePhone.csproj", "{2D386F59-2CAA-4B49-AD11-AD0C99DF1687}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sample.FsmPhone", "SamplePhone\Sample.FsmPhone.csproj", "{2D386F59-2CAA-4B49-AD11-AD0C99DF1687}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Designs", "Designs", "{3E81178B-EB9B-4B90-88F8-FCFB63844267}"
 	ProjectSection(SolutionItems) = preProject
 		Concept-Designs.md = Concept-Designs.md
 		readme.md = readme.md
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample.FsmTimeout", "Sample.FsmTimeout\Sample.FsmTimeout.csproj", "{F281A53D-481C-4FD9-9DE3-C6B0339C6274}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,12 +33,17 @@ Global
 		{2D386F59-2CAA-4B49-AD11-AD0C99DF1687}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2D386F59-2CAA-4B49-AD11-AD0C99DF1687}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2D386F59-2CAA-4B49-AD11-AD0C99DF1687}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F281A53D-481C-4FD9-9DE3-C6B0339C6274}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F281A53D-481C-4FD9-9DE3-C6B0339C6274}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F281A53D-481C-4FD9-9DE3-C6B0339C6274}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F281A53D-481C-4FD9-9DE3-C6B0339C6274}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{2D386F59-2CAA-4B49-AD11-AD0C99DF1687} = {BE9AA713-B8C1-4E27-B460-D1619A806392}
+		{F281A53D-481C-4FD9-9DE3-C6B0339C6274} = {BE9AA713-B8C1-4E27-B460-D1619A806392}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FC070A48-EC49-48F6-A993-7D33FB7A7A3A}
