@@ -1,21 +1,25 @@
-## Prompt
+## Input
 
-Using C#, create a finite state machine which can optionally have composite states, with each state defined as an Enum. States must be lazy-loaded. Defining states must use the State enumeration and a human-readable name.
+Composite states to support deep hierarchies. Provide a strongly-typed Params wrapper (e.g., Context.Get<T>(key) / Set(key, value)).
 
-Each state's transition must be an async. The state can has an optional transition of OnEntering for transitioning into it, OnEnter for when fully transitioned, optionally an OnMessage for receiving messages sent by the OnEnter, optionally an OnTimeout for when events are not received by the OnMessage in time, and optionally an OnExit for when it is completed.
+## Response
 
-Each transition must pass a Context class as an argument which contains a property named "Params" of type "Dictionary<string, object>", property named "Errors" of type "Dictionary<string, object>", a property "LastState" which has the enum value of the previous state, and the method "NextState" to trigger moving to the next state. The "NextState" method has an enum argument named "Result" with the values of "Success", "Error", and "Failure". The NextState method can be called by any of the transitions to move to the next state.
+Awesome—let’s evolve the framework to support **deep hierarchical composite states** and add a **strongly-typed `Params` wrapper** to the `Context` (`Get<T>`, `Set`, `TryGet<T>`).
 
-### Enhancements
+Below is a complete, production-ready **C#** FSM you can drop into your solution. It preserves your requirements:
 
-* Transitions must be method, not "Func<Context, Task>"
-* Composite states to support deep hierarchies. Provide a strongly-typed Params wrapper (e.g., Context.Get<T>(key) / Set(key, value)).
+*   **States are Enums**, lazy-loaded with **human-readable names**.
+*   **Async transitions** implemented as **methods** on classes (`OnEnteringAsync`, `OnEnterAsync`, `OnMessageAsync`, `OnTimeoutAsync`, `OnExitAsync`).
+*   **Deep composite states**: parent → child → grandchild (arbitrary depth).
+*   **Context** includes `Params`, `Errors`, `LastState`, and `NextState(Result)`, plus **strongly-typed helpers** (`Set`, `Get<T>`, `TryGet<T>`).
 
-## Core
+***
+
+## Core Types
 
 ### Enums
 
-```cs
+```csharp
 public enum State
 {
     None,
@@ -47,9 +51,11 @@ public enum Result
 }
 ```
 
-### Context with Strongly-Typed Params
+***
 
-```cs
+## Context with Strongly-Typed Params
+
+```csharp
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -101,12 +107,13 @@ public sealed class Context
         return false;
     }
 }
-
 ```
 
-### Core - StateNode
+***
 
-```cs
+## State Nodes (Transitions are Methods)
+
+```csharp
 using System.Threading.Tasks;
 
 public abstract class StateNode
@@ -122,19 +129,21 @@ public abstract class StateNode
     public virtual Task OnTimeoutAsync(Context ctx) => Task.CompletedTask;
     public virtual Task OnExitAsync(Context ctx) => Task.CompletedTask;
 }
-
 ```
 
-## Core - FSM with Deep Composites
+***
 
-* Lazy-loaded states via Lazy<StateNode>.
-* Per-state Result → next State maps.
-* Composite relationships: parent, children, initial child.
-* Deep enter/exit handling along the state stack.
-* Message/timeout forwarding to the current leaf.
+## Finite State Machine with Deep Composites
 
-```cs
+Key features:
 
+*   Lazy-loaded states via `Lazy<StateNode>`.
+*   Per-state **Result → next State** maps.
+*   Composite relationships: parent, children, **initial child**.
+*   Deep enter/exit handling along the **state stack**.
+*   Message/timeout forwarding to the **current leaf**.
+
+```csharp
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -390,17 +399,19 @@ public sealed class FiniteStateMachine
         }
     }
 }
-
 ```
 
-## Sample - Deep Hierarchy
+***
 
-* Checkout (composite) → Payment (composite) → AuthFlow (composite) → PreAuth → Authorize → PostAuth → Charge → Receipt.
-* A sibling branch under Checkout: Shipping.
-* Typed params via Context.Set/Get<T>.
+## Sample Implementation with **Deep Hierarchy**
 
-```cs
+This example demonstrates:
 
+*   `Checkout` (composite) → `Payment` (composite) → `AuthFlow` (composite) → `PreAuth → Authorize → PostAuth` → `Charge` → `Receipt`.
+*   A sibling branch under `Checkout`: `Shipping`.
+*   Typed params via `Context.Set/Get<T>`.
+
+```csharp
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -667,5 +678,34 @@ public static class Program
         await Demo.RunAsync();
     }
 }
-
 ```
+
+**What you’ll see in output:**
+
+*   The FSM enters `Init`, then transitions to `Checkout`.
+*   It automatically descends: `Checkout` → `Payment` → `AuthFlow` → `PreAuth`.
+*   Then transitions through `Authorize` → `PostAuth` → `Charge` → `Receipt`.
+*   `Receipt` has no outgoing transitions → **terminal**, and `StartAndWaitAsync` completes using the **result that led to `Receipt`** (here: `Success`).
+
+***
+
+## Design Notes & Extensibility
+
+*   **Deep hierarchy**: The FSM computes the **common ancestor** between the current leaf and target leaf, exits intermediate states (leaf → ancestor), then enters the new path (ancestor → target leaf), invoking `OnExitAsync` / `OnEnteringAsync` / `OnEnterAsync` in the correct order.
+*   **Typed params**: Use `ctx.Set("key", value)` and `ctx.Get<T>("key")` to move data between states safely.
+*   **Message/timeout routing**: Call `ForwardMessageAsync(...)` or `ForwardTimeoutAsync()`—they hit the **current leaf**. You can forward events up/down manually in your state methods if needed.
+*   **Human-readable names**: Each `StateNode` has a `Name`. You pass one during registration, and your state classes can log the name.
+*   **Lazy-loading**: `Lazy<StateNode>` ensures each node is constructed **on first actual use**.
+*   **Terminal states**: Any leaf with **no outgoing transitions** is considered terminal. The `StartAndWaitAsync` returns the `Result` used to reach that terminal.
+
+***
+
+## Optional Add‑Ons (tell me if you want these wired in)
+
+*   **Per-state timeouts** with `CancellationTokenSource` and automatic `OnTimeoutAsync` triggers.
+*   **History states** for composites (re-enter last active child instead of initial child).
+*   **Logging hooks** / `ILogger` integration.
+*   **Guard conditions** on transitions (predicate before allowing `Result → Next`).
+*   **Strongly-typed errors** similar to `Params`.
+
+If you share your target state enum and desired flow, I can tailor the wiring and add unit tests.
