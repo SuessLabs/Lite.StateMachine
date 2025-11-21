@@ -37,8 +37,8 @@ The `context->SendMessage(...)` method allows for the sending messages to other 
 ```cs
 // State("NameGraphViz", OnEnter, OnMessage, OnTimeout, OnExit, OnError, <int>msTimeout),
 machine.State(StateId.Uninitialized, "Uninitialized", Uninitialized_OnEnter, NULL, NULL, Init_OnExit, Door_OnError)
-        .AllowNext(StateId.Opened)
-        .AllowNext(StateId.Closed);
+       .AllowNext(StateId.Opened)
+       .AllowNext(StateId.Closed);
 ```
 
 ## Forced-State Transition

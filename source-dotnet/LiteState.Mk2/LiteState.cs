@@ -92,7 +92,9 @@ public class AsyncStateMachine
 
   public async Task SendMessageAsync(string message, Context context)
   {
-    await _messageChannel.Writer.WriteAsync((message, context));
+    ////  await _messageChannel.Writer.WriteAsync((message, context));
+    if (_currentState?.OnMessage != null)
+      await _currentState.OnMessage(message, context);
   }
 
   private async Task ProcessMessagesAsync()

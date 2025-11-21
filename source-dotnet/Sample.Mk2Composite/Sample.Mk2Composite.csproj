@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LiteState.Mk2\LiteState.Mk2.csproj" />
+    <ProjectReference Include="..\LiteState.Mk2\LiteState.csproj" />
   </ItemGroup>
 
 </Project>
