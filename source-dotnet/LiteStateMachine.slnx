@@ -11,5 +11,6 @@
   <Folder Name="/Tests/">
     <Project Path="LiteState.Tests/LiteState.Tests.csproj" Id="9644caac-1ac7-49b2-a502-896ca82f7b74" />
   </Folder>
-  <Project Path="LiteState.Mk2/LiteState.csproj" />
+  <Project Path="LiteState.Mk2/LiteState.Mk2.csproj" />
+  <Project Path="LiteState/LiteState.csproj" />
 </Solution>

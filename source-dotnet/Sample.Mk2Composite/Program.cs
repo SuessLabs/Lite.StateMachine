@@ -2,8 +2,10 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using LiteState.Mk2;
+using LiteState.Mk2.Interfaces;
 
 namespace Sample.Mk2Composite;
 
@@ -53,5 +55,9 @@ internal class Program
     await Task.Delay(2000);
     await fsm.TransitionToAsync(StateId.Processing, context);
     await fsm.SendMessageAsync("Hello from FSM!", context);
+
+    // Simulate going back to Root and then returning to Processing with history
+    await fsm.TransitionToAsync(StateId.Root, context);
+    await fsm.TransitionToAsync(StateId.Processing, context); // Should resume SubProcessing
   }
 }
