@@ -9,6 +9,6 @@ internal class Program
   {
     Console.WriteLine("Sample state machine with LiteState!");
 
-    await Demo.RunAsync();
+    await DemoMachine.RunAsync();
   }
 }

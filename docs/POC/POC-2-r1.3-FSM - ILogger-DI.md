@@ -25,8 +25,6 @@ Below is a complete, drop-in **C# FSM framework** updated to:
 
 > Uses `Microsoft.Extensions.DependencyInjection` and `Microsoft.Extensions.Logging`.
 
-***
-
 ## Enums
 
 ```csharp
@@ -50,8 +48,6 @@ public enum Result
     Failure
 }
 ```
-
-***
 
 ## Context (unchanged API)
 
@@ -79,8 +75,6 @@ public sealed class Context
     public Task NextState(Result result) => _nextState(result);
 }
 ```
-
-***
 
 ## StateNode with ILogger (DI-aware, with logging hooks)
 

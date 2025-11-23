@@ -8,15 +8,15 @@ using Microsoft.Extensions.Logging;
 
 public sealed class CompositeStateNode : StateNode
 {
-  private readonly State _initialChild;
-  private readonly FiniteStateMachine _subFsm;
+  private readonly StateId _initialChild;
+  private readonly StateMachine _subFsm;
 
   public CompositeStateNode(
-      string name,
-      ILogger<CompositeStateNode> logger,
-      FiniteStateMachine subFsm,
-      State initialChild)
-      : base(name, logger)
+    string name,
+    ILogger<CompositeStateNode> logger,
+    StateMachine subFsm,
+    StateId initialChild)
+    : base(name, logger)
   {
     _subFsm = subFsm ?? throw new System.ArgumentNullException(nameof(subFsm));
     _initialChild = initialChild;

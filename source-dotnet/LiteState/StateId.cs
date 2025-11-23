@@ -3,7 +3,7 @@
 
 namespace LiteState;
 
-public enum State
+public enum StateId
 {
   None,
   Init,

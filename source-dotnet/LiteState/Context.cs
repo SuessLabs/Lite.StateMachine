@@ -16,10 +16,11 @@ public sealed class Context
     _nextState = nextState ?? throw new ArgumentNullException(nameof(nextState));
   }
 
+  ////public PropertyBag Errors { get; } = new();
   public Dictionary<string, object> Errors { get; } = new();
 
   /// <summary>The previous state's enum value.</summary>
-  public State LastState { get; internal set; } = State.None;
+  public StateId LastState { get; internal set; } = StateId.None;
 
   public Dictionary<string, object> Params { get; } = new();
 

@@ -23,9 +23,9 @@ internal class Program
   }
 }
 
-public class IdleState : State
+public class IdleState : StateId
 {
-  public override State? OnEnter()
+  public override StateId? OnEnter()
   {
     return null;
   }

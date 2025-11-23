@@ -10,7 +10,7 @@ using LiteState;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-public static class Demo
+public static class DemoMachine
 {
   public static async Task RunAsync()
   {
@@ -31,16 +31,21 @@ public static class Demo
       .BuildServiceProvider();
 
     // Create FSMs with DI + loggers
-    var rootLogger = services.GetRequiredService<ILogger<FiniteStateMachine>>();
-    var fsm = new FiniteStateMachine(services, rootLogger, isRoot: true);
+    var rootLogger = services.GetRequiredService<ILogger<StateMachine>>();
+    var fsm = new StateMachine(services, rootLogger, isRoot: true);
 
-    var childLogger = services.GetRequiredService<ILogger<FiniteStateMachine>>();
-    var subFsm = new FiniteStateMachine(services, childLogger, isRoot: false);
+    var childLogger = services.GetRequiredService<ILogger<StateMachine>>();
+    var subFsm = new StateMachine(services, childLogger, isRoot: false);
 
     // Register child states lazily via DI
     subFsm.RegisterState<LoadingState>(State.Loading);
     subFsm.RegisterState<ProcessingState>(State.Processing);
     subFsm.RegisterState<CompletedState>(State.Completed);
+
+    // TODO: Set default Error/Failure states for everyone to use
+    //  Or, don't set it and have an Exception thrown if missing
+    //  - InvalidStateTransitionException
+    //  - MissingStateTransitionException
 
     subFsm.SetTransitions(State.Loading, new Dictionary<Result, State>
     {

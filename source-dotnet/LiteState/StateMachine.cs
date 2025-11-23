@@ -7,24 +7,24 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using LiteState.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-public sealed class FiniteStateMachine
+/// <summary>Lite Finite State Machine (FSM) implementation.</summary>
+public sealed class StateMachine
 {
-  private readonly IServiceProvider _services;
-  private readonly ILogger<FiniteStateMachine> _logger;
-
-  private readonly Dictionary<State, Lazy<StateNode>> _states = new();
-  private readonly Dictionary<State, Dictionary<Result, State>> _transitions = new();
-  private readonly SemaphoreSlim _lock = new(1, 1);
-
-  private State _current = State.None;
-  private TaskCompletionSource<Result>? _completionTcs;
   private readonly bool _isRoot;
+  private readonly SemaphoreSlim _lock = new(1, 1);
+  private readonly ILogger<StateMachine> _logger;
+  private readonly IServiceProvider _services;
+  private readonly Dictionary<StateId, Lazy<StateNode>> _states = new();
+  private readonly Dictionary<StateId, Dictionary<Result, StateId>> _transitions = new();
+  private TaskCompletionSource<Result>? _completionTcs;
+  private StateId _current = StateId.None;
 
-  public FiniteStateMachine(IServiceProvider services,
-                            ILogger<FiniteStateMachine> logger,
+  public StateMachine(IServiceProvider services,
+                            ILogger<StateMachine> logger,
                             bool isRoot = true)
   {
     _services = services ?? throw new ArgumentNullException(nameof(services));
@@ -32,63 +32,14 @@ public sealed class FiniteStateMachine
     _isRoot = isRoot;
   }
 
-  /// <summary>Register a state lazily via DI (generic type).</summary>
-  public void RegisterState<TState>(State state)
-      where TState : StateNode
-  {
-    _states[state] = new Lazy<StateNode>(
-        () => ActivatorUtilities.CreateInstance<TState>(_services),
-        LazyThreadSafetyMode.ExecutionAndPublication);
-  }
-
-  /// <summary>Register a state lazily via a custom factory that uses DI.</summary>
-  public void RegisterState(State state, Func<IServiceProvider, StateNode> factory)
-  {
-    if (factory is null) throw new ArgumentNullException(nameof(factory));
-    _states[state] = new Lazy<StateNode>(
-        () => factory(_services),
-        LazyThreadSafetyMode.ExecutionAndPublication);
-  }
-
-  /// <summary>Configure transitions for a state: Result → Next State.</summary>
-  public void SetTransitions(State state, IDictionary<Result, State> map)
-  {
-    var dict = new Dictionary<Result, State>();
-    foreach (var kvp in map)
-      dict[kvp.Key] = kvp.Value;
-    _transitions[state] = dict;
-  }
-
-  public async Task<Result> StartAndWaitAsync(State initial, IDictionary<string, object>? initialParams = null)
-  {
-    _completionTcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
-    await StartAsync(initial, initialParams).ConfigureAwait(false);
-    return await _completionTcs.Task.ConfigureAwait(false);
-  }
-
-  public async Task StartAsync(State initial, IDictionary<string, object>? initialParams = null)
-  {
-    await _lock.WaitAsync().ConfigureAwait(false);
-    try
-    {
-      if (_current != State.None)
-        throw new InvalidOperationException($"FSM already started at state '{_current}'.");
-
-      _logger.LogInformation("FSM starting at state '{Initial}'.", initial);
-      await TransitionToAsync(initial, BuildContext(initialParams)).ConfigureAwait(false);
-    }
-    finally
-    {
-      _lock.Release();
-    }
-  }
-
   public async Task ForwardMessageAsync(IDictionary<string, object>? message = null)
   {
     await _lock.WaitAsync().ConfigureAwait(false);
     try
     {
-      if (_current == State.None) return;
+      if (_current == StateId.None)
+        return;
+
       var node = _states[_current].Value;
 
       var ctx = BuildContext(message);
@@ -106,12 +57,81 @@ public sealed class FiniteStateMachine
     await _lock.WaitAsync().ConfigureAwait(false);
     try
     {
-      if (_current == State.None) return;
+      if (_current == StateId.None)
+        return;
+
       var node = _states[_current].Value;
 
       var ctx = BuildContext(null);
       _logger.LogWarning("Forwarding timeout to current state: {State}.", _current);
       await node.OnTimeoutAsync(ctx).ConfigureAwait(false);
+    }
+    finally
+    {
+      _lock.Release();
+    }
+  }
+
+  /// <summary>Register a state lazily via DI (generic type).</summary>
+  public void RegisterState<TState>(StateId state)
+    where TState : StateNode
+  {
+    _states[state] = new Lazy<StateNode>(
+      () => ActivatorUtilities.CreateInstance<TState>(_services),
+      LazyThreadSafetyMode.ExecutionAndPublication);
+  }
+
+  /// <summary>Register a state lazily via a custom factory that uses DI.</summary>
+  public void RegisterState(StateId state, Func<IServiceProvider, StateNode> factory)
+  {
+    if (factory is null)
+      throw new ArgumentNullException(nameof(factory));
+
+    _states[state] = new Lazy<StateNode>(
+      () => factory(_services),
+      LazyThreadSafetyMode.ExecutionAndPublication);
+  }
+
+  /// <summary>Configure transitions for a state: Result → Next State.</summary>
+  /// <remarks>
+  /// <![CDATA[
+  ///   subFsm.SetTransitions(State.Loading, new Dictionary<Result, State>
+  ///   {
+  ///     [Result.Success] = State.Processing,
+  ///     [Result.Error] = State.Completed,
+  ///     [Result.Failure] = State.Completed
+  ///   })
+  ///   // Not implemented yet
+  ///   // .AllowTransition(State.Processing); // Allow an additional transition separately
+  /// ]]>
+  /// </remarks>
+  public void SetTransitions(StateId state, IDictionary<Result, StateId> map)
+  {
+    var dict = new Dictionary<Result, StateId>();
+    foreach (var kvp in map)
+      dict[kvp.Key] = kvp.Value;
+
+    _transitions[state] = dict;
+  }
+
+  public async Task<Result> StartAndWaitAsync(StateId initial, IDictionary<string, object>? initialParams = null)
+  {
+    _completionTcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
+    await StartAsync(initial, initialParams).ConfigureAwait(false);
+    return await _completionTcs.Task.ConfigureAwait(false);
+  }
+
+  public async Task StartAsync(StateId initial, IDictionary<string, object>? initialParams = null)
+  {
+    await _lock.WaitAsync().ConfigureAwait(false);
+
+    try
+    {
+      if (_current != StateId.None)
+        throw new InvalidStateTransitionException($"FSM already started at state '{_current}'.");
+
+      _logger.LogInformation("FSM starting at state '{Initial}'.", initial);
+      await TransitionToAsync(initial, BuildContext(initialParams)).ConfigureAwait(false);
     }
     finally
     {
@@ -127,6 +147,7 @@ public sealed class FiniteStateMachine
       foreach (var kvp in initialParams)
         ctx.Params[kvp.Key] = kvp.Value;
     }
+
     ctx.LastState = _current;
     return ctx;
   }
@@ -136,11 +157,11 @@ public sealed class FiniteStateMachine
     await _lock.WaitAsync().ConfigureAwait(false);
     try
     {
-      if (_current == State.None)
-        throw new InvalidOperationException("No active state to transition from.");
+      if (_current == StateId.None)
+        throw new InvalidStateTransitionException("No active state to transition from.");
 
       if (!_transitions.TryGetValue(_current, out var map) || !map.TryGetValue(result, out var next))
-        throw new KeyNotFoundException($"No transition defined from '{_current}' on result '{result}'.");
+        throw new MissingStateTransitionException($"No transition defined from '{_current}' on result '{result}'.");
 
       _logger.LogInformation("Transition requested: {Current} --({Result})--> {Next}", _current, result, next);
 
@@ -164,15 +185,15 @@ public sealed class FiniteStateMachine
     }
   }
 
-  private async Task TransitionToAsync(State newState, Context ctx)
+  private async Task TransitionToAsync(StateId newState, Context ctx)
   {
     if (!_states.TryGetValue(newState, out var lazyNode))
-      throw new InvalidOperationException($"State '{newState}' is not registered.");
+      throw new InvalidStateTransitionException($"State '{newState}' is not registered.");
 
     var prev = _current;
 
     // Exit previous if it was created
-    if (prev != State.None && _states.TryGetValue(prev, out var prevLazy) && prevLazy.IsValueCreated)
+    if (prev != StateId.None && _states.TryGetValue(prev, out var prevLazy) && prevLazy.IsValueCreated)
     {
       var prevNode = prevLazy.Value;
       _logger.LogTrace("Exiting state '{Prev}'.", prev);
