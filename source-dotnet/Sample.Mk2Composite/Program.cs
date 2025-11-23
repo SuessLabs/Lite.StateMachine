@@ -13,7 +13,7 @@ internal class Program
 {
   static async Task Main(string[] args)
   {
-    var fsm = new AsyncStateMachine();
+    var fsm = new StateMachine2();
 
     var rootState = new CompositeState(StateId.Root)
     {

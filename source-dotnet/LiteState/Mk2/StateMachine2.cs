@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace LiteState.Mk2;
 
-public class AsyncStateMachine
+public class StateMachine2
 {
   private readonly Dictionary<StateId, StateDefinition> _states = new();
 
@@ -20,7 +20,7 @@ public class AsyncStateMachine
   private readonly Channel<(string message, Context context)> _messageChannel =
     Channel.CreateUnbounded<(string, Context)>();
 
-  public AsyncStateMachine()
+  public StateMachine2()
   {
     _ = ProcessMessagesAsync();
   }
