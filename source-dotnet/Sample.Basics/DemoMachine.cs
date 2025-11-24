@@ -38,59 +38,59 @@ public static class DemoMachine
     var subFsm = new StateMachine(services, childLogger, isRoot: false);
 
     // Register child states lazily via DI
-    subFsm.RegisterState<LoadingState>(State.Loading);
-    subFsm.RegisterState<ProcessingState>(State.Processing);
-    subFsm.RegisterState<CompletedState>(State.Completed);
+    subFsm.RegisterState<LoadingState>(StateId.Loading);
+    subFsm.RegisterState<ProcessingState>(StateId.Processing);
+    subFsm.RegisterState<CompletedState>(StateId.Completed);
 
     // TODO: Set default Error/Failure states for everyone to use
     //  Or, don't set it and have an Exception thrown if missing
     //  - InvalidStateTransitionException
     //  - MissingStateTransitionException
 
-    subFsm.SetTransitions(State.Loading, new Dictionary<Result, State>
+    subFsm.SetTransitions(StateId.Loading, new Dictionary<Result, StateId>
     {
-      [Result.Success] = State.Processing,
-      [Result.Error] = State.Completed,
-      [Result.Failure] = State.Completed
+      [Result.Success] = StateId.Processing,
+      [Result.Error] = StateId.Completed,
+      [Result.Failure] = StateId.Completed
     });
 
-    subFsm.SetTransitions(State.Processing, new Dictionary<Result, State>
+    subFsm.SetTransitions(StateId.Processing, new Dictionary<Result, StateId>
     {
-      [Result.Success] = State.Completed,
-      [Result.Error] = State.Completed,
-      [Result.Failure] = State.Completed
+      [Result.Success] = StateId.Completed,
+      [Result.Error] = StateId.Completed,
+      [Result.Failure] = StateId.Completed
     });
 
     // Register composite state on root via factory (so we can pass sub-FSM and initial child)
-    fsm.RegisterState(State.OrderFlow, sp =>
+    fsm.RegisterState(StateId.OrderFlow, sp =>
       new CompositeStateNode(
         name: "Order Flow",
         logger: sp.GetRequiredService<ILogger<CompositeStateNode>>(),
         subFsm: subFsm,
-        initialChild: State.Loading));
+        initialChild: StateId.Loading));
 
     // Register other root states via DI
-    fsm.RegisterState<InitState>(State.Init);
-    fsm.RegisterState<CompletedState>(State.Completed);
-    fsm.RegisterState<ErrorState>(State.Error);
+    fsm.RegisterState<InitState>(StateId.Init);
+    fsm.RegisterState<CompletedState>(StateId.Completed);
+    fsm.RegisterState<ErrorState>(StateId.Error);
 
     // Wiring root transitions
-    fsm.SetTransitions(State.Init, new Dictionary<Result, State>
+    fsm.SetTransitions(StateId.Init, new Dictionary<Result, StateId>
     {
-      [Result.Success] = State.OrderFlow,
-      [Result.Error] = State.Error,
-      [Result.Failure] = State.Error
+      [Result.Success] = StateId.OrderFlow,
+      [Result.Error] = StateId.Error,
+      [Result.Failure] = StateId.Error
     });
 
-    fsm.SetTransitions(State.OrderFlow, new Dictionary<Result, State>
+    fsm.SetTransitions(StateId.OrderFlow, new Dictionary<Result, StateId>
     {
-      [Result.Success] = State.Completed,
-      [Result.Error] = State.Error,
-      [Result.Failure] = State.Error
+      [Result.Success] = StateId.Completed,
+      [Result.Error] = StateId.Error,
+      [Result.Failure] = StateId.Error
     });
 
     // Start the root FSM and wait for terminal outcome
-    var finalResult = await fsm.StartAndWaitAsync(State.Init);
+    var finalResult = await fsm.StartAndWaitAsync(StateId.Init);
     Console.WriteLine($"Root FSM finished with result: {finalResult}");
   }
 }

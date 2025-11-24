@@ -11,6 +11,19 @@ using LiteState.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+public enum StateId
+{
+  None,
+  Init,
+  Loading,
+  Processing,
+  Completed,
+  Error,
+
+  // Example composite "parent"
+  OrderFlow
+}
+
 /// <summary>Lite Finite State Machine (FSM) implementation.</summary>
 public sealed class StateMachine
 {

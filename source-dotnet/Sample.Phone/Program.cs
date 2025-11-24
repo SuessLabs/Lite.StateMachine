@@ -6,6 +6,14 @@ using LiteState;
 
 namespace Sample.Phone;
 
+internal class Program
+{
+  private static void Main(string[] args)
+  {
+  }
+}
+
+/*
 public enum PhoneState
 {
   Idle,
@@ -34,3 +42,4 @@ public class IdleState : StateId
   {
   }
 }
+*/

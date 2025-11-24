@@ -270,7 +270,8 @@ public sealed class StateMachine<TState> where TState : struct, Enum
     _states[state.Id] = state;
 
     // Wire composite submachine instance if needed.
-    if (state is ICompositeState<TState> comp)
+    ////if (state is ICompositeState<TState> comp)
+    if (state is CompositeState<TState> comp)
     {
       comp.Submachine = new StateMachine<TState>(this, comp, _eventAggregator)
       {

@@ -31,7 +31,7 @@ public abstract class StateNode
   /// <summary>Logger injected via DI.</summary>
   protected ILogger Logger { get; }
 
-  public sealed async Task OnEnterAsync(Context ctx)
+  public async Task OnEnterAsync(Context ctx)
   {
     Logger.LogDebug("State '{StateName}' OnEnter starting.", Name);
     await OnEnterAsyncCore(ctx).ConfigureAwait(false);
@@ -39,28 +39,28 @@ public abstract class StateNode
   }
 
   // ---------- Transition methods (sealed) ----------
-  public sealed async Task OnEnteringAsync(Context ctx)
+  public async Task OnEnteringAsync(Context ctx)
   {
     Logger.LogTrace("Entering state '{StateName}' (OnEntering). LastState={LastState}", Name, ctx.LastState);
     await OnEnteringAsyncCore(ctx).ConfigureAwait(false);
     Logger.LogTrace("Entered state '{StateName}' (OnEntering finished).", Name);
   }
 
-  public sealed async Task OnExitAsync(Context ctx)
+  public async Task OnExitAsync(Context ctx)
   {
     Logger.LogTrace("Exiting state '{StateName}'.", Name);
     await OnExitAsyncCore(ctx).ConfigureAwait(false);
     Logger.LogTrace("Exited state '{StateName}'.", Name);
   }
 
-  public sealed async Task OnMessageAsync(Context ctx)
+  public async Task OnMessageAsync(Context ctx)
   {
     Logger.LogInformation("State '{StateName}' OnMessage received.", Name);
     await OnMessageAsyncCore(ctx).ConfigureAwait(false);
     Logger.LogInformation("State '{StateName}' OnMessage handled.", Name);
   }
 
-  public sealed async Task OnTimeoutAsync(Context ctx)
+  public async Task OnTimeoutAsync(Context ctx)
   {
     Logger.LogWarning("State '{StateName}' Timeout triggered.", Name);
     await OnTimeoutAsyncCore(ctx).ConfigureAwait(false);
