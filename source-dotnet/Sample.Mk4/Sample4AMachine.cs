@@ -1,26 +1,16 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
-namespace Sample.Mk3;
+namespace Sample.Mk4.SampleA;
 
 using System;
-using LiteState.Mk3;
-
-// Your custom enum; the machine is generic and agnostic to which enum you use.
-public enum Workflow
-{
-  Root,       // Composite parent
-  Validate,   // Child 1
-  Process,    // Child 2
-  Persist,    // Child 3
-  Done        // Terminal top-level state
-}
+using LiteState.Mk4a;
 
 #region Test App
 
-internal class Program
+public class TestApp
 {
-  private static void Main()
+  public static void Run()
   {
     var sm = new StateMachine<Workflow>();
 
@@ -43,8 +33,18 @@ internal class Program
 
 #endregion Test App
 
+// Your custom enum; the machine is generic and agnostic to which enum you use.
+public enum Workflow
+{
+  Root,       // Composite parent
+  Validate,   // Child 1
+  Process,    // Child 2
+  Persist,    // Child 3
+  Done        // Terminal top-level state
+}
+
 // A simple terminal state
-public sealed class DoneState : StateBase<Workflow>
+public sealed class DoneState : State<Workflow>
 {
   public DoneState() : base(Workflow.Done)
   {
@@ -70,7 +70,7 @@ public sealed class DoneState : StateBase<Workflow>
 }
 
 // Child 3
-public sealed class PersistState : StateBase<Workflow>
+public sealed class PersistState : State<Workflow>
 {
   public PersistState() : base(Workflow.Persist)
   {
@@ -96,7 +96,7 @@ public sealed class PersistState : StateBase<Workflow>
 }
 
 // Child 2
-public sealed class ProcessState : StateBase<Workflow>
+public sealed class ProcessState : State<Workflow>
 {
   public ProcessState() : base(Workflow.Process)
   {
@@ -151,7 +151,7 @@ public sealed class RootState : CompositeState<Workflow>
 }
 
 // Child 1
-public sealed class ValidateState : StateBase<Workflow>
+public sealed class ValidateState : State<Workflow>
 {
   public ValidateState() : base(Workflow.Validate)
   {

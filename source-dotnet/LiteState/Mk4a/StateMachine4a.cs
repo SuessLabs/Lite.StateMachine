@@ -10,7 +10,7 @@
  * contains a string property named "Parameter" and a method named, "NextState" to trigger
  * moving to the next state.
  */
-namespace LiteState.Mk3;
+namespace LiteState.Mk4a;
 
 using System;
 using System.Collections.Generic;
@@ -41,7 +41,7 @@ public interface IState<TState> where TState : struct, Enum
 ///  3) For each child: Child.OnEntering -> Child.OnEnter -> Child.OnExit
 ///  4) Parent.OnExit (after the last child exits)
 /// </summary>
-public class CompositeState<TState> : StateBase<TState> where TState : struct, Enum
+public class CompositeState<TState> : State<TState> where TState : struct, Enum
 {
   private readonly List<IState<TState>> _children = new();
 
@@ -88,9 +88,9 @@ public sealed class Context<TState> where TState : struct, Enum
 /// <summary>
 /// Convenience base class with default "true" transitions.
 /// </summary>
-public abstract class StateBase<TState> : IState<TState> where TState : struct, Enum
+public abstract class State<TState> : IState<TState> where TState : struct, Enum
 {
-  protected StateBase(TState id) => Id = id;
+  protected State(TState id) => Id = id;
 
   public TState Id { get; }
 

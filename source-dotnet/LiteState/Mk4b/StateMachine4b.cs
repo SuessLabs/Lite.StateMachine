@@ -1,15 +1,24 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
+/*
+ * Make a state machine using C# and has state transitions named OnEntering, OnEnter, OnExit
+ * that must be methods. Each state is identified as an custom enum and the state machine is
+ * agnostic to the type of enum provided. The state machine can have composite states and
+ * when the last sub-state exits it goes to it's parent state's OnExit transition. Each state
+ * gets passed a Context object that contains a string property named "Parameter" and a method
+ * named, "NextState" to trigger moving to the next state. The "NextState" methond has an num
+ * named, "Result" with the values, "Ok", "Error", and "Failure" that determines which state
+ * to go to next.  The state machine can have regular states or Command states which receive
+ * an OnMessage from an event aggregator service and if messages are not received on time,
+ * they will go to the OnTimeout method. The default timeout can be set by the state machine
+ * and its value is 3000 ms.
+ */
+
+namespace LiteState.Mk4b;
+
 using System;
 using System.Collections.Generic;
-using System.Text;
-
-namespace LiteState.Mk4;
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
