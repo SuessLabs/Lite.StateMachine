@@ -1,32 +1,184 @@
 # Concept Designs
 
+[[_TOC_]]
+
 ## Design Patterns
 
-* Director/Builder - Separate the construction of a complex object from its representation.
-* Fluent - design relies extensively on method chaining to increase code legibility.
+* **Director/Builder**
+  * Separate the construction of a complex object from its representation.
+  * Allows you to construct an object step-by-step. Helpful when obj has many optional parameters.
+  * Typically uses a separate Builder class and a final `Build()` method to return the fully constructed object.
+* **Fluent**
+  * Design relies extensively on method chaining to increase code legibility.
 
-## Design Questions
+### Example
 
-* [ ] Is it better to pre-define transition (strict rules) or allow a state to decide where it wants to go (free-floating, code driven).
-  * STRICT: Requiring 2 enums (StateId, TriggerId)
-  * FREE: Requires only 1 enum, StateId.
+```cs
+// Fluent Builder Pattern
+
+Car car = new CarBuilder()
+    .WithMake("Honda")
+    .WithModel("Civic")
+    .WithColor("Red")
+    .Build();
+
+// The builder class pattern for constructing a "new Car"
+public class CarBuilder
+{
+  private Car _car = new();
+
+  // Note returns the builder itself for chaining (fluent)
+  public CarBuilder WithMake(string make) { _car.Make = make; return this; }
+  public CarBuilder WithModel(string model) { _car.Model = model; return this; }
+  public CarBuilder WithColor(string color) { _car.Color = color; return this; }
+  
+  // Builder's `Build` method.
+  public Car Build() { return _car; }
+}
+```
+
+## Chosen 
+
+
+## Design Concepts
+
+### Extension Libraries
+
+Lite State Machine at its core should be simple. Extension libraries should be provided to add additional features that are not normally apart of the core system.  i.e. Messaging interfaces.
+
+### State Types
+
+* Composite (parent) State - _Has children and will move to next state upon completion_
+* Standard (custom) State
+* Data Load State - _Pulls data from DB (from another SBMP)_
+* Command - _Sends command to another SBMP and wait for response_
+
+#### Sending Messages
+
+Sending a message (aka: commands) requires a specific `MessageType` to send so the receiver knows its only for them via a "request", as well as receiving the "response" back.
+
+For example:
+
+1. System control state `ToasterUnlock` sends, `CommandType.UnlockRequest`.
+2. The hw-service listens for this "request" and performs the unlock.
+3. The hw-service responds with the "response", `CommandType.UnlockResponse`.
+4. SysCtrl's `ToasterUnlock_OnMessage` receives this message
+   1. If no errors, we proceed to the next state, `ToasterUnlocked`.
+   2. If an error happened or `ToasterUnlock_OnTimeout` is encountered, we goto `ToasterFailedState` and attempt recovery.
+5. Done.
+
+### Transition Mechanism
+
+**Question:** Is it better to pre-define transition (strict rules) or allow a state to decide where it wants to go (free-floating, code driven).
+
+For simplicity, Model-2 "Strict Predefined (single)" may be best.
+
+#### 1) STRICT with Triggers
+
+Pre-defined state-to-trigger for logical paths. Requiring 2 enums (StateId, TriggerId). AKA: Guarding
+
+* CON: Have to maintain 2 definitions. 1) State-Name, 2) State-Trigger
+* CON: Trigger naming can get messy or confusing (_user problem_)
+
+#### 2) STRICT Predefined (single success exit) <--- THIS ONE
+
+Pre-defined transitions using a single enum (OnSuccess, OnError, OnFailure). This will need a default OnError/OnFailure defined in case the OnSuccess fails.
+
+Transitioning happens by returning the enum `Result` as either, `Success`, `Error` (soft-error), `Failure` (hard-fault).
+
+```cs
+// Happy path
+ToasterUnlocked_OnEnter(Context)
+{
+  return Result.Success;
+}
+
+ToasterUnlock_OnEnter(Context ctx)
+{
+  ctx.AddError("Something bad happened");
+  return Result.Error;
+}
+```
+
+Pros/Cons:
+* PRO: Able to pre-render UML diagrams
+* PRO: Success and error case transitions clearly defined
+* CON: Only 1 success exit
+* CON: Limited exit paths (1 success, 1 failure, 1 timeout)
+
+#### 3) STRICT - Predefinied (multiple successful exit strategies)
+
+```cs
+State multiSuccess = new()
+  .OnEnter(MultiSuccess_OnEnter)
+  .AllowNext(StateId.Opened)
+  .AllowNext(StateId.Closed);
+
+public int MultiSuccess_OnEnter(Context params)
+{
+  return StateId.Opened;
+}
+```
+
+* CON: How to strictly define which success state to exit to?
+  * Cannot say, `return State.Success` - there are multiple successes
+* CON: Cannot use `return State.Success;` 
+
+#### 4) FREE - User sets whatever
+
+* PRO: Requires only 1 enum, StateId.
+* PRO: User can define whatever based on logical paths
+* CON: Hard to pre-drawer UML diagrams
+* CON: Users can infinite loop themselves, or "fall off a cliff"
+
+### Builder Design Pattern
+
 * [ ] Builder design pattern for defining a state? (aka: Fluent)
   * [ ] What is the overhead of a C++ Fluent design pattern?
   * Sample: `State(StateId.Init, ...).AllowNext(Opened).AllowNext(Closed);`
-* [ ] Passing parameters
-  * A: Context as a singleton?
-    * Context would live in the main StateMachine class, being passed to each `State(Context)`.
-    * PRO: It's small and don't care if a parameter is forgotten
-    * CON: How to clean out Parameters? The same param isn't needed for everything.
-  * B: Context as a ParameterSet passed everytime?
-    * PRO: Params are passed and not maintained. Allowing for minimal memory overhead.
-    * CON: Requires dev to grab and repush params onto context every time.
+
+### Passing Parameters (Context)
+
+Passing parameters via a `ParameterSet` context ensures data object are associated cleanly.
+
+* [ ] A: Context as a singleton?
+  * Context would live in the main StateMachine class, being passed to each `State(Context)`.
+  * PRO: It's small and don't care if a parameter is forgotten
+  * CON: How to clean out Parameters? The same param isn't needed for everything.
+* [X] B: Context as a ParameterSet passed everytime?  `Dictionary<enum ParameterType, object payload>()`
+  * PRO: Params are passed and not maintained. Allowing for minimal memory overhead.
+  * CON: Requires dev to grab and repush params onto context every time.
+
+### CoAP Messaging
+
 * [ ] CoAP Messaging needs to interact with State Machine.
-  * The `observed` events would then be passed to the active state's OnMessage.
-* [ ] ON_STATE: Should we transition to (A) "In State" or (B) "Entering the State", and why would we need, "B"?
+* The `observed` events would then be passed to the active state's OnMessage.
+* CoAP - Constrained Application Protocol (_similar to SBMP, just not TCP/IP_)
+
+### Message Services (EXT-lib)
+
+Extension library for handling TCP/IP based state based message processing.
+
+### State Properties
+
+* [B] ON_STATE: Should we transition to (A) "In State" or (B) "Entering the State", and why would we need, "B"?
   * A: "OnEnter > OnMessage > OnTimeout > OnExit"
   * B: "OnEntering > OnEntered > OnMessage > OnTimeout > OnExit"
-* [ ] Composite (sub) States?
+
+**Winner:** "B"
+
+* `OnEntering` (optional)
+* `OnEnter`
+* `OnMessage` (Optional)
+* `OnTimeout`
+* `OnExit`
+
+### Composite States
+
+* [X] Composite (sub) States?
+
+Yes, this is a must
+
 
 ### Follow-up Features
 

@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/Samples/">
+    <Project Path="Sample.Basics/Sample.Basics.csproj" Id="88e1e0a9-34b8-4610-a2f4-bfb36e0d1b43" />
+    <Project Path="Sample.Mk2Composite/Sample.Mk2.Composite.csproj" />
+    <Project Path="Sample.Mk4/Sample.Mk4.csproj" Id="f7481ec8-d3be-4acd-9eae-a4723c09e245" />
+    <Project Path="Sample.Phone/Sample.Phone.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="codemaid.config" />
+    <File Path="Concept-Designs.md" />
+    <File Path="readme.md" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="LiteState.Tests/LiteState.Mk2.Tests.csproj" Id="9644caac-1ac7-49b2-a502-896ca82f7b74" />
+  </Folder>
+  <Project Path="LiteState/LiteState.csproj" />
+</Solution>
