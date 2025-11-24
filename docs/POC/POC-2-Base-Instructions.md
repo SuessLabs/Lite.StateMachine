@@ -11,7 +11,7 @@ Each transition must pass a Context class as an argument which contains a proper
 
 Package this into a reusable library-style class. Extend this design to support composite states explicitly
 
-## MK2 - First Vibe
+## MK2 - Redesign with Messaging, Timeouts and Context
 
 
 Using C# create a finite state machine which is async and can have composite states. States are defined by an enumeration value. Each state passes a context payload in the form a Dictionary<string, object>. Each state has an optional OnEntering for transitioning into it,  OnEnter for when fully transitioned, optionally an OnMessage for receiving message events sent by the OnEnter, optionally an OnTimeout for when events are not received by the OnMessage in time, and optionally an OnExit for when it is completed.

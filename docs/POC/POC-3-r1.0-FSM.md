@@ -1,4 +1,4 @@
-# MK3-Vibe-2.0-FSM
+# LiteState FSM - MK3
 
 ## Instructions
 
@@ -354,7 +354,7 @@ namespace LiteStateFsm
 
                 if (nextId == null)
                     throw new InvalidOperationException($"No route for result '{result}' from state '{currentLeaf}'.");
-                
+
                 var ctx = new Context<TState>(this, lastState: currentLeaf);
 
                 // Compute LCA and orchestrate exit/enter across the hierarchy.
