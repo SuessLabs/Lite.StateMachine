@@ -3,7 +3,7 @@
 
 using System;
 
-namespace LiteState.Exceptions;
+namespace LiteState;
 
 /// <summary>State transition not allowed by pre-defined rule.</summary>
 /// <remarks>Happens when a custom-override provided is not in the allowed list.</remarks>

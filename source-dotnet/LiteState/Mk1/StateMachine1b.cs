@@ -1,7 +1,7 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
-namespace LiteState;
+namespace LiteState.Mk1;
 
 using System;
 using System.Collections.Generic;
@@ -9,6 +9,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+
+/// <summary>State transition result.</summary>
+public enum Result
+{
+  Success,
+  Error,
+  Failure
+}
 
 public enum StateId
 {
@@ -23,6 +32,8 @@ public enum StateId
   OrderFlow
 }
 
+#region State Machine
+
 /// <summary>Lite Finite State Machine (FSM) implementation.</summary>
 public sealed class StateMachine
 {
@@ -36,8 +47,8 @@ public sealed class StateMachine
   private StateId _current = StateId.None;
 
   public StateMachine(IServiceProvider services,
-                      ILogger<StateMachine> logger,
-                      bool isRoot = true)
+                            ILogger<StateMachine> logger,
+                            bool isRoot = true)
   {
     _services = services ?? throw new ArgumentNullException(nameof(services));
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -223,3 +234,185 @@ public sealed class StateMachine
     await node.OnEnterAsync(ctx).ConfigureAwait(false);
   }
 }
+
+#endregion State Machine
+
+#region State Node
+
+/// <summary>State node.</summary>
+
+public abstract class StateNode
+{
+  protected StateNode(string name, ILogger logger)
+  {
+    Name = name ?? throw new System.ArgumentNullException(nameof(name));
+    Logger = logger ?? NullLogger.Instance;
+  }
+
+  /// <summary>Human-readable name for diagnostics/logging.</summary>
+  public string Name { get; }
+
+  /// <summary>Logger injected via DI.</summary>
+  protected ILogger Logger { get; }
+
+  public async Task OnEnterAsync(Context ctx)
+  {
+    Logger.LogDebug("State '{StateName}' OnEnter starting.", Name);
+    await OnEnterAsyncCore(ctx).ConfigureAwait(false);
+    Logger.LogDebug("State '{StateName}' OnEnter finished.", Name);
+  }
+
+  // ---------- Transition methods (sealed) ----------
+  public async Task OnEnteringAsync(Context ctx)
+  {
+    Logger.LogTrace("Entering state '{StateName}' (OnEntering). LastState={LastState}", Name, ctx.LastState);
+    await OnEnteringAsyncCore(ctx).ConfigureAwait(false);
+    Logger.LogTrace("Entered state '{StateName}' (OnEntering finished).", Name);
+  }
+
+  public async Task OnExitAsync(Context ctx)
+  {
+    Logger.LogTrace("Exiting state '{StateName}'.", Name);
+    await OnExitAsyncCore(ctx).ConfigureAwait(false);
+    Logger.LogTrace("Exited state '{StateName}'.", Name);
+  }
+
+  public async Task OnMessageAsync(Context ctx)
+  {
+    Logger.LogInformation("State '{StateName}' OnMessage received.", Name);
+    await OnMessageAsyncCore(ctx).ConfigureAwait(false);
+    Logger.LogInformation("State '{StateName}' OnMessage handled.", Name);
+  }
+
+  public async Task OnTimeoutAsync(Context ctx)
+  {
+    Logger.LogWarning("State '{StateName}' Timeout triggered.", Name);
+    await OnTimeoutAsyncCore(ctx).ConfigureAwait(false);
+    Logger.LogWarning("State '{StateName}' Timeout handling completed.", Name);
+  }
+
+  protected virtual Task OnEnterAsyncCore(Context ctx) => Task.CompletedTask;
+
+  // ---------- Override these in derived states ----------
+
+  protected virtual Task OnEnteringAsyncCore(Context ctx) => Task.CompletedTask;
+
+  protected virtual Task OnExitAsyncCore(Context ctx) => Task.CompletedTask;
+
+  protected virtual Task OnMessageAsyncCore(Context ctx) => Task.CompletedTask;
+
+  protected virtual Task OnTimeoutAsyncCore(Context ctx) => Task.CompletedTask;
+}
+
+#endregion State Node
+
+#region Composite State
+
+public sealed class CompositeStateNode : StateNode
+{
+  private readonly StateId _initialChild;
+  private readonly StateMachine _subFsm;
+
+  public CompositeStateNode(
+    string name,
+    ILogger<CompositeStateNode> logger,
+    StateMachine subFsm,
+    StateId initialChild)
+    : base(name, logger)
+  {
+    _subFsm = subFsm ?? throw new System.ArgumentNullException(nameof(subFsm));
+    _initialChild = initialChild;
+  }
+
+  protected override async Task OnEnterAsyncCore(Context ctx)
+  {
+    Logger.LogInformation("Composite '{Name}' starting sub-FSM at child '{Child}'.", Name, _initialChild);
+
+    var childResult = await _subFsm.StartAndWaitAsync(_initialChild, ctx.Params)
+                                   .ConfigureAwait(false);
+
+    Logger.LogInformation("Composite '{Name}' sub-FSM completed with Result={Result}. Passing to parent.", Name, childResult);
+    await ctx.NextState(childResult).ConfigureAwait(false);
+  }
+
+  protected override Task OnMessageAsyncCore(Context ctx)
+  {
+    Logger.LogDebug("Composite '{Name}' forwarding message to child FSM.", Name);
+    return _subFsm.ForwardMessageAsync(ctx.Params);
+  }
+
+  protected override Task OnTimeoutAsyncCore(Context ctx)
+  {
+    Logger.LogWarning("Composite '{Name}' forwarding timeout to child FSM.", Name);
+    return _subFsm.ForwardTimeoutAsync();
+  }
+}
+
+#endregion Composite State
+
+#region Context
+
+public sealed class Context
+{
+  private readonly Func<Result, Task> _nextState;
+
+  public Context(Func<Result, Task> nextState)
+  {
+    _nextState = nextState ?? throw new ArgumentNullException(nameof(nextState));
+  }
+
+  ////public PropertyBag Errors { get; } = new();
+  public Dictionary<string, object> Errors { get; } = new();
+
+  /// <summary>The previous state's enum value.</summary>
+  public StateId LastState { get; internal set; } = StateId.None;
+
+  public Dictionary<string, object> Params { get; } = new();
+
+  /// <summary>Triggers moving to the next state, based on a Result.</summary>
+  public Task NextState(Result result) => _nextState(result);
+}
+
+#endregion Context
+
+#region Property Bag
+
+public interface IPropertyBag : IDictionary<string, object>
+{
+}
+
+public class PropertyBag : Dictionary<string, object>
+{
+}
+
+#endregion Property Bag
+
+#region Exceptions
+
+/// <summary>State transition not allowed by pre-defined rule.</summary>
+/// <remarks>Happens when a custom-override provided is not in the allowed list.</remarks>
+public class InvalidStateTransitionException : Exception
+{
+  public InvalidStateTransitionException()
+  {
+  }
+
+  public InvalidStateTransitionException(string message)
+    : base(message)
+  {
+  }
+}
+
+public class MissingStateTransitionException : Exception
+{
+  public MissingStateTransitionException()
+  {
+  }
+
+  public MissingStateTransitionException(string message)
+    : base(message)
+  {
+  }
+}
+
+#endregion Exceptions
