@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LiteState\LiteState.csproj" />
+    <ProjectReference Include="..\Lite.State\Lite.State.csproj" />
   </ItemGroup>
 
 </Project>
