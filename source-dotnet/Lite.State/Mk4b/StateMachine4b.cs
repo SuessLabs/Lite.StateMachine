@@ -261,7 +261,8 @@ public sealed class StateMachine<TState> where TState : struct, Enum
     _eventAggregator = eventAggregator;
   }
 
-  public Context<TState> Context { get; } = default!;
+  public Context<TState> Context { get; private set; } = default!;
+
   public int DefaultTimeoutMs { get; set; } = 3000;
 
   public void RegisterState(IState<TState> state)
@@ -292,10 +293,11 @@ public sealed class StateMachine<TState> where TState : struct, Enum
       throw new InvalidOperationException($"Initial state '{_initial}' is not registered.");
 
     _started = true;
-    var ctx = new Context<TState>(this) { Parameter = parameter };
-    typeof(StateMachine<TState>)
-        .GetProperty(nameof(Context))!
-        .SetValue(this, ctx);
+    ////var ctx = new Context<TState>(this) { Parameter = parameter };
+    ////typeof(StateMachine<TState>)
+    ////    .GetProperty(nameof(Context))!
+    ////    .SetValue(this, ctx);
+    Context = new Context<TState>(this) { Parameter = parameter };
 
     EnterState(initialState);
   }
