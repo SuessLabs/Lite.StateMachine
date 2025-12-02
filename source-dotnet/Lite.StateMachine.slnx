@@ -12,7 +12,7 @@
     <File Path="readme.md" />
   </Folder>
   <Folder Name="/Tests/">
-    <Project Path="Lite.State.Tests/Lite.State.Mk2.Tests.csproj" Id="9644caac-1ac7-49b2-a502-896ca82f7b74" />
+    <Project Path="Lite.State.Tests/Lite.State.Tests.csproj" Id="9644caac-1ac7-49b2-a502-896ca82f7b74" />
   </Folder>
   <Project Path="Lite.State/Lite.State.csproj" />
 </Solution>
