@@ -2,7 +2,7 @@
 
 Small finite state machine for .NET and C++
 
-Copyright 2022-2024 Xeno Innovations, Inc. (dba, Suess Labs)<br />
+Copyright 2022-2025 Xeno Innovations, Inc. (dba, Suess Labs)<br />
 Created by: Damian Suess<br />
 Date: 2022-06-07<br />
 
