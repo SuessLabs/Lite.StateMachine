@@ -2,11 +2,11 @@
 // See the LICENSE file in the project root for more information.
 
 namespace Sample.Basics;
-
+/*
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using LiteState;
+using Lite.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -27,7 +27,7 @@ public static class DemoMachine
       .AddTransient<ProcessingState>()
       .AddTransient<CompletedState>()
       .AddTransient<ErrorState>()
-      .AddTransient<CompositeStateNode>() // if you want DI to be able to create composites generically
+      .AddTransient<CompositeState>() // if you want DI to be able to create composites generically
       .BuildServiceProvider();
 
     // Create FSMs with DI + loggers
@@ -65,7 +65,7 @@ public static class DemoMachine
     fsm.RegisterState(StateId.OrderFlow, sp =>
       new CompositeStateNode(
         name: "Order Flow",
-        logger: sp.GetRequiredService<ILogger<CompositeStateNode>>(),
+        logger: sp.GetRequiredService<ILogger<CompositeState>>(),
         subFsm: subFsm,
         initialChild: StateId.Loading));
 
@@ -94,3 +94,4 @@ public static class DemoMachine
     Console.WriteLine($"Root FSM finished with result: {finalResult}");
   }
 }
+*/

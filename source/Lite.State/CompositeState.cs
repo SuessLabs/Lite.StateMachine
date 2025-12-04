@@ -1,19 +1,36 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
-namespace LiteState;
+namespace Lite.State;
 
+using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-public sealed class CompositeStateNode : StateNode
+/// <summary>
+/// A base class for composite states. The submachine is injected/assigned externally.
+/// </summary>
+public abstract class CompositeState<TState> : BaseState<TState>, ICompositeState<TState> where TState : struct, Enum
+{
+  protected CompositeState(TState id) : base(id)
+  {
+    // : base(name, logger)
+  }
+
+  public override bool IsComposite => true;
+
+  public StateMachine<TState> Submachine { get; internal set; } = default!;
+}
+
+/*
+public sealed class CompositeState : StateNode
 {
   private readonly StateId _initialChild;
   private readonly StateMachine _subFsm;
 
-  public CompositeStateNode(
+  public CompositeState(
     string name,
-    ILogger<CompositeStateNode> logger,
+    ILogger<CompositeState> logger,
     StateMachine subFsm,
     StateId initialChild)
     : base(name, logger)
@@ -45,3 +62,4 @@ public sealed class CompositeStateNode : StateNode
     return _subFsm.ForwardTimeoutAsync();
   }
 }
+*/

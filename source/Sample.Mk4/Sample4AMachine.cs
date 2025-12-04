@@ -1,6 +1,6 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
-
+/*
 namespace Sample.Mk4.SampleA;
 
 using System;
@@ -176,3 +176,4 @@ public sealed class ValidateState : State<Workflow>
     return true;
   }
 }
+*/

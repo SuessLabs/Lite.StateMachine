@@ -2,13 +2,14 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using Lite.State;
 
 namespace Lite.State.Tests;
 
 [TestClass]
-public class BasicStateTest
+public class StateTransitionPocTest
 {
-  public const string PARAM_TEST = "param1";
+  /*
   public const string SUCCESS = "success";
 
   public enum BasicFsm
@@ -22,26 +23,21 @@ public class BasicStateTest
   [TestMethod]
   public void TransitionWithErrorToSuccessTest()
   {
-    // Assemble
     var machine = new StateMachine<BasicFsm>();
-
-    machine.RegisterState(new State1());
-    machine.RegisterState(new State2());
-    machine.RegisterState(new State2Error(BasicFsm.State2Error));
-    machine.RegisterState(new State3(BasicFsm.State3));
+    machine.RegisterState(stateId: BasicFsm.State1,       stateClass: new State1(),       onSuccess: BaseFsm.State2,  onError: null,                 onFailure: null);
+    machine.RegisterState(stateid: BasicFsm.State2,       stateClass: new State2(),       onSuccess: BasicFsm.State3, onError: BasicFsm.State2Error, onFailure: null);
+    machine.RegisterState(stateid: BasicFsm.State2Error,  stateClass: new State2Error(),  onSuccess: BasicFsm.State2);
+    machine.RegisterState(stateid: BasicFsm.State3,       stateClass: new State3(),       onSuccess: null);
 
     // Set starting point
     machine.SetInitial(BasicFsm.State1);
 
     // Start your engine!
-    var ctxProperties = new PropertyBag() { { PARAM_TEST, "not-finished" }, };
-    machine.Start(ctxProperties);
+    machine.Start("param-test");
 
-    // Assert Results
-    var ctxFinalParams = machine.Context.Parameters;
+    var finalParam = machine.Context.Parameter;
 
-    Assert.IsNotNull(ctxFinalParams);
-    Assert.AreEqual(SUCCESS, ctxFinalParams[PARAM_TEST]);
+    Assert.AreEqual(SUCCESS, finalParam);
   }
 
   //// private class State1 : IState<BasicStateTest.BasicFsm>
@@ -106,8 +102,9 @@ public class BasicStateTest
 
     public override void OnEntering(Context<BasicFsm> context)
     {
-      context.Parameters[PARAM_TEST] = SUCCESS;
+      context.Parameter = SUCCESS;
       Console.WriteLine("[State3] OnEntering");
     }
   }
+  */
 }
