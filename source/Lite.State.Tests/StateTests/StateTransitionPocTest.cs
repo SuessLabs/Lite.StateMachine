@@ -4,12 +4,17 @@
 using System;
 using Lite.State;
 
-namespace Lite.State.Tests;
+namespace Lite.State.Tests.StateTests;
 
+/// <summary>
+///   Proof of concept
+///   Define transition at state creation and transitions
+/// </summary>
 [TestClass]
 public class StateTransitionPocTest
 {
   /*
+  public const string PARAM_TEST = "param1";
   public const string SUCCESS = "success";
 
   public enum BasicFsm
@@ -36,17 +41,13 @@ public class StateTransitionPocTest
     machine.Start("param-test");
 
     var finalParam = machine.Context.Parameter;
-
     Assert.AreEqual(SUCCESS, finalParam);
   }
 
   //// private class State1 : IState<BasicStateTest.BasicFsm>
   private class State1 : BaseState<BasicFsm>
   {
-    public State1() : base(BasicFsm.State1)
-    {
-      AddTransition(Result.Ok, BasicFsm.State2);
-    }
+    public State1(BasicFsm id) : base(id) { }
 
     public override void OnEnter(Context<BasicFsm> context)
     {
@@ -59,11 +60,7 @@ public class StateTransitionPocTest
   {
     private int _counter = 0;
 
-    public State2() : base(BasicFsm.State2)
-    {
-      AddTransition(Result.Ok, BasicFsm.State3);
-      AddTransition(Result.Error, BasicFsm.State2Error);
-    }
+    public State2(BasicFsm id) : base(id) { }
 
     public override void OnEnter(Context<BasicFsm> context)
     {
@@ -82,10 +79,7 @@ public class StateTransitionPocTest
   /// <summary>Simulated error state handler, goes back to State2.</summary>
   private class State2Error : BaseState<BasicFsm>
   {
-    public State2Error(BasicFsm id) : base(id)
-    {
-      AddTransition(Result.Ok, BasicFsm.State2);
-    }
+    public State2Error(BasicFsm id) : base(id) { }
 
     public override void OnEnter(Context<BasicFsm> context)
     {
@@ -96,9 +90,7 @@ public class StateTransitionPocTest
 
   private class State3 : BaseState<BasicFsm>
   {
-    public State3(BasicFsm id) : base(id)
-    {
-    }
+    public State3(BasicFsm id) : base(id) { }
 
     public override void OnEntering(Context<BasicFsm> context)
     {

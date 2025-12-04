@@ -2,7 +2,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
-using LiteState;
+using Lite.State;
 
 namespace Sample.Phone;
 

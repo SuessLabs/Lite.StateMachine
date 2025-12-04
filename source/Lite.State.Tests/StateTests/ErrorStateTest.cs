@@ -3,10 +3,10 @@
 
 using System;
 
-namespace Lite.State.Tests;
+namespace Lite.State.Tests.StateTests;
 
 [TestClass]
-public class BasicStateTest
+public class ErrorStateTest
 {
   public const string PARAM_TEST = "param1";
   public const string SUCCESS = "success";
