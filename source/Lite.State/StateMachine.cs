@@ -45,10 +45,11 @@ public sealed class StateMachine<TState> where TState : struct, Enum
 
   public void RegisterState(IState<TState> state)
   {
-    if (state == null) throw new ArgumentNullException(nameof(state));
+    ArgumentNullException.ThrowIfNull(state);
+
     _states[state.Id] = state;
 
-    // Wire composite submachine instance if needed.
+    // Wire composite sub-state machine instance if needed.
     ////if (state is ICompositeState<TState> comp)
     if (state is CompositeState<TState> comp)
     {
@@ -57,6 +58,45 @@ public sealed class StateMachine<TState> where TState : struct, Enum
         DefaultTimeoutMs = DefaultTimeoutMs
       };
     }
+  }
+
+  /// <summary>Register State Extended.</summary>
+  /// <param name="state">ID of state.</param>
+  /// <param name="onSuccess">OnSuccess State Id. When not defined, the machine exits.</param>
+  /// <param name="onError">(Optional) OnError State Id.</param>
+  /// <param name="onFailure">(Optional) OnFailure State Id.</param>
+  /// <returns>StateMachine instance for fluent definitions.</returns>
+  /// <exception cref="ArgumentNullException">Must include State ID.</exception>
+  public StateMachine<TState> RegisterStateEx(
+    IState<TState> state,
+    TState? onSuccess = null,
+    TState? onError = null,
+    TState? onFailure = null)
+  {
+    ArgumentNullException.ThrowIfNull(state);
+
+    if (onSuccess is not null)
+      (state as BaseState<TState>)?.AddTransition(Result.Ok, onSuccess.Value);
+
+    if (onError is not null)
+      (state as BaseState<TState>)?.AddTransition(Result.Error, onError.Value);
+
+    if (onFailure is not null)
+      (state as BaseState<TState>)?.AddTransition(Result.Failure, onFailure.Value);
+
+    _states[state.Id] = state;
+
+    // Wire composite sub-state machine instance if needed.
+    ////if (state is ICompositeState<TState> comp)
+    if (state is CompositeState<TState> comp)
+    {
+      comp.Submachine = new StateMachine<TState>(this, comp, _eventAggregator)
+      {
+        DefaultTimeoutMs = DefaultTimeoutMs
+      };
+    }
+
+    return this;
   }
 
   public void SetInitial(TState initial) => _initial = initial;
@@ -93,7 +133,7 @@ public sealed class StateMachine<TState> where TState : struct, Enum
 
     var current = _current;
 
-    // 1) Try local mapping (submachine level).
+    // 1) Try local mapping (sub-state machine level).
     if (current.Transitions.TryGetValue(outcome, out var target))
     {
       ExitCurrent();

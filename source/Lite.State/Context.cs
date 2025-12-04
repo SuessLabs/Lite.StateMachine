@@ -25,8 +25,9 @@ public sealed class Context<TState> where TState : struct, Enum
 
   /// <summary>
   ///   Signals transitioning by outcome. This uses the current state's mapping,
-  ///   and if none exists locally (composite submachine exhausted),
+  ///   and if none exists locally (composite sub-state machine exhausted),
   ///   it bubbles to the parent state's OnExit and applies the parent's mapping.
   /// </summary>
-  public void NextState(Result result) => _machine.InternalNextState(result);
+  public void NextState(Result result) =>
+    _machine.InternalNextState(result);
 }

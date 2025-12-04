@@ -6,7 +6,7 @@ using System;
 namespace Lite.State.Tests.StateTests;
 
 [TestClass]
-public class ErrorStateTest
+public class ErrorStateExTest
 {
   public const string PARAM_TEST = "param1";
   public const string SUCCESS = "success";
@@ -23,12 +23,11 @@ public class ErrorStateTest
   public void TransitionWithErrorToSuccessTest()
   {
     // Assemble
-    var machine = new StateMachine<StateId>();
-
-    machine.RegisterState(new State1());
-    machine.RegisterState(new State2());
-    machine.RegisterState(new State2Error(StateId.State2Error));
-    machine.RegisterState(new State3(StateId.State3));
+    var machine = new StateMachine<StateId>()
+      .RegisterStateEx(new State1(StateId.State1), StateId.State2)
+      .RegisterStateEx(new State2(StateId.State2), StateId.State3, StateId.State2Error)
+      .RegisterStateEx(new State2Error(StateId.State2Error), StateId.State2)
+      .RegisterStateEx(new State3(StateId.State3));
 
     // Set starting point
     machine.SetInitial(StateId.State1);
@@ -45,13 +44,9 @@ public class ErrorStateTest
   }
 
   //// private class State1 : IState<BasicStateTest.BasicFsm>
-  private class State1 : BaseState<StateId>
+  private class State1(StateId id)
+    : BaseState<StateId>(id)
   {
-    public State1() : base(StateId.State1)
-    {
-      AddTransition(Result.Ok, StateId.State2);
-    }
-
     public override void OnEnter(Context<StateId> context)
     {
       Console.WriteLine("[State1] OnEntering");
@@ -59,15 +54,10 @@ public class ErrorStateTest
     }
   }
 
-  private class State2 : BaseState<StateId>
+  private class State2(StateId id)
+    : BaseState<StateId>(id)
   {
     private int _counter = 0;
-
-    public State2() : base(StateId.State2)
-    {
-      AddTransition(Result.Ok, StateId.State3);
-      AddTransition(Result.Error, StateId.State2Error);
-    }
 
     public override void OnEnter(Context<StateId> context)
     {
@@ -84,13 +74,9 @@ public class ErrorStateTest
   }
 
   /// <summary>Simulated error state handler, goes back to State2.</summary>
-  private class State2Error : BaseState<StateId>
+  private class State2Error(StateId id)
+    : BaseState<StateId>(id)
   {
-    public State2Error(StateId id) : base(id)
-    {
-      AddTransition(Result.Ok, StateId.State2);
-    }
-
     public override void OnEnter(Context<StateId> context)
     {
       Console.WriteLine("[State2Error] OnEntering");
@@ -98,17 +84,18 @@ public class ErrorStateTest
     }
   }
 
-  private class State3 : BaseState<StateId>
+  private class State3(StateId id)
+    : BaseState<StateId>(id)
   {
-    public State3(StateId id) : base(id)
-    {
-    }
-
     public override void OnEntering(Context<StateId> context)
     {
-      // TODO: Wait a sec.. we never "said to exit"
       context.Parameters[PARAM_TEST] = SUCCESS;
       Console.WriteLine("[State3] OnEntering");
+    }
+
+    public override void OnEnter(Context<StateId> context)
+    {
+      context.NextState(Result.Ok);
     }
   }
 }
