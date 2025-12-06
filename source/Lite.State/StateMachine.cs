@@ -235,6 +235,7 @@ public sealed class StateMachine<TState> where TState : struct, Enum
       try
       {
         await Task.Delay(timeoutMs, _timeoutCts.Token);
+
         // If we arrived here, no message within timeout
         cmd.OnTimeout(Context);
       }

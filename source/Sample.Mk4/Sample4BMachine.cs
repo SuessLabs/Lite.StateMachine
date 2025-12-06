@@ -22,6 +22,7 @@ public static class TestApp
 
     // Register top-level states
     machine.RegisterState(new StartState());
+
     var processing = new ProcessingState();
     machine.RegisterState(processing);
     machine.RegisterState(new AwaitMessageState());

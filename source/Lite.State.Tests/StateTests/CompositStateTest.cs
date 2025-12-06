@@ -6,7 +6,7 @@ namespace Lite.State.Tests.StateTests;
 [TestClass]
 public class CompositStateTest
 {
-  public const string PARAM_TEST = "SubEntered";
+  public const string PARAM_SUB_ENTERED = "SubEntered";
   public const string SUCCESS = "success";
 
   public enum StateId
@@ -26,56 +26,77 @@ public class CompositStateTest
     machine.RegisterState(new State1(StateId.State1));
     machine.RegisterState(new State2(StateId.State2));
 
-    var machineState2 = new StateMachine<StateId>();
-    machineState2.RegisterState(new State2_Sub1(StateId.State2_Sub1));
-    machineState2.RegisterState(new State2_Sub2(StateId.State2_Sub2));
+    // Sub-state machine (Composite State + children
+    // POC - Register Initial: var comState2 = new State2(StateId.State2, StateId.State2_Sub1);
+    var comState2 = new State2(StateId.State2);
+    machine.RegisterState(comState2);
+    var subMachine = comState2.Submachine;
+    subMachine.RegisterState(new State2_Sub1(StateId.State2_Sub1));
+    subMachine.RegisterState(new State2_Sub2(StateId.State2_Sub2));
 
     machine.RegisterState(new State3(StateId.State3));
 
-    // Act
+    // Configure initial states
     machine.SetInitial(StateId.State1);
+    subMachine.SetInitial(StateId.State2_Sub1);
+
+    // Act
     machine.Start();
 
     // Assert
     var ctxFinal = machine.Context.Parameters;
     Assert.IsNotNull(ctxFinal);
-    Assert.AreEqual(SUCCESS, ctxFinal[PARAM_TEST]);
+    Assert.AreEqual(SUCCESS, ctxFinal[PARAM_SUB_ENTERED]);
   }
 
-  private class State1(StateId id)
-    : BaseState<StateId>(id)
+  private class State1 : BaseState<StateId>
   {
+    public State1(StateId id) : base(id)
+    {
+      AddTransition(Result.Ok, StateId.State2);
+    }
+
+    public override void OnEnter(Context<StateId> context)
+      => context.NextState(Result.Ok);
+  }
+
+  /// <summary>Composite Parent State.</summary>
+  private class State2 : CompositeState<StateId>
+  {
+    /// <param name="id"></param>
+    public State2(StateId id) : base(id)
+    {
+      AddTransition(Result.Ok, StateId.State3);
+    }
+
+    public override void OnEnter(Context<StateId> context)
+      => context.NextState(Result.Ok);
+  }
+
+  private class State2_Sub1 : BaseState<StateId>
+  {
+    public State2_Sub1(StateId id) : base(id)
+    {
+      AddTransition(Result.Ok, StateId.State2_Sub2);
+    }
+
     public override void OnEnter(Context<StateId> context)
     {
+      context.Parameters.Add(PARAM_SUB_ENTERED, SUCCESS);
       context.NextState(Result.Ok);
     }
   }
 
-  private class State2(StateId id)
-    : BaseState<StateId>(id)
+  private class State2_Sub2 : BaseState<StateId>
   {
-    public override void OnEnter(Context<StateId> context)
+    public State2_Sub2(StateId id) : base(id)
     {
-      context.NextState(Result.Ok);
+      // NOTE: We're not defining the 'NextState' intentionally
+      // to demonstrate the bubble-up
     }
-  }
 
-  private class State2_Sub1(StateId id)
-    : BaseState<StateId>(id)
-  {
     public override void OnEnter(Context<StateId> context)
-    {
-      context.NextState(Result.Ok);
-    }
-  }
-
-  private class State2_Sub2(StateId id)
-    : BaseState<StateId>(id)
-  {
-    public override void OnEnter(Context<StateId> context)
-    {
-      context.NextState(Result.Ok);
-    }
+      => context.NextState(Result.Ok);
   }
 
   private class State3(StateId id)
@@ -83,7 +104,7 @@ public class CompositStateTest
   {
     public override void OnEnter(Context<StateId> context)
     {
-      context.NextState(Result.Ok);
+      // context.NextState(Result.Ok);
     }
   }
 }
