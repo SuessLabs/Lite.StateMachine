@@ -4,7 +4,7 @@
 namespace Lite.State.Tests.StateTests;
 
 [TestClass]
-public class CompositStateTest
+public class CompositeStateTest
 {
   public const string PARAM_SUB_ENTERED = "SubEntered";
   public const string SUCCESS = "success";
@@ -56,8 +56,8 @@ public class CompositStateTest
       AddTransition(Result.Ok, StateId.State2);
     }
 
-    public override void OnEnter(Context<StateId> context)
-      => context.NextState(Result.Ok);
+    public override void OnEnter(Context<StateId> context) =>
+      context.NextState(Result.Ok);
   }
 
   /// <summary>Composite Parent State.</summary>
@@ -69,8 +69,8 @@ public class CompositStateTest
       AddTransition(Result.Ok, StateId.State3);
     }
 
-    public override void OnEnter(Context<StateId> context)
-      => context.NextState(Result.Ok);
+    public override void OnEnter(Context<StateId> context) =>
+      context.NextState(Result.Ok);
   }
 
   private class State2_Sub1 : BaseState<StateId>
@@ -95,8 +95,8 @@ public class CompositStateTest
       // to demonstrate the bubble-up
     }
 
-    public override void OnEnter(Context<StateId> context)
-      => context.NextState(Result.Ok);
+    public override void OnEnter(Context<StateId> context) =>
+      context.NextState(Result.Ok);
   }
 
   private class State3(StateId id)
