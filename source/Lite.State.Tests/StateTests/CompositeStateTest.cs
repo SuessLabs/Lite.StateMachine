@@ -1,0 +1,110 @@
+// Copyright Xeno Innovations, Inc. 2025
+// See the LICENSE file in the project root for more information.
+
+namespace Lite.State.Tests.StateTests;
+
+[TestClass]
+public class CompositeStateTest
+{
+  public const string PARAM_SUB_ENTERED = "SubEntered";
+  public const string SUCCESS = "success";
+
+  public enum StateId
+  {
+    State1,
+    State2,
+    State2_Sub1,
+    State2_Sub2,
+    State3,
+  }
+
+  [TestMethod]
+  public void TransitionWithErrorToSuccessTest()
+  {
+    // Assemble
+    var machine = new StateMachine<StateId>();
+    machine.RegisterState(new State1(StateId.State1));
+    machine.RegisterState(new State2(StateId.State2));
+
+    // Sub-state machine (Composite State + children
+    // POC - Register Initial: var comState2 = new State2(StateId.State2, StateId.State2_Sub1);
+    var comState2 = new State2(StateId.State2);
+    machine.RegisterState(comState2);
+    var subMachine = comState2.Submachine;
+    subMachine.RegisterState(new State2_Sub1(StateId.State2_Sub1));
+    subMachine.RegisterState(new State2_Sub2(StateId.State2_Sub2));
+
+    machine.RegisterState(new State3(StateId.State3));
+
+    // Configure initial states
+    machine.SetInitial(StateId.State1);
+    subMachine.SetInitial(StateId.State2_Sub1);
+
+    // Act
+    machine.Start();
+
+    // Assert
+    var ctxFinal = machine.Context.Parameters;
+    Assert.IsNotNull(ctxFinal);
+    Assert.AreEqual(SUCCESS, ctxFinal[PARAM_SUB_ENTERED]);
+  }
+
+  private class State1 : BaseState<StateId>
+  {
+    public State1(StateId id) : base(id)
+    {
+      AddTransition(Result.Ok, StateId.State2);
+    }
+
+    public override void OnEnter(Context<StateId> context) =>
+      context.NextState(Result.Ok);
+  }
+
+  /// <summary>Composite Parent State.</summary>
+  private class State2 : CompositeState<StateId>
+  {
+    /// <param name="id"></param>
+    public State2(StateId id) : base(id)
+    {
+      AddTransition(Result.Ok, StateId.State3);
+    }
+
+    public override void OnEnter(Context<StateId> context) =>
+      context.NextState(Result.Ok);
+  }
+
+  private class State2_Sub1 : BaseState<StateId>
+  {
+    public State2_Sub1(StateId id) : base(id)
+    {
+      AddTransition(Result.Ok, StateId.State2_Sub2);
+    }
+
+    public override void OnEnter(Context<StateId> context)
+    {
+      context.Parameters.Add(PARAM_SUB_ENTERED, SUCCESS);
+      context.NextState(Result.Ok);
+    }
+  }
+
+  private class State2_Sub2 : BaseState<StateId>
+  {
+    public State2_Sub2(StateId id) : base(id)
+    {
+      // NOTE: We're not defining the 'NextState' intentionally
+      // to demonstrate the bubble-up
+    }
+
+    public override void OnEnter(Context<StateId> context) =>
+      context.NextState(Result.Ok);
+  }
+
+  private class State3(StateId id)
+    : BaseState<StateId>(id)
+  {
+    public override void OnEnter(Context<StateId> context)
+    {
+      // context.NextState(Result.Ok);
+    }
+  }
+}

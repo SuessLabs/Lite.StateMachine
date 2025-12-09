@@ -4,16 +4,20 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using LiteState.Mk2;
-using LiteState.Mk2.Interfaces;
+using Lite.State;
 
 namespace Sample.Mk2Composite;
 
 internal class Program
 {
-  static async Task Main(string[] args)
+  private static async Task Main(string[] args)
   {
-    var fsm = new StateMachine2();
+  }
+
+  /*
+  static async Task StartMachineAsync()
+  {
+    var fsm = new StateMachine();
 
     var rootState = new CompositeState(StateId.Root)
     {
@@ -60,4 +64,5 @@ internal class Program
     await fsm.TransitionToAsync(StateId.Root, context);
     await fsm.TransitionToAsync(StateId.Processing, context); // Should resume SubProcessing
   }
+  */
 }

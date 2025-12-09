@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 
-namespace LiteState;
+namespace Lite.State;
 
 public class PropertyBag : Dictionary<string, object>
 {

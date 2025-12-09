@@ -2,10 +2,10 @@
 // See the LICENSE file in the project root for more information.
 
 namespace Sample.Basics;
-
+/*
 using System;
 using System.Threading.Tasks;
-using LiteState;
+using Lite.State;
 using Microsoft.Extensions.Logging;
 
 public sealed class CompletedState : StateNode
@@ -100,3 +100,4 @@ public sealed class ErrorState : StateNode
     return Task.CompletedTask;
   }
 }
+*/

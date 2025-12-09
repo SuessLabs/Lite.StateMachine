@@ -1,29 +1,33 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
-namespace LiteState;
+namespace Lite.State;
 
 using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
-public sealed class Context
+/// <summary>
+/// Context passed to every state. Provides a "Parameter" and a NextState(Result) trigger.
+/// </summary>
+public sealed class Context<TState> where TState : struct, Enum
 {
-  private readonly Func<Result, Task> _nextState;
+  private readonly StateMachine<TState> _machine;
 
-  public Context(Func<Result, Task> nextState)
-  {
-    _nextState = nextState ?? throw new ArgumentNullException(nameof(nextState));
-  }
+  internal Context(StateMachine<TState> machine) => _machine = machine;
 
-  ////public PropertyBag Errors { get; } = new();
-  public Dictionary<string, object> Errors { get; } = new();
+  /// <summary>Arbitrary collection of errors to pass along to the next state.</summary>
+  public PropertyBag ErrorStack { get; set; } = [];
 
   /// <summary>The previous state's enum value.</summary>
-  public StateId LastState { get; internal set; } = StateId.None;
+  public TState LastState { get; internal set; }
 
-  public Dictionary<string, object> Params { get; } = new();
+  /// <summary>Arbitrary parameter provided by caller to the current action.</summary>
+  public PropertyBag Parameters { get; set; } = [];
 
-  /// <summary>Triggers moving to the next state, based on a Result.</summary>
-  public Task NextState(Result result) => _nextState(result);
+  /// <summary>
+  ///   Signals transitioning by outcome. This uses the current state's mapping,
+  ///   and if none exists locally (composite sub-state machine exhausted),
+  ///   it bubbles to the parent state's OnExit and applies the parent's mapping.
+  /// </summary>
+  public void NextState(Result result) =>
+    _machine.InternalNextState(result);
 }

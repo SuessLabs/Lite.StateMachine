@@ -3,12 +3,12 @@
 
 namespace Sample.Mk4a;
 
-internal class Program
+internal class Programs
 {
   private static void Main()
   {
-    Mk4.SampleA.TestApp.Run();
-
-    Mk4.SampleB.TestApp.Run();
+    ////Mk4.SampleA.TestApp.Run();
+    ////
+    ////Mk4.SampleB.TestApp.Run();
   }
 }

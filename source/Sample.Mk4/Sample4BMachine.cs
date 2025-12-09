@@ -1,6 +1,7 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
+/*
 namespace Sample.Mk4.SampleB;
 
 using System;
@@ -21,6 +22,7 @@ public static class TestApp
 
     // Register top-level states
     machine.RegisterState(new StartState());
+
     var processing = new ProcessingState();
     machine.RegisterState(processing);
     machine.RegisterState(new AwaitMessageState());
@@ -240,3 +242,4 @@ public sealed class FailedState : BaseState<WorkflowState>
   public FailedState() : base(WorkflowState.Failed) { }
   public override void OnEnter(Context<WorkflowState> context) => Console.WriteLine("[Failed] OnEnter");
 }
+*/

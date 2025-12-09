@@ -1,20 +1,42 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
+using System;
+using System.Collections.Generic;
 
-namespace LiteState;
+namespace Lite.State;
 
-/// <summary>State transition result.</summary>
-public enum Result
+/// <summary>
+/// A simple base implementation for states with convenient transition builder.
+/// </summary>
+public abstract class BaseState<TState> : IState<TState> where TState : struct, Enum
 {
-  Success,
-  Error,
-  Failure
+  private readonly Dictionary<Result, TState> _transitions = new();
+
+  protected BaseState(TState id) => Id = id;
+
+  public TState Id { get; }
+
+  public virtual bool IsComposite => false;
+
+  public IReadOnlyDictionary<Result, TState> Transitions => _transitions;
+
+  public void AddTransition(Result outcome, TState target)
+  {
+    _transitions[outcome] = target;
+  }
+
+  public virtual void OnEnter(Context<TState> context)
+  { }
+
+  public virtual void OnEntering(Context<TState> context)
+  { }
+
+  public virtual void OnExit(Context<TState> context)
+  { }
 }
 
+/*
 /// <summary>State node.</summary>
 
 public abstract class StateNode
@@ -79,3 +101,4 @@ public abstract class StateNode
 
   protected virtual Task OnTimeoutAsyncCore(Context ctx) => Task.CompletedTask;
 }
+*/

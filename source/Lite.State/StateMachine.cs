@@ -1,225 +1,248 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
-namespace LiteState;
+namespace Lite.State;
 
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-public enum StateId
+/// <summary>
+/// The generic, enum-driven state machine with hierarchical bubbling and command-state timeout handling.
+/// </summary>
+public sealed class StateMachine<TState> where TState : struct, Enum
 {
-  None,
-  Init,
-  Loading,
-  Processing,
-  Completed,
-  Error,
+  private readonly IEventAggregator? _eventAggregator;
+  private readonly ILogger<StateMachine<TState>>? _logger;
+  private readonly ICompositeState<TState>? _ownerCompositeState;
+  private readonly StateMachine<TState>? _parentMachine;
+  private readonly Dictionary<TState, IState<TState>> _states = [];
 
-  // Example composite "parent"
-  OrderFlow
-}
+  private IState<TState>? _current;
+  private TState _initial;
+  private bool _started;
+  private IDisposable? _subscription;
+  private CancellationTokenSource? _timeoutCts;
 
-/// <summary>Lite Finite State Machine (FSM) implementation.</summary>
-public sealed class StateMachine
-{
-  private readonly bool _isRoot;
-  private readonly SemaphoreSlim _lock = new(1, 1);
-  private readonly ILogger<StateMachine> _logger;
-  private readonly IServiceProvider _services;
-  private readonly Dictionary<StateId, Lazy<StateNode>> _states = new();
-  private readonly Dictionary<StateId, Dictionary<Result, StateId>> _transitions = new();
-  private TaskCompletionSource<Result>? _completionTcs;
-  private StateId _current = StateId.None;
-
-  public StateMachine(IServiceProvider services,
-                      ILogger<StateMachine> logger,
-                      bool isRoot = true)
+  public StateMachine(IEventAggregator? eventAggregator = null)
   {
-    _services = services ?? throw new ArgumentNullException(nameof(services));
-    _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    _isRoot = isRoot;
+    _eventAggregator = eventAggregator;
   }
 
-  public async Task ForwardMessageAsync(IDictionary<string, object>? message = null)
+  private StateMachine(StateMachine<TState> parentMachine, ICompositeState<TState> ownerCompositeState, IEventAggregator? eventAggregator = null, ILogger<StateMachine<TState>>? logs = null)
   {
-    await _lock.WaitAsync().ConfigureAwait(false);
-    try
+    _parentMachine = parentMachine;
+    _ownerCompositeState = ownerCompositeState;
+    _eventAggregator = eventAggregator;
+    _logger = logs;
+  }
+
+  public Context<TState> Context { get; private set; } = default!;
+
+  public int DefaultTimeoutMs { get; set; } = 3000;
+
+  public void RegisterState(IState<TState> state)
+  {
+    ArgumentNullException.ThrowIfNull(state);
+
+    _states[state.Id] = state;
+
+    // Wire composite sub-state machine instance if needed.
+    ////if (state is ICompositeState<TState> comp)
+    if (state is CompositeState<TState> comp)
     {
-      if (_current == StateId.None)
-        return;
-
-      var node = _states[_current].Value;
-
-      var ctx = BuildContext(message);
-      _logger.LogDebug("Forwarding message to current state: {State}.", _current);
-      await node.OnMessageAsync(ctx).ConfigureAwait(false);
-    }
-    finally
-    {
-      _lock.Release();
-    }
-  }
-
-  public async Task ForwardTimeoutAsync()
-  {
-    await _lock.WaitAsync().ConfigureAwait(false);
-    try
-    {
-      if (_current == StateId.None)
-        return;
-
-      var node = _states[_current].Value;
-
-      var ctx = BuildContext(null);
-      _logger.LogWarning("Forwarding timeout to current state: {State}.", _current);
-      await node.OnTimeoutAsync(ctx).ConfigureAwait(false);
-    }
-    finally
-    {
-      _lock.Release();
-    }
-  }
-
-  /// <summary>Register a state lazily via DI (generic type).</summary>
-  public void RegisterState<TState>(StateId state)
-    where TState : StateNode
-  {
-    _states[state] = new Lazy<StateNode>(
-      () => ActivatorUtilities.CreateInstance<TState>(_services),
-      LazyThreadSafetyMode.ExecutionAndPublication);
-  }
-
-  /// <summary>Register a state lazily via a custom factory that uses DI.</summary>
-  public void RegisterState(StateId state, Func<IServiceProvider, StateNode> factory)
-  {
-    if (factory is null)
-      throw new ArgumentNullException(nameof(factory));
-
-    _states[state] = new Lazy<StateNode>(
-      () => factory(_services),
-      LazyThreadSafetyMode.ExecutionAndPublication);
-  }
-
-  /// <summary>Configure transitions for a state: Result → Next State.</summary>
-  /// <remarks>
-  /// <![CDATA[
-  ///   subFsm.SetTransitions(State.Loading, new Dictionary<Result, State>
-  ///   {
-  ///     [Result.Success] = State.Processing,
-  ///     [Result.Error] = State.Completed,
-  ///     [Result.Failure] = State.Completed
-  ///   })
-  ///   // Not implemented yet
-  ///   // .AllowTransition(State.Processing); // Allow an additional transition separately
-  /// ]]>
-  /// </remarks>
-  public void SetTransitions(StateId state, IDictionary<Result, StateId> map)
-  {
-    var dict = new Dictionary<Result, StateId>();
-    foreach (var kvp in map)
-      dict[kvp.Key] = kvp.Value;
-
-    _transitions[state] = dict;
-  }
-
-  public async Task<Result> StartAndWaitAsync(StateId initial, IDictionary<string, object>? initialParams = null)
-  {
-    _completionTcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
-    await StartAsync(initial, initialParams).ConfigureAwait(false);
-    return await _completionTcs.Task.ConfigureAwait(false);
-  }
-
-  public async Task StartAsync(StateId initial, IDictionary<string, object>? initialParams = null)
-  {
-    await _lock.WaitAsync().ConfigureAwait(false);
-
-    try
-    {
-      if (_current != StateId.None)
-        throw new InvalidStateTransitionException($"FSM already started at state '{_current}'.");
-
-      _logger.LogInformation("FSM starting at state '{Initial}'.", initial);
-      await TransitionToAsync(initial, BuildContext(initialParams)).ConfigureAwait(false);
-    }
-    finally
-    {
-      _lock.Release();
-    }
-  }
-
-  private Context BuildContext(IDictionary<string, object>? initialParams)
-  {
-    var ctx = new Context(NextStateAsync);
-    if (initialParams is not null)
-    {
-      foreach (var kvp in initialParams)
-        ctx.Params[kvp.Key] = kvp.Value;
-    }
-
-    ctx.LastState = _current;
-    return ctx;
-  }
-
-  private async Task NextStateAsync(Result result)
-  {
-    await _lock.WaitAsync().ConfigureAwait(false);
-    try
-    {
-      if (_current == StateId.None)
-        throw new InvalidStateTransitionException("No active state to transition from.");
-
-      if (!_transitions.TryGetValue(_current, out var map) || !map.TryGetValue(result, out var next))
-        throw new MissingStateTransitionException($"No transition defined from '{_current}' on result '{result}'.");
-
-      _logger.LogInformation("Transition requested: {Current} --({Result})--> {Next}", _current, result, next);
-
-      var ctx = BuildContext(null);
-      await TransitionToAsync(next, ctx).ConfigureAwait(false);
-
-      // If sub-FSM reached terminal state (no outgoing transitions), signal completion.
-      if (_completionTcs is not null)
+      comp.Submachine = new StateMachine<TState>(this, comp, _eventAggregator)
       {
-        var hasOutgoing = _transitions.TryGetValue(_current, out var outgoing) && outgoing.Count > 0;
-        if (!hasOutgoing)
-        {
-          _logger.LogInformation("FSM reached terminal state '{State}'. Completing with result '{Result}'.", _current, result);
-          _completionTcs.TrySetResult(result);
-        }
-      }
-    }
-    finally
-    {
-      _lock.Release();
+        DefaultTimeoutMs = DefaultTimeoutMs
+      };
     }
   }
 
-  private async Task TransitionToAsync(StateId newState, Context ctx)
+  /// <summary>Register State Extended.</summary>
+  /// <param name="state">ID of state.</param>
+  /// <param name="onSuccess">OnSuccess State Id. When not defined, the machine exits.</param>
+  /// <param name="onError">(Optional) OnError State Id.</param>
+  /// <param name="onFailure">(Optional) OnFailure State Id.</param>
+  /// <returns>StateMachine instance for fluent definitions.</returns>
+  /// <exception cref="ArgumentNullException">Must include State ID.</exception>
+  public StateMachine<TState> RegisterStateEx(
+    IState<TState> state,
+    TState? onSuccess = null,
+    TState? onError = null,
+    TState? onFailure = null)
   {
-    if (!_states.TryGetValue(newState, out var lazyNode))
-      throw new InvalidStateTransitionException($"State '{newState}' is not registered.");
+    ArgumentNullException.ThrowIfNull(state);
 
-    var prev = _current;
+    if (onSuccess is not null)
+      (state as BaseState<TState>)?.AddTransition(Result.Ok, onSuccess.Value);
 
-    // Exit previous if it was created
-    if (prev != StateId.None && _states.TryGetValue(prev, out var prevLazy) && prevLazy.IsValueCreated)
+    if (onError is not null)
+      (state as BaseState<TState>)?.AddTransition(Result.Error, onError.Value);
+
+    if (onFailure is not null)
+      (state as BaseState<TState>)?.AddTransition(Result.Failure, onFailure.Value);
+
+    _states[state.Id] = state;
+
+    // Wire composite sub-state machine instance if needed.
+    ////if (state is ICompositeState<TState> comp)
+    if (state is CompositeState<TState> comp)
     {
-      var prevNode = prevLazy.Value;
-      _logger.LogTrace("Exiting state '{Prev}'.", prev);
-      await prevNode.OnExitAsync(ctx).ConfigureAwait(false);
+      comp.Submachine = new StateMachine<TState>(this, comp, _eventAggregator)
+      {
+        DefaultTimeoutMs = DefaultTimeoutMs
+      };
     }
 
-    // Switch current
-    _current = newState;
-    var node = lazyNode.Value;
+    return this;
+  }
 
-    _logger.LogTrace("Transitioning to state '{New}'.", newState);
+  public void SetInitial(TState initial) => _initial = initial;
 
-    // Enter lifecycle
-    await node.OnEnteringAsync(ctx).ConfigureAwait(false);
-    await node.OnEnterAsync(ctx).ConfigureAwait(false);
+  /// <summary>Starts the machine at the initial state.</summary>
+  public void Start(PropertyBag? parameters = null, PropertyBag? errorStack = null)
+  {
+    if (_started) throw new InvalidOperationException("State machine already started.");
+    if (!_states.TryGetValue(_initial, out var initialState))
+      throw new InvalidOperationException($"Initial state '{_initial}' is not registered.");
+
+    _started = true;
+    ////var ctx = new Context<TState>(this) { Parameter = parameter };
+    ////typeof(StateMachine<TState>)
+    ////    .GetProperty(nameof(Context))!
+    ////    .SetValue(this, ctx);
+
+    // Initialize the property bags
+    parameters ??= [];
+    errorStack ??= [];
+
+    Context = new Context<TState>(this) { Parameters = parameters };
+
+    EnterState(initialState);
+  }
+
+  /// <summary>
+  /// Internal transition logic used by Context.NextState.
+  /// </summary>
+  internal void InternalNextState(Result outcome)
+  {
+    if (_current == null)
+      throw new InvalidOperationException("No current state.");
+
+    var current = _current;
+
+    // 1) Try local mapping (sub-state machine level).
+    if (current.Transitions.TryGetValue(outcome, out var target))
+    {
+      ExitCurrent();
+
+      var next = _states[target];
+
+      EnterState(next);
+      return;
+    }
+
+    // 2) If this is within a submachine and cannot resolve mapping,
+    // bubble up: invoke parent's OnExit, then parent machine transitions.
+    if (_parentMachine != null && _ownerCompositeState != null)
+    {
+      // Leave last sub-state
+      ExitCurrent();
+
+      // Parent composite state's exit hook
+      _ownerCompositeState.OnExit(Context);
+
+      // Continue from parent machine using the same outcome
+      _parentMachine.InternalNextState(outcome);
+      return;
+    }
+
+    // 3) Top-level cannot resolve: this is terminal; just exit.
+    ExitCurrent();
+  }
+
+  private void CancelTimerAndSubscription()
+  {
+    try { _subscription?.Dispose(); } catch { /* ignore */ }
+
+    _subscription = null;
+
+    try { _timeoutCts?.Cancel(); } catch { /* ignore */ }
+
+    _timeoutCts?.Dispose();
+    _timeoutCts = null;
+  }
+
+  private void EnterState(IState<TState> state)
+  {
+    _current = state;
+    state.OnEntering(Context);
+    state.OnEnter(Context);
+
+    // If composite: start its submachine at its own initial (must be set).
+    if (state is ICompositeState<TState> comp)
+    {
+      // inherit default timeout
+      comp.Submachine.DefaultTimeoutMs = DefaultTimeoutMs;
+
+      // Compose: ensure submachine has initial and is registered.
+      // Submachine will drive transitions until it bubbles up
+      comp.Submachine.Start(Context.Parameters);
+      return;
+    }
+
+    // If command state: subscribe to aggregator and start timeout
+    if (state is ICommandState<TState> cmd)
+    {
+      SetupCommandState(cmd);
+    }
+  }
+
+  private void ExitCurrent()
+  {
+    CancelTimerAndSubscription();
+    _current?.OnExit(Context);
+  }
+
+  private void SetupCommandState(ICommandState<TState> cmd)
+  {
+    CancelTimerAndSubscription();
+
+    // Subscribe to messages
+    if (_eventAggregator != null)
+    {
+      _subscription = _eventAggregator.Subscribe(msg =>
+      {
+        // Filter before delivery
+        if (!cmd.MessageFilter(msg)) return false;
+
+        // Cancel timeout upon first relevant message delivery
+        _timeoutCts?.Cancel();
+
+        cmd.OnMessage(Context, msg);
+        return true;
+      });
+    }
+
+    // Start timeout
+    var timeoutMs = cmd.TimeoutMs ?? DefaultTimeoutMs;
+    _timeoutCts = new CancellationTokenSource();
+
+    _ = Task.Run(async () =>
+    {
+      try
+      {
+        await Task.Delay(timeoutMs, _timeoutCts.Token);
+
+        // If we arrived here, no message within timeout
+        cmd.OnTimeout(Context);
+      }
+      catch (TaskCanceledException)
+      {
+        // Timer cancelled by message or exit
+      }
+    });
   }
 }
