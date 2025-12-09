@@ -99,6 +99,8 @@ public sealed class StateMachine<TState> where TState : struct, Enum
     return this;
   }
 
+  /// <summary>Set the initial startup state.</summary>
+  /// <param name="initial">Initial state from enumeration.</param>
   public void SetInitial(TState initial) => _initial = initial;
 
   /// <summary>Starts the machine at the initial state.</summary>
@@ -118,14 +120,12 @@ public sealed class StateMachine<TState> where TState : struct, Enum
     parameters ??= [];
     errorStack ??= [];
 
-    Context = new Context<TState>(this) { Parameters = parameters };
+    Context = new Context<TState>(this) { Parameters = parameters, ErrorStack = errorStack, };
 
     EnterState(initialState);
   }
 
-  /// <summary>
-  /// Internal transition logic used by Context.NextState.
-  /// </summary>
+  /// <summary>Internal transition logic used by Context.NextState.</summary>
   internal void InternalNextState(Result outcome)
   {
     if (_current == null)
