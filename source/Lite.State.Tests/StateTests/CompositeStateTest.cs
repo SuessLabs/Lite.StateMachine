@@ -104,6 +104,10 @@ public class CompositeStateTest
   {
     public override void OnEnter(Context<StateId> context)
     {
+      // NOTE: Not needed, as this is the "last state"
+      // FUTURE CONSIDERATIONS:
+      //  1. Sit at this state, as it could be intended or an error
+      //  2. Or continue to allow the system to auto-exit (possible undesirable outcomes)
       // context.NextState(Result.Ok);
     }
   }

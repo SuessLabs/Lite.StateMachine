@@ -17,7 +17,7 @@ public class StateTransitionPocTest
   public const string PARAM_TEST = "param1";
   public const string SUCCESS = "success";
 
-  public enum BasicFsm
+  public enum StateId
   {
     State1,
     State2,
@@ -28,41 +28,50 @@ public class StateTransitionPocTest
   [TestMethod]
   public void TransitionWithErrorToSuccessTest()
   {
-    var machine = new StateMachine<BasicFsm>();
-    machine.RegisterState(stateId: BasicFsm.State1,       stateClass: new State1(),       onSuccess: BaseFsm.State2,  onError: null,                 onFailure: null);
-    machine.RegisterState(stateid: BasicFsm.State2,       stateClass: new State2(),       onSuccess: BasicFsm.State3, onError: BasicFsm.State2Error, onFailure: null);
-    machine.RegisterState(stateid: BasicFsm.State2Error,  stateClass: new State2Error(),  onSuccess: BasicFsm.State2);
-    machine.RegisterState(stateid: BasicFsm.State3,       stateClass: new State3(),       onSuccess: null);
+    var machine = new StateMachine<StateId>();
+    // NOTE: We pass in the state Enum ID separately
+    machine.RegisterStateEx(stateId: StateId.State1,       stateClass: new State1(),       onSuccess: StateId.State2,  onError: null,               onFailure: null);
+    machine.RegisterStateEx(stateId: StateId.State2,       stateClass: new State2(),       onSuccess: StateId.State3, onError: StateId.State2Error, onFailure: null);
+    machine.RegisterStateEx(stateId: StateId.State2Error,  stateClass: new State2Error(),  onSuccess: StateId.State2);
+    machine.RegisterStateEx(stateId: StateId.State3,       stateClass: new State3(),       onSuccess: null);
+
+    // ALT-2: Lazy-loaded classes (preferred)
+    // machine.RegisterStateEx<State1>(stateId: StateId.State1,           onSuccess: StateId.State2, onError: null,                onFailure: null);
+    // machine.RegisterStateEx<State2>(stateId: StateId.State2,           onSuccess: StateId.State3, onError: StateId.State2Error, onFailure: null);
+    // machine.RegisterStateEx<State2Error>(stateId: StateId.State2Error, onSuccess: StateId.State2);
+    // machine.RegisterStateEx<State3>(stateId: StateId.State3,           onSuccess: null);
+
 
     // Set starting point
-    machine.SetInitial(BasicFsm.State1);
+    machine.SetInitial(StateId.State1);
 
     // Start your engine!
-    machine.Start("param-test");
+    machine.Start();
 
-    var finalParam = machine.Context.Parameter;
-    Assert.AreEqual(SUCCESS, finalParam);
+    var ctxFinalParams = machine.Context.Parameters;
+    Assert.IsNotNull(ctxFinalParams);
+    Assert.AreEqual(SUCCESS, ctxFinalParams[PARAM_TEST]);
   }
 
   //// private class State1 : IState<BasicStateTest.BasicFsm>
-  private class State1 : BaseState<BasicFsm>
+  private class State1 : BaseState<StateId>
   {
-    public State1(BasicFsm id) : base(id) { }
+    public State1(StateId id) : base(id) { }
 
-    public override void OnEnter(Context<BasicFsm> context)
+    public override void OnEnter(Context<StateId> context)
     {
       Console.WriteLine("[State1] OnEntering");
       context.NextState(Result.Ok);
     }
   }
 
-  private class State2 : BaseState<BasicFsm>
+  private class State2 : BaseState<StateId>
   {
     private int _counter = 0;
 
-    public State2(BasicFsm id) : base(id) { }
+    public State2(StateId id) : base(id) { }
 
-    public override void OnEnter(Context<BasicFsm> context)
+    public override void OnEnter(Context<StateId> context)
     {
       _counter++;
       Console.WriteLine($"[State2] OnEntering: Counter={_counter}");
@@ -77,22 +86,22 @@ public class StateTransitionPocTest
   }
 
   /// <summary>Simulated error state handler, goes back to State2.</summary>
-  private class State2Error : BaseState<BasicFsm>
+  private class State2Error : BaseState<StateId>
   {
-    public State2Error(BasicFsm id) : base(id) { }
+    public State2Error(StateId id) : base(id) { }
 
-    public override void OnEnter(Context<BasicFsm> context)
+    public override void OnEnter(Context<StateId> context)
     {
       Console.WriteLine("[State2Error] OnEntering");
       context.NextState(Result.Ok);
     }
   }
 
-  private class State3 : BaseState<BasicFsm>
+  private class State3 : BaseState<StateId>
   {
-    public State3(BasicFsm id) : base(id) { }
+    public State3(StateId id) : base(id) { }
 
-    public override void OnEntering(Context<BasicFsm> context)
+    public override void OnEntering(Context<StateId> context)
     {
       context.Parameter = SUCCESS;
       Console.WriteLine("[State3] OnEntering");
