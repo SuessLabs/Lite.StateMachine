@@ -31,13 +31,13 @@ public class CarBuilder
   public CarBuilder WithMake(string make) { _car.Make = make; return this; }
   public CarBuilder WithModel(string model) { _car.Model = model; return this; }
   public CarBuilder WithColor(string color) { _car.Color = color; return this; }
-  
+
   // Builder's `Build` method.
   public Car Build() { return _car; }
 }
 ```
 
-## Chosen 
+## Chosen
 
 
 ## Design Concepts
@@ -122,7 +122,7 @@ public int MultiSuccess_OnEnter(Context params)
 
 * CON: How to strictly define which success state to exit to?
   * Cannot say, `return State.Success` - there are multiple successes
-* CON: Cannot use `return State.Success;` 
+* CON: Cannot use `return State.Success;`
 
 #### 4) FREE - User sets whatever
 
@@ -297,6 +297,9 @@ StateId InitOnEnter()
 ```
 
 ## Model B - State Defined Transitions
+
+* Date: 2022-12-15
+* Modified: 2022-12-16
 
 ```cpp
 enum StateId =

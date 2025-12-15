@@ -104,23 +104,27 @@ public sealed class StateMachine<TState> where TState : struct, Enum
   public void SetInitial(TState initial) => _initial = initial;
 
   /// <summary>Starts the machine at the initial state.</summary>
-  public void Start(PropertyBag? parameters = null, PropertyBag? errorStack = null)
+  /// <param name="initParameters">Initial <see cref="PropertyBag"/> parameter stack.</param>
+  /// <param name="errorStack">Error Stack <see cref="PropertyBag"/>.</param>
+  public void Start(PropertyBag? initParameters = null, PropertyBag? errorStack = null)
   {
     if (_started) throw new InvalidOperationException("State machine already started.");
     if (!_states.TryGetValue(_initial, out var initialState))
       throw new InvalidOperationException($"Initial state '{_initial}' is not registered.");
 
     _started = true;
-    ////var ctx = new Context<TState>(this) { Parameter = parameter };
+
+    // Same as below
+    ////var ctx = new Context<TState>(this) { Parameters = initParameters ?? [] };
     ////typeof(StateMachine<TState>)
     ////    .GetProperty(nameof(Context))!
     ////    .SetValue(this, ctx);
 
     // Initialize the property bags
-    parameters ??= [];
+    initParameters ??= [];
     errorStack ??= [];
 
-    Context = new Context<TState>(this) { Parameters = parameters, ErrorStack = errorStack, };
+    Context = new Context<TState>(this) { Parameters = initParameters, ErrorStack = errorStack, };
 
     EnterState(initialState);
   }
@@ -216,7 +220,8 @@ public sealed class StateMachine<TState> where TState : struct, Enum
       _subscription = _eventAggregator.Subscribe(msg =>
       {
         // Filter before delivery
-        if (!cmd.MessageFilter(msg)) return false;
+        if (!cmd.MessageFilter(msg))
+          return false;
 
         // Cancel timeout upon first relevant message delivery
         _timeoutCts?.Cancel();
