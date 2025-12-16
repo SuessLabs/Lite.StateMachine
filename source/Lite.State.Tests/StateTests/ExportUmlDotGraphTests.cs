@@ -199,6 +199,12 @@ public class ExportUmlDotGraphTests
   }
 
   [TestMethod]
+  [Ignore("Example coming soon")]
+  public void Generates_CommandState_RegisterStateEx_SuccessTest()
+  {
+  }
+
+  [TestMethod]
   public void Generates_CompositeState_RegisterStateEx_WithErrorAndFailure_SuccessTest()
   {
     // Assemble
@@ -219,9 +225,10 @@ public class ExportUmlDotGraphTests
       .SetInitialEx(StateId.State1);
 
     // Register - State4 Sub-States
-    state4.Submachine.RegisterStateEx(new StateEx4_Sub1(StateId.State4_Sub1), StateId.State4_Sub2);
-    state4.Submachine.RegisterStateEx(new StateEx4_Sub1(StateId.State4_Sub2));
-    state4.Submachine.SetInitial(StateId.State4_Sub1);
+    state4.Submachine
+      .RegisterStateEx(new StateEx4_Sub1(StateId.State4_Sub1), StateId.State4_Sub2)
+      .RegisterStateEx(new StateEx4_Sub1(StateId.State4_Sub2))
+      .SetInitial(StateId.State4_Sub1);
 
     // Act - Generate UML
     var uml = machine.ExportUml(includeSubmachines: true);

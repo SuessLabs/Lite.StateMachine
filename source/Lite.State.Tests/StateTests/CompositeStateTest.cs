@@ -24,7 +24,6 @@ public class CompositeStateTest
     // Assemble
     var machine = new StateMachine<StateId>();
     machine.RegisterState(new State1(StateId.State1));
-    ////machine.RegisterState(new State2(StateId.State2));
 
     // Sub-state machine (Composite State + children
     // POC - Register Initial: var comState2 = new State2(StateId.State2, StateId.State2_Sub1);
@@ -49,24 +48,22 @@ public class CompositeStateTest
     Assert.AreEqual(SUCCESS, ctxFinal[PARAM_SUB_ENTERED]);
   }
 
+  [TestMethod]
   public void RegisterStateEx_Fluent_SuccessTest()
   {
     // Assemble
-    var machine = new StateMachine<StateId>();
-    machine.RegisterStateEx(new State1(StateId.State1), StateId.State2);
-    machine.RegisterStateEx(new State2(StateId.State2), StateId.State3);
+    var comState2 = new StateEx2(StateId.State2);
 
-    var comState2 = new State2(StateId.State2);
-    machine.RegisterState(comState2);
-    var subMachine = comState2.Submachine;
-    subMachine.RegisterState(new State2_Sub1(StateId.State2_Sub1));
-    subMachine.RegisterState(new State2_Sub2(StateId.State2_Sub2));
+    var machine = new StateMachine<StateId>()
+      .RegisterStateEx(new StateEx1(StateId.State1), StateId.State2)
+      .RegisterStateEx(comState2, StateId.State3)
+      .RegisterStateEx(new StateEx3(StateId.State3))
+      .SetInitialEx(StateId.State1);
 
-    machine.RegisterState(new State3(StateId.State3));
-
-    // Configure initial states
-    machine.SetInitial(StateId.State1);
-    subMachine.SetInitial(StateId.State2_Sub1);
+    comState2.Submachine
+      .RegisterStateEx(new StateEx2_Sub1(StateId.State2_Sub1))
+      .RegisterStateEx(new StateEx2_Sub2(StateId.State2_Sub2))
+      .SetInitial(StateId.State2_Sub1);
 
     // Act
     machine.Start();
@@ -146,7 +143,7 @@ public class CompositeStateTest
 
   #region State Machine - Fluent
 
-  private class StateEx1(CompositeStateTest.StateId id) : BaseState<StateId>(id)
+  private class StateEx1(StateId id) : BaseState<StateId>(id)
   {
     public override void OnEnter(Context<StateId> context) =>
       context.NextState(Result.Ok);
@@ -154,13 +151,13 @@ public class CompositeStateTest
 
   /// <summary>Composite Parent State.</summary>
   /// <param name="id"></param>
-  private class StateEx2(CompositeStateTest.StateId id) : CompositeState<StateId>(id)
+  private class StateEx2(StateId id) : CompositeState<StateId>(id)
   {
     public override void OnEnter(Context<StateId> context) =>
       context.NextState(Result.Ok);
   }
 
-  private class StateEx2_Sub1(CompositeStateTest.StateId id) : BaseState<StateId>(id)
+  private class StateEx2_Sub1(StateId id) : BaseState<StateId>(id)
   {
     public override void OnEnter(Context<StateId> context)
     {
@@ -169,7 +166,7 @@ public class CompositeStateTest
     }
   }
 
-  private class StateEx2_Sub2(CompositeStateTest.StateId id) : BaseState<StateId>(id)
+  private class StateEx2_Sub2(StateId id) : BaseState<StateId>(id)
   {
     public override void OnEnter(Context<StateId> context) =>
       context.NextState(Result.Ok);
