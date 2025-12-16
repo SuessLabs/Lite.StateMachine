@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// The generic, enum-driven state machine with hierarchical bubbling and command-state timeout handling.
 /// </summary>
-public sealed class StateMachine<TState> where TState : struct, Enum
+public sealed partial class StateMachine<TState> where TState : struct, Enum
 {
   private readonly IEventAggregator? _eventAggregator;
   private readonly ILogger<StateMachine<TState>>? _logger;
@@ -102,6 +102,14 @@ public sealed class StateMachine<TState> where TState : struct, Enum
   /// <summary>Set the initial startup state.</summary>
   /// <param name="initial">Initial state from enumeration.</param>
   public void SetInitial(TState initial) => _initial = initial;
+
+  /// <summary>Set the initial startup state.</summary>
+  /// <param name="initial">Initial state from enumeration.</param>
+  public StateMachine<TState> SetInitialEx(TState initial)
+  {
+    _initial = initial;
+    return this;
+  }
 
   /// <summary>Starts the machine at the initial state.</summary>
   /// <param name="initParameters">Initial <see cref="PropertyBag"/> parameter stack.</param>
@@ -199,11 +207,10 @@ public sealed class StateMachine<TState> where TState : struct, Enum
 
     // If command state: subscribe to aggregator and start timeout
     if (state is ICommandState<TState> cmd)
-    {
       SetupCommandState(cmd);
-    }
   }
 
+  /// <summary>Cancel timer and scription and inform exiting of current state.</summary>
   private void ExitCurrent()
   {
     CancelTimerAndSubscription();

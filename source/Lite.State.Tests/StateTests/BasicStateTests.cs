@@ -11,6 +11,7 @@ public class BasicStateTests
   public const string ParameterKeyTest = "TestKey";
   public const string TestValue = "success";
 
+  /// <summary>State definitions.</summary>
   public enum StateId
   {
     State1,
@@ -20,11 +21,10 @@ public class BasicStateTests
 
   /// <summary>Standard basic state registration with fall-through exiting.</summary>
   [TestMethod]
-  public void RegisterStateAndTransitionWithSuccessTest()
+  public void RegisterState_Transition_SuccessTest()
   {
     // Assemble
     var machine = new StateMachine<StateId>();
-
     machine.RegisterState(new State1());
     machine.RegisterState(new State2());
     machine.RegisterState(new State3());
@@ -45,14 +45,13 @@ public class BasicStateTests
 
   /// <summary>Defines State Enum ID and `OnSuccess` transitions from the `RegisterStateEx` method.</summary>
   [TestMethod]
-  public void RegisterStateExAndTransitionsWithSuccessTest()
+  public void RegisterStateEx_Transitions_SuccessTest()
   {
     // Assemble
-    var machine = new StateMachine<StateId>();
-
-    machine.RegisterStateEx(new StateEx1(StateId.State1), StateId.State2);
-    machine.RegisterStateEx(new StateEx2(StateId.State2), StateId.State3);
-    machine.RegisterStateEx(new StateEx3(StateId.State3));
+    var machine = new StateMachine<StateId>()
+      .RegisterStateEx(new StateEx1(StateId.State1), StateId.State2)
+      .RegisterStateEx(new StateEx2(StateId.State2), StateId.State3)
+      .RegisterStateEx(new StateEx3(StateId.State3));
 
     // Set starting point
     machine.SetInitial(StateId.State1);
@@ -60,6 +59,27 @@ public class BasicStateTests
     // Act - Start your engine!
     var ctxProperties = new PropertyBag() { { ParameterKeyTest, "not-finished" }, };
     machine.Start(ctxProperties);
+
+    // Assert Results
+    var ctxFinalParams = machine.Context.Parameters;
+
+    Assert.IsNotNull(ctxFinalParams);
+    Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
+  }
+
+  /// <summary>Defines State Enum ID and `OnSuccess` transitions from the `RegisterStateEx` method.</summary>
+  [TestMethod]
+  public void RegisterStateEx_WithoutInitialContextTransitions_SuccessTest()
+  {
+    // Assemble
+    var machine = new StateMachine<StateId>()
+      .RegisterStateEx(new StateEx1(StateId.State1), StateId.State2)
+      .RegisterStateEx(new StateEx2(StateId.State2), StateId.State3)
+      .RegisterStateEx(new StateEx3(StateId.State3))
+      .SetInitialEx(StateId.State1);
+
+    // Act - Start your engine!
+    machine.Start();
 
     // Assert Results
     var ctxFinalParams = machine.Context.Parameters;
@@ -103,7 +123,7 @@ public class BasicStateTests
     public override void OnEntering(Context<StateId> context)
     {
       context.Parameters[ParameterKeyTest] = TestValue;
-      Console.WriteLine("[State3] OnEntering");
+      Console.WriteLine("[State3] OnEntering - Add/Update parameter");
     }
   }
 
