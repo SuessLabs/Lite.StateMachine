@@ -60,7 +60,7 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
     }
   }
 
-  /// <summary>Register State Extended.</summary>
+  /// <summary>Register State (extended fluent pattern).</summary>
   /// <param name="state">ID of state.</param>
   /// <param name="onSuccess">OnSuccess State Id. When not defined, the machine exits.</param>
   /// <param name="onError">(Optional) OnError State Id.</param>
@@ -103,7 +103,7 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
   /// <param name="initial">Initial state from enumeration.</param>
   public void SetInitial(TState initial) => _initialState = initial;
 
-  /// <summary>Set the initial startup state.</summary>
+  /// <summary>Set the initial startup state (extended fluent pattern).</summary>
   /// <param name="initial">Initial state from enumeration.</param>
   public StateMachine<TState> SetInitialEx(TState initial)
   {
