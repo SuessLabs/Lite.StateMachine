@@ -35,9 +35,9 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
 
     // Top-level start marker
     sb.AppendLine("  start [shape=point];");
-    if (_states.TryGetValue(_initial, out _))
+    if (_states.TryGetValue(_initialState, out _))
     {
-      sb.AppendLine($"  start -> \"{Escape(_initial.ToString())}\";");
+      sb.AppendLine($"  start -> \"{Escape(_initialState.ToString())}\";");
     }
 
     // Nodes
@@ -82,8 +82,8 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
 
     // Submachine start marker (only if initial is valid)
     sb.AppendLine($"    \"start_{label}\" [shape=point];");
-    if (sub._states.TryGetValue(sub._initial, out _))
-      sb.AppendLine($"    \"start_{label}\" -> \"{Escape(sub._initial.ToString())}\";");
+    if (sub._states.TryGetValue(sub._initialState, out _))
+      sb.AppendLine($"    \"start_{label}\" -> \"{Escape(sub._initialState.ToString())}\";");
 
     // Nodes in submachine
     foreach (var kv in sub._states)

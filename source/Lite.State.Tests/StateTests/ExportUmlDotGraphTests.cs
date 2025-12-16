@@ -73,6 +73,9 @@ public class ExportUmlDotGraphTests
     State2e,
     State2f,
     State3,
+    State3_Sub1,
+    State3_Sub2,
+    State4
   }
 
   [TestMethod]
