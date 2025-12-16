@@ -93,22 +93,11 @@ public class ExportUmlDotGraphTests
 
   #region State Machine Ex
 
-  private class StateEx1(StateId id) : BaseState<StateId>(id)
-  {
-    public override void OnEnter(Context<StateId> context) => context.NextState(Result.Ok);
-  }
+  private class StateEx1(StateId id) : BaseState<StateId>(id);
 
-  private class StateEx2(StateId id) : BaseState<StateId>(id)
-  {
-    public override void OnEnter(Context<StateId> context) => context.NextState(Result.Ok);
-  }
+  private class StateEx2(StateId id) : BaseState<StateId>(id);
 
-  private class StateEx3(StateId id) : BaseState<StateId>(id)
-  {
-    public override void OnEnter(Context<StateId> context)
-    {
-    }
-  }
+  private class StateEx3(StateId id) : BaseState<StateId>(id);
 
   #endregion State Machine Ex
 }
