@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// The generic, enum-driven state machine with hierarchical bubbling and command-state timeout handling.
 /// </summary>
-public sealed class StateMachine<TState> where TState : struct, Enum
+public sealed partial class StateMachine<TState> where TState : struct, Enum
 {
   private readonly IEventAggregator? _eventAggregator;
   private readonly ILogger<StateMachine<TState>>? _logger;
@@ -20,9 +20,9 @@ public sealed class StateMachine<TState> where TState : struct, Enum
   private readonly StateMachine<TState>? _parentMachine;
   private readonly Dictionary<TState, IState<TState>> _states = [];
 
-  private IState<TState>? _current;
-  private TState _initial;
-  private bool _started;
+  private IState<TState>? _currentState;
+  private TState _initialState;
+  private bool _isStarted;
   private IDisposable? _subscription;
   private CancellationTokenSource? _timeoutCts;
 
@@ -60,7 +60,7 @@ public sealed class StateMachine<TState> where TState : struct, Enum
     }
   }
 
-  /// <summary>Register State Extended.</summary>
+  /// <summary>Register State (extended fluent pattern).</summary>
   /// <param name="state">ID of state.</param>
   /// <param name="onSuccess">OnSuccess State Id. When not defined, the machine exits.</param>
   /// <param name="onError">(Optional) OnError State Id.</param>
@@ -101,18 +101,26 @@ public sealed class StateMachine<TState> where TState : struct, Enum
 
   /// <summary>Set the initial startup state.</summary>
   /// <param name="initial">Initial state from enumeration.</param>
-  public void SetInitial(TState initial) => _initial = initial;
+  public void SetInitial(TState initial) => _initialState = initial;
+
+  /// <summary>Set the initial startup state (extended fluent pattern).</summary>
+  /// <param name="initial">Initial state from enumeration.</param>
+  public StateMachine<TState> SetInitialEx(TState initial)
+  {
+    _initialState = initial;
+    return this;
+  }
 
   /// <summary>Starts the machine at the initial state.</summary>
   /// <param name="initParameters">Initial <see cref="PropertyBag"/> parameter stack.</param>
   /// <param name="errorStack">Error Stack <see cref="PropertyBag"/>.</param>
   public void Start(PropertyBag? initParameters = null, PropertyBag? errorStack = null)
   {
-    if (_started) throw new InvalidOperationException("State machine already started.");
-    if (!_states.TryGetValue(_initial, out var initialState))
-      throw new InvalidOperationException($"Initial state '{_initial}' is not registered.");
+    if (_isStarted) throw new InvalidOperationException("State machine already started.");
+    if (!_states.TryGetValue(_initialState, out var initialState))
+      throw new InvalidOperationException($"Initial state '{_initialState}' is not registered.");
 
-    _started = true;
+    _isStarted = true;
 
     // Same as below
     ////var ctx = new Context<TState>(this) { Parameters = initParameters ?? [] };
@@ -132,10 +140,10 @@ public sealed class StateMachine<TState> where TState : struct, Enum
   /// <summary>Internal transition logic used by Context.NextState.</summary>
   internal void InternalNextState(Result outcome)
   {
-    if (_current == null)
+    if (_currentState == null)
       throw new InvalidOperationException("No current state.");
 
-    var current = _current;
+    var current = _currentState;
 
     // 1) Try local mapping (sub-state machine level).
     if (current.Transitions.TryGetValue(outcome, out var target))
@@ -181,7 +189,7 @@ public sealed class StateMachine<TState> where TState : struct, Enum
 
   private void EnterState(IState<TState> state)
   {
-    _current = state;
+    _currentState = state;
     state.OnEntering(Context);
     state.OnEnter(Context);
 
@@ -199,15 +207,14 @@ public sealed class StateMachine<TState> where TState : struct, Enum
 
     // If command state: subscribe to aggregator and start timeout
     if (state is ICommandState<TState> cmd)
-    {
       SetupCommandState(cmd);
-    }
   }
 
+  /// <summary>Cancel timer and scription and inform exiting of current state.</summary>
   private void ExitCurrent()
   {
     CancelTimerAndSubscription();
-    _current?.OnExit(Context);
+    _currentState?.OnExit(Context);
   }
 
   private void SetupCommandState(ICommandState<TState> cmd)

@@ -19,12 +19,11 @@ public class CompositeStateTest
   }
 
   [TestMethod]
-  public void TransitionWithErrorToSuccessTest()
+  public void RegisterState_TransitionWithError_ToSuccessTest()
   {
     // Assemble
     var machine = new StateMachine<StateId>();
     machine.RegisterState(new State1(StateId.State1));
-    machine.RegisterState(new State2(StateId.State2));
 
     // Sub-state machine (Composite State + children
     // POC - Register Initial: var comState2 = new State2(StateId.State2, StateId.State2_Sub1);
@@ -48,6 +47,67 @@ public class CompositeStateTest
     Assert.IsNotNull(ctxFinal);
     Assert.AreEqual(SUCCESS, ctxFinal[PARAM_SUB_ENTERED]);
   }
+
+  [TestMethod]
+  public void RegisterStateEx_Fluent_SuccessTest()
+  {
+    // Assemble
+    var comState2 = new StateEx2(StateId.State2);
+
+    var machine = new StateMachine<StateId>()
+      .RegisterStateEx(new StateEx1(StateId.State1), StateId.State2)
+      .RegisterStateEx(comState2, StateId.State3)
+      .RegisterStateEx(new StateEx3(StateId.State3))
+      .SetInitialEx(StateId.State1);
+
+    comState2.Submachine
+      .RegisterStateEx(new StateEx2_Sub1(StateId.State2_Sub1))
+      .RegisterStateEx(new StateEx2_Sub2(StateId.State2_Sub2))
+      .SetInitial(StateId.State2_Sub1);
+
+    // Act
+    machine.Start();
+
+    // Assert
+    var ctxFinal = machine.Context.Parameters;
+    Assert.IsNotNull(ctxFinal);
+    Assert.AreEqual(SUCCESS, ctxFinal[PARAM_SUB_ENTERED]);
+  }
+
+  [TestMethod]
+  [Ignore("Intermixing parent and sub-states fluent design does not work yet.")]
+  public void RegisterStateEx_Fluent_ProofOfConcept_SuccessTest()
+  {
+    // Assemble
+    var comState2 = new StateEx2(StateId.State2);
+
+    var machine = new StateMachine<StateId>()
+      .RegisterStateEx(new StateEx1(StateId.State1), StateId.State2)
+      .RegisterStateEx(comState2, StateId.State3)
+      ////.RegisterStateEx(
+      ////  new StateEx2(StateId.State2).Submachine
+      ////    .RegisterStateEx(new StateEx2_Sub1(StateId.State2_Sub1))
+      ////    .RegisterStateEx(new StateEx2_Sub2(StateId.State2_Sub2))
+      ////    .SetInitialEx(StateId.State2_Sub1))
+      ////  StateId.State3)
+      .RegisterStateEx(new StateEx3(StateId.State3))
+      .SetInitialEx(StateId.State1);
+
+    comState2.Submachine
+      .RegisterStateEx(new StateEx2_Sub1(StateId.State2_Sub1))
+      .RegisterStateEx(new StateEx2_Sub2(StateId.State2_Sub2))
+      .SetInitial(StateId.State2_Sub1);
+
+    // Act
+    machine.Start();
+
+    // Assert
+    var ctxFinal = machine.Context.Parameters;
+    Assert.IsNotNull(ctxFinal);
+    Assert.AreEqual(SUCCESS, ctxFinal[PARAM_SUB_ENTERED]);
+  }
+
+  #region State Machine - Regular
 
   private class State1 : BaseState<StateId>
   {
@@ -111,4 +171,42 @@ public class CompositeStateTest
       // context.NextState(Result.Ok);
     }
   }
+
+  #endregion State Machine - Regular
+
+  #region State Machine - Fluent
+
+  private class StateEx1(StateId id) : BaseState<StateId>(id)
+  {
+    public override void OnEnter(Context<StateId> context) =>
+      context.NextState(Result.Ok);
+  }
+
+  /// <summary>Composite Parent State.</summary>
+  /// <param name="id"></param>
+  private class StateEx2(StateId id) : CompositeState<StateId>(id)
+  {
+    public override void OnEnter(Context<StateId> context) =>
+      context.NextState(Result.Ok);
+  }
+
+  private class StateEx2_Sub1(StateId id) : BaseState<StateId>(id)
+  {
+    public override void OnEnter(Context<StateId> context)
+    {
+      context.Parameters.Add(PARAM_SUB_ENTERED, SUCCESS);
+      context.NextState(Result.Ok);
+    }
+  }
+
+  private class StateEx2_Sub2(StateId id) : BaseState<StateId>(id)
+  {
+    public override void OnEnter(Context<StateId> context) =>
+      context.NextState(Result.Ok);
+  }
+
+  private class StateEx3(StateId id)
+    : BaseState<StateId>(id);
+
+  #endregion State Machine - Fluent
 }
