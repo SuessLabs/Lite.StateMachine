@@ -39,9 +39,15 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
     _logger = logs;
   }
 
+  /// <summary>Gets the context payload passed between the states, and contains methods for transitioning to the next state.</summary>
   public Context<TState> Context { get; private set; } = default!;
 
+  /// <summary>Gets or sets the default timeout (3000ms default) to be used by <see cref="CommandState{TState}"/>'s OnTimeout.</summary>
   public int DefaultTimeoutMs { get; set; } = 3000;
+
+  /// <summary>Gets the collection of all registered states.</summary>
+  /// <remarks>Exposed for validations, debugging, etc.</remarks>
+  public Dictionary<TState, IState<TState>> States => _states;
 
   public void RegisterState(IState<TState> state)
   {

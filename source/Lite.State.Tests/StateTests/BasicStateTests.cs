@@ -2,6 +2,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Linq;
 
 namespace Lite.State.Tests.StateTests;
 
@@ -38,9 +39,17 @@ public class BasicStateTests
 
     // Assert Results
     var ctxFinalParams = machine.Context.Parameters;
-
     Assert.IsNotNull(ctxFinalParams);
     Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
+
+    var enums = Enum.GetValues(typeof(StateId)).Cast<StateId>();
+
+    // Ensure all states are hit
+    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.IsTrue(enums.All(k => machine.States.Keys.Contains(k)));
+
+    // Ensure they're in order
+    Assert.IsTrue(enums.SequenceEqual(machine.States.Keys));
   }
 
   /// <summary>Defines State Enum ID and `OnSuccess` transitions from the `RegisterStateEx` method.</summary>
@@ -62,7 +71,6 @@ public class BasicStateTests
 
     // Assert Results
     var ctxFinalParams = machine.Context.Parameters;
-
     Assert.IsNotNull(ctxFinalParams);
     Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
   }
