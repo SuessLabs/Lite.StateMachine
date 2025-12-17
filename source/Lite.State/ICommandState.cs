@@ -5,9 +5,7 @@ using System;
 
 namespace Lite.State;
 
-/// <summary>
-/// Command-state interface: receives messages and can time out.
-/// </summary>
+/// <summary>Command-state interface: receives messages and can time out.</summary>
 public interface ICommandState<TState> : IState<TState> where TState : struct, Enum
 {
   /// <summary>
@@ -16,18 +14,12 @@ public interface ICommandState<TState> : IState<TState> where TState : struct, E
   /// </summary>
   Func<object, bool> MessageFilter => _ => true;
 
-  /// <summary>
-  /// Optional override of timeout for this state; null uses machine default.
-  /// </summary>
+  /// <summary>Optional override of timeout for this state; null uses machine default.</summary>
   int? TimeoutMs => null;
 
-  /// <summary>
-  /// Receives a message from the event aggregator.
-  /// </summary>
+  /// <summary>Receives a message from the event aggregator.</summary>
   void OnMessage(Context<TState> context, object message);
 
-  /// <summary>
-  /// Fires when no messages are received within the timeout window.
-  /// </summary>
+  /// <summary>Fires when no messages are received within the timeout window.</summary>
   void OnTimeout(Context<TState> context);
 }
