@@ -13,17 +13,22 @@ public abstract class CommandState<TState> : BaseState<TState>, ICommandState<TS
   }
 
   /// <summary>Message filtration (string objects only).</summary>
-  public virtual new Func<object, bool> MessageFilter => _ => true;
+  public new virtual Func<object, bool> MessageFilter => _ => true;
 
+  /// <summary>Gets a value to override the default <see cref="StateMachine{TState}"/> timeout (in milliseconds).</summary>
   public virtual int? TimeoutOverrideMs => null;
 
+  /// <inheritdoc/>
   Func<object, bool> ICommandState<TState>.MessageFilter => MessageFilter;
 
+  /// <inheritdoc/>
   int? ICommandState<TState>.TimeoutMs => TimeoutOverrideMs;
 
+  /// <inheritdoc/>
   public virtual void OnMessage(Context<TState> context, object message)
   { }
 
+  /// <inheritdoc/>
   public virtual void OnTimeout(Context<TState> context)
   { }
 }

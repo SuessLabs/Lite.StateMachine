@@ -26,9 +26,9 @@ public class BasicStateTests
   {
     // Assemble
     var machine = new StateMachine<StateId>();
-    machine.RegisterState(new State1());
-    machine.RegisterState(new State2());
-    machine.RegisterState(new State3());
+    machine.RegisterState(StateId.State1, () => new State1());
+    machine.RegisterState(StateId.State2, () => new State2());
+    machine.RegisterState(StateId.State3, () => new State3());
 
     // Set starting point
     machine.SetInitial(StateId.State1);
@@ -46,10 +46,10 @@ public class BasicStateTests
 
     // Ensure all states are hit
     Assert.AreEqual(enums.Count(), machine.States.Count());
-    Assert.IsTrue(enums.All(k => machine.States.Keys.Contains(k)));
+    Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
 
     // Ensure they're in order
-    Assert.IsTrue(enums.SequenceEqual(machine.States.Keys));
+    Assert.IsTrue(enums.SequenceEqual(machine.States));
   }
 
   /// <summary>Defines State Enum ID and `OnSuccess` transitions from the `RegisterStateEx` method.</summary>
@@ -58,9 +58,9 @@ public class BasicStateTests
   {
     // Assemble
     var machine = new StateMachine<StateId>()
-      .RegisterStateEx(new StateEx1(StateId.State1), StateId.State2)
-      .RegisterStateEx(new StateEx2(StateId.State2), StateId.State3)
-      .RegisterStateEx(new StateEx3(StateId.State3));
+      .RegisterState(StateId.State1, () => new StateEx1(StateId.State1), StateId.State2)
+      .RegisterState(StateId.State2, () => new StateEx2(StateId.State2), StateId.State3)
+      .RegisterState(StateId.State3, () => new StateEx3(StateId.State3));
 
     // Set starting point
     machine.SetInitial(StateId.State1);
@@ -81,9 +81,9 @@ public class BasicStateTests
   {
     // Assemble
     var machine = new StateMachine<StateId>()
-      .RegisterStateEx(new StateEx1(StateId.State1), StateId.State2)
-      .RegisterStateEx(new StateEx2(StateId.State2), StateId.State3)
-      .RegisterStateEx(new StateEx3(StateId.State3))
+      .RegisterState(StateId.State1, () => new StateEx1(StateId.State1), StateId.State2)
+      .RegisterState(StateId.State2, () => new StateEx2(StateId.State2), StateId.State3)
+      .RegisterState(StateId.State3, () => new StateEx3(StateId.State3))
       .SetInitialEx(StateId.State1);
 
     // Act - Start your engine!

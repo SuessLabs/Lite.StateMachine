@@ -22,22 +22,24 @@ public class CompositeStateTest
   public void RegisterState_TransitionWithError_ToSuccessTest()
   {
     // Assemble
+    // NOTE: Composite state has 2 registrations, 1st for the state, 2nd for the children
+    // POC - Register composite with initial; no longer require double-registration
+    //  machine.RegisterState<State2>(stateId: StateId.State2, onSuccess: xxx, initState: StateId.State2_Sub1, subStates: (sub) => { ... });
     var machine = new StateMachine<StateId>();
-    machine.RegisterState(new State1(StateId.State1));
+    machine.RegisterState(StateId.State1, () => new State1(StateId.State1));
 
-    // Sub-state machine (Composite State + children
-    // POC - Register Initial: var comState2 = new State2(StateId.State2, StateId.State2_Sub1);
-    var comState2 = new State2(StateId.State2);
-    machine.RegisterState(comState2);
-    var subMachine = comState2.Submachine;
-    subMachine.RegisterState(new State2_Sub1(StateId.State2_Sub1));
-    subMachine.RegisterState(new State2_Sub2(StateId.State2_Sub2));
+    machine.RegisterState(StateId.State2, () => new State2(StateId.State2));
+    machine.RegisterState(StateId.State2, (sub) =>
+    {
+      sub.RegisterState(StateId.State2_Sub1, () => new State2_Sub1(StateId.State2_Sub1));
+      sub.RegisterState(StateId.State2_Sub2, () => new State2_Sub2(StateId.State2_Sub2));
+      sub.SetInitial(StateId.State2_Sub1);
+    });
 
-    machine.RegisterState(new State3(StateId.State3));
+    machine.RegisterState(StateId.State3, () => new State3(StateId.State3));
 
     // Configure initial states
     machine.SetInitial(StateId.State1);
-    subMachine.SetInitial(StateId.State2_Sub1);
 
     // Act
     machine.Start();
@@ -55,15 +57,18 @@ public class CompositeStateTest
     var comState2 = new StateEx2(StateId.State2);
 
     var machine = new StateMachine<StateId>()
-      .RegisterStateEx(new StateEx1(StateId.State1), StateId.State2)
-      .RegisterStateEx(comState2, StateId.State3)
-      .RegisterStateEx(new StateEx3(StateId.State3))
-      .SetInitialEx(StateId.State1);
+      .RegisterState(StateId.State1, () => new StateEx1(StateId.State1), StateId.State2)
+      .RegisterState(StateId.State2, () => new StateEx2(StateId.State2), StateId.State3);
 
-    comState2.Submachine
-      .RegisterStateEx(new StateEx2_Sub1(StateId.State2_Sub1))
-      .RegisterStateEx(new StateEx2_Sub2(StateId.State2_Sub2))
-      .SetInitial(StateId.State2_Sub1);
+    machine.RegisterState(StateId.State2, (sub) =>
+    {
+      sub.RegisterState(StateId.State2_Sub1, () => new StateEx2_Sub1(StateId.State2_Sub1));
+      sub.RegisterState(StateId.State2_Sub2, () => new StateEx2_Sub2(StateId.State2_Sub2));
+      sub.SetInitial(StateId.State2_Sub1);
+    });
+
+    machine.RegisterState(StateId.State3, () => new StateEx3(StateId.State3))
+           .SetInitialEx(StateId.State1);
 
     // Act
     machine.Start();
@@ -78,12 +83,13 @@ public class CompositeStateTest
   [Ignore("Intermixing parent and sub-states fluent design does not work yet.")]
   public void RegisterStateEx_Fluent_ProofOfConcept_SuccessTest()
   {
+    /*
     // Assemble
     var comState2 = new StateEx2(StateId.State2);
 
     var machine = new StateMachine<StateId>()
-      .RegisterStateEx(new StateEx1(StateId.State1), StateId.State2)
-      .RegisterStateEx(comState2, StateId.State3)
+      .RegisterState(StateId.State1, () => new StateEx1(StateId.State1), StateId.State2)
+      .RegisterState(comState2, StateId.State3)
       ////.RegisterStateEx(
       ////  new StateEx2(StateId.State2).Submachine
       ////    .RegisterStateEx(new StateEx2_Sub1(StateId.State2_Sub1))
@@ -105,6 +111,7 @@ public class CompositeStateTest
     var ctxFinal = machine.Context.Parameters;
     Assert.IsNotNull(ctxFinal);
     Assert.AreEqual(SUCCESS, ctxFinal[PARAM_SUB_ENTERED]);
+    */
   }
 
   #region State Machine - Regular

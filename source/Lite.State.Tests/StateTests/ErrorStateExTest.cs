@@ -24,13 +24,11 @@ public class ErrorStateExTest
   {
     // Assemble
     var machine = new StateMachine<StateId>()
-      .RegisterStateEx(new State1(StateId.State1), StateId.State2)
-      .RegisterStateEx(new State2(StateId.State2), StateId.State3, StateId.State2Error)
-      .RegisterStateEx(new State2Error(StateId.State2Error), StateId.State2)
-      .RegisterStateEx(new State3(StateId.State3));
-
-    // Set starting point
-    machine.SetInitial(StateId.State1);
+      .RegisterState(StateId.State1, () => new State1(StateId.State1), StateId.State2)
+      .RegisterState(StateId.State2, () => new State2(StateId.State2), StateId.State3, StateId.State2Error)
+      .RegisterState(StateId.State2Error, () => new State2Error(StateId.State2Error), StateId.State2)
+      .RegisterState(StateId.State3, () => new State3(StateId.State3))
+      .SetInitialEx(StateId.State1);
 
     // Act - Start your engine!
     var ctxProperties = new PropertyBag() { { PARAM_TEST, "not-finished" }, };
@@ -87,15 +85,13 @@ public class ErrorStateExTest
   private class State3(StateId id)
     : BaseState<StateId>(id)
   {
+    public override void OnEnter(Context<StateId> context) =>
+      context.NextState(Result.Ok);
+
     public override void OnEntering(Context<StateId> context)
     {
       context.Parameters[PARAM_TEST] = SUCCESS;
       Console.WriteLine("[State3] OnEntering");
-    }
-
-    public override void OnEnter(Context<StateId> context)
-    {
-      context.NextState(Result.Ok);
     }
   }
 }

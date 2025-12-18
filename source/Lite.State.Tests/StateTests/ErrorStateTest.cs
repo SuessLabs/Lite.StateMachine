@@ -25,10 +25,10 @@ public class ErrorStateTest
     // Assemble
     var machine = new StateMachine<StateId>();
 
-    machine.RegisterState(new State1());
-    machine.RegisterState(new State2());
-    machine.RegisterState(new State2Error(StateId.State2Error));
-    machine.RegisterState(new State3(StateId.State3));
+    machine.RegisterState(StateId.State1, () => new State1());
+    machine.RegisterState(StateId.State2, () => new State2());
+    machine.RegisterState(StateId.State2Error, () => new State2Error(StateId.State2Error));
+    machine.RegisterState(StateId.State3, () => new State3(StateId.State3));
 
     // Set starting point
     machine.SetInitial(StateId.State1);
