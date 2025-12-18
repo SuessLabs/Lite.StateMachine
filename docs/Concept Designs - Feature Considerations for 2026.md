@@ -1,13 +1,57 @@
-# Lite.State - Feature Considerations
+# Lite.State - Feature Requests
 
 **Table of Contents:**
 
-* [Lite.State - Feature Considerations](#litestate---feature-considerations)
-  * [How the system treats the last defined state transition](#how-the-system-treats-the-last-defined-state-transition)
+* [Lite.State - Feature Requests](#litestate---feature-requests)
+  * [Adopted Feature Requests](#adopted-feature-requests)
+  * [Defining States](#defining-states)
+    * [Basic State](#basic-state)
+    * [Composite State](#composite-state)
+  * [Last Defined State - Exit machine or stay at last state](#last-defined-state---exit-machine-or-stay-at-last-state)
   * [Option to generate DotGraph of state transitions](#option-to-generate-dotgraph-of-state-transitions)
   * [Custom Event Aggregator](#custom-event-aggregator)
 
-## How the system treats the last defined state transition
+## Adopted Feature Requests
+
+* [x] Generate DOT Graph
+
+## Defining States
+
+**Date:** 2025-12-17
+
+### Basic State
+
+* [ ] Simplify the registration of states to use `RegisterState<T>(...);`
+
+### Composite State
+
+1. Register composite to:
+   1. [ ] No longer require double-registration
+   2. [ ] Pass in initial sub-state
+
+```cs
+// Composite State
+machine.RegisterState<State2>(
+  stateId: StateId.State2,
+  onSuccess: StateId.State3,
+  initialState: StateId.State2_Sub1,
+  subStates: (sub) =>
+  {
+    sub.RegisterState<State2_Sub1>(stateId: StateId.State2_Sub1);
+  });
+
+```
+
+## Fix DOT Graph 
+
+After switching to lazy-loading, using the fluent pattern does not recognize that AddTransition() is being called. Therefore DOTgraph adds a `doublebox` instead of a `box` to all of the states, thinking it is "the last state".
+
+```cs
+// SEE:
+_transitions[outcome] = target;
+```
+
+## Last Defined State - Exit machine or stay at last state
 
 **Date:** 2025-12-15
 
