@@ -91,10 +91,11 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
   ///     });
   ///     ]]>
   /// </remarks>
-  public void RegisterComposite(TState compositeId, Action<StateMachine<TState>> configure)
+  public void RegisterState(TState compositeStateId, Action<StateMachine<TState>> configure)
   {
-    if (!_states.TryGetValue(compositeId, out var reg))
-      throw new InvalidOperationException($"Composite state '{compositeId}' must be registered before configuring.");
+    // TODO (2025-12-18): Change exception to, "MissingStateOrInvalidRegistration"
+    if (!_states.TryGetValue(compositeStateId, out var reg))
+      throw new InvalidOperationException($"Composite state '{compositeStateId}' must be registered before configuring.");
 
     reg.ConfigureSubmachine = configure ?? throw new ArgumentNullException(nameof(configure));
   }
@@ -103,6 +104,8 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
   ///   Register a state by enum id and a factory that creates the state instance.
   ///   The instance will be created lazily on first entry.
   /// </summary>
+  /// <param name="stateId">State Id (number/enum).</param>
+  /// <param name="state">State Factory.</param>
   /// <remarks>
   ///   Usage:
   ///     <![CDATA[
@@ -114,10 +117,32 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
   ///       machine.RegisterState<StartState>(WorkflowState.Start);
   ///     ]]>
   /// </remarks>
-  public void RegisterState(TState id, Func<IState<TState>> factory)
+  public StateMachine<TState> RegisterState(TState stateId, Func<IState<TState>> state)
   {
-    ArgumentNullException.ThrowIfNull(factory);
-    _states[id] = new Registration { Factory = factory };
+    ArgumentNullException.ThrowIfNull(state);
+    _states[stateId] = new Registration { Factory = state };
+
+    return this;
+  }
+
+  public StateMachine<TState> RegisterState(
+    TState stateId,
+    Func<IState<TState>> state,
+    TState? onSuccess = null,
+    TState? onError = null,
+    TState? onFailure = null)
+  {
+    ArgumentNullException.ThrowIfNull(state);
+
+    _states[stateId] = new Registration
+    {
+      Factory = state,
+      OnSuccess = onSuccess,
+      OnError = onError,
+      OnFailure = onFailure,
+    };
+
+    return this;
   }
 
   /*
@@ -139,7 +164,9 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
       };
     }
   }
+  */
 
+  /*
   /// <summary>Register State (extended fluent pattern).</summary>
   /// <param name="state">ID of state.</param>
   /// <param name="onSuccess">OnSuccess State Id. When not defined, the machine exits.</param>
@@ -314,6 +341,7 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
   }
 
   /// <summary>Get and generate state instance of the Lazy state.</summary>
+  /// <remarks>TODO: Rename to, `InitializeLazyState()`.</remarks>
   /// <returns>Instance of the state.</returns>
   private IState<TState> GetInstance(TState id)
   {
@@ -324,6 +352,15 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
     regState.LazyInstance ??= new Lazy<IState<TState>>(() =>
     {
       var instance = regState.Factory();
+
+      if (regState.OnSuccess is not null)
+        (instance as BaseState<TState>)?.AddTransition(Result.Ok, regState.OnSuccess.Value);
+
+      if (regState.OnError is not null)
+        (instance as BaseState<TState>)?.AddTransition(Result.Error, regState.OnError.Value);
+
+      if (regState.OnFailure is not null)
+        (instance as BaseState<TState>)?.AddTransition(Result.Failure, regState.OnFailure.Value);
 
       // If composite: wire a submachine and run configuration callback.
       if (instance is ICompositeState<TState> comp)
@@ -396,5 +433,14 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
     public Func<IState<TState>> Factory = default;
 
     public Lazy<IState<TState>>? LazyInstance;
+
+    /// <summary>Optional auto-wire OnError StateId transition.</summary>
+    public TState? OnError = null;
+
+    /// <summary>Optional auto-wire OnFailure StateId transition.</summary>
+    public TState? OnFailure = null;
+
+    /// <summary>Optional auto-wire OnSuccess StateId transition.</summary>
+    public TState? OnSuccess = null;
   }
 }
