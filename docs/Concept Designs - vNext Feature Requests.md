@@ -14,6 +14,7 @@
 ## Adopted Feature Requests
 
 * [x] Generate DOT Graph
+* [x] Simplify registration of Composite states allow for fluent
 
 ## Defining States
 
@@ -40,15 +41,6 @@ machine.RegisterState<State2>(
     sub.RegisterState<State2_Sub1>(stateId: StateId.State2_Sub1);
   });
 
-```
-
-## Fix DOT Graph 
-
-After switching to lazy-loading, using the fluent pattern does not recognize that AddTransition() is being called. Therefore DOTgraph adds a `doublebox` instead of a `box` to all of the states, thinking it is "the last state".
-
-```cs
-// SEE:
-_transitions[outcome] = target;
 ```
 
 ## Last Defined State - Exit machine or stay at last state

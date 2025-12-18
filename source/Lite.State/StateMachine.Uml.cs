@@ -20,11 +20,11 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
   ///   Exports a DOT (Graphviz) diagram of the state machine.
   ///   - Top-level machine (`rankdir=LR`)
   ///   - Composite states are shown as clustered subgraphs
-  ///   - Command states are hexagons; terminal states (no transitions) are `doublecircle`
+  ///   - Command states are hexagons;
+  ///   - Terminal/final states (no transitions) are `doublecircle`
   ///   - Edge labels show Result (Ok, Error, Failure)
   /// </summary>
   /// <param name="includeSubmachines">Include composite submachines as subgraph clusters.</param>
-
   public string ExportUml(bool includeSubmachines = true)
   {
     var sb = new StringBuilder();
@@ -240,9 +240,21 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
     sb.AppendLine($"    \"{name}\" [{string.Join(", ", attrs)}];");
   }
 
+  /// <summary>Create a very short instance of the state to extract the transitions.</summary>
+  /// <param name="reg"></param>
+  /// <returns></returns>
   private IState<TState> CreateEphemeralInstance(Registration reg)
   {
     var state = reg.Factory();
+
+    if (reg.OnSuccess is not null)
+      (state as BaseState<TState>)?.AddTransition(Result.Ok, reg.OnSuccess.Value);
+
+    if (reg.OnError is not null)
+      (state as BaseState<TState>)?.AddTransition(Result.Error, reg.OnError.Value);
+
+    if (reg.OnFailure is not null)
+      (state as BaseState<TState>)?.AddTransition(Result.Failure, reg.OnFailure.Value);
 
     // For composites: build an ephemeral submachine for topology inspection (no Start).
     if (state is ICompositeState<TState> comp && reg.ConfigureSubmachine != null)

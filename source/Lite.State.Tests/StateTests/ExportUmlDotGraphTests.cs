@@ -59,6 +59,10 @@ public class ExportUmlDotGraphTests
       "State2" [shape=box];
       "State2e" [shape=box];
       "State3" [shape=doublecircle];
+      "State1" -> "State2" [label="Ok"];
+      "State2" -> "State3" [label="Ok"];
+      "State2" -> "State2e" [label="Error"];
+      "State2e" -> "State2" [label="Ok"];
       subgraph cluster_legend {
         label="Legend"; style=rounded; color=gray; fontcolor=gray;
         rankdir=LR;
@@ -98,6 +102,12 @@ public class ExportUmlDotGraphTests
       "State2e" [shape=box];
       "State2f" [shape=box];
       "State3" [shape=doublecircle];
+      "State1" -> "State2" [label="Ok"];
+      "State2" -> "State3" [label="Ok"];
+      "State2" -> "State2e" [label="Error"];
+      "State2" -> "State2f" [label="Failure"];
+      "State2e" -> "State2" [label="Ok"];
+      "State2f" -> "State1" [label="Ok"];
       subgraph cluster_legend {
         label="Legend"; style=rounded; color=gray; fontcolor=gray;
         rankdir=LR;
@@ -122,7 +132,6 @@ public class ExportUmlDotGraphTests
         legend_edge_a -> legend_edge_b [label="Ok"];
       }
     }
-    }
     """;
 
   private const string ExpectedUmlComposite = """
@@ -140,6 +149,14 @@ public class ExportUmlDotGraphTests
       "State3" [shape=box];
       "State4" [shape=box3d, style=rounded];
       "State5" [shape=doublecircle];
+      "State1" -> "State2" [label="Ok"];
+      "State2" -> "State3" [label="Ok"];
+      "State2" -> "State2e" [label="Error"];
+      "State2" -> "State2f" [label="Failure"];
+      "State2e" -> "State2" [label="Ok"];
+      "State2f" -> "State1" [label="Ok"];
+      "State3" -> "State4" [label="Ok"];
+      "State4" -> "State5" [label="Ok"];
       subgraph cluster_State4 {
         label="State4"; style=rounded; color=lightgray; fontcolor=gray;
         rankdir=LR;
@@ -147,6 +164,7 @@ public class ExportUmlDotGraphTests
         "start_State4" -> "State4_Sub1";
         "State4_Sub1" [shape=box];
         "State4_Sub2" [shape=doublecircle];
+        "State4_Sub1" -> "State4_Sub2" [label="Ok"];
       }
       subgraph cluster_legend {
         label="Legend"; style=rounded; color=gray; fontcolor=gray;
