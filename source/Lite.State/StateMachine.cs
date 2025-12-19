@@ -125,6 +125,27 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
     return this;
   }
 
+  /*
+  ////public StateMachine<TState> RegisterState(TState stateId, Func<IState<TState>> state)
+  public StateMachine<TState> RegisterState<T>(TState stateId)
+    where T : new() // class, new() => new T()
+  {
+    // OLD:
+    ////ArgumentNullException.ThrowIfNull(state);
+    ////_states[stateId] = new Registration { Factory = state };
+
+    // NEW:
+    ////Func<IState<TState>> state = () => new T();
+    var lazy = new Lazy<T>(() => new T());
+    //Func<IState<TState>> state = () => new T();
+
+    ArgumentNullException.ThrowIfNull(lazy);
+    _states[stateId] = new Registration { Factory = lazy };
+
+    return this;
+  }
+  */
+
   public StateMachine<TState> RegisterState(
     TState stateId,
     Func<IState<TState>> state,
