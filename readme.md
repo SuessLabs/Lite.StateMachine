@@ -6,7 +6,7 @@ Copyright 2022-2025 Xeno Innovations, Inc. (dba, Suess Labs)<br />
 Created by: Damian Suess<br />
 Date: 2022-06-07<br />
 
-Flexible lightweight finite state machine (FSM) for .NET, supporting shared context for passing parameters, composite (sub) states, command states, lazy-loading and thread safe. Cross-platform and optimized for speed for use in enterprise, robotic/industrial systems, and even tiny (mobile) applications.
+Flexible lightweight finite state machine (FSM) for .NET, supporting shared context for passing parameters, composite (sub) states, command states, lazy-loading and thread safe. The library is AOT friendly, cross-platform and optimized for speed for use in enterprise, robotic/industrial systems, and even tiny (mobile) applications.
 
 The Lite State Machine is designed for vertical scaling. Meaning, it can be used for the most basic (tiny) system and beyond medical-grade robotics systems.
 

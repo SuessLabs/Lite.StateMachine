@@ -6,12 +6,12 @@
     <Project Path="Sample.Phone/Sample.Phone.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
+    <File Path="../readme.md" />
     <File Path=".editorconfig" />
     <File Path="codemaid.config" />
     <File Path="Concept-Designs.md" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
-    <File Path="readme.md" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="Lite.State.Tests/Lite.State.Tests.csproj" Id="9644caac-1ac7-49b2-a502-896ca82f7b74" />
