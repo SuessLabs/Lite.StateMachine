@@ -9,6 +9,8 @@
     <File Path=".editorconfig" />
     <File Path="codemaid.config" />
     <File Path="Concept-Designs.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
     <File Path="readme.md" />
   </Folder>
   <Folder Name="/Tests/">
