@@ -6,6 +6,7 @@
     <Project Path="Sample.Phone/Sample.Phone.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
+    <File Path="../build.ps1" />
     <File Path="../readme.md" />
     <File Path=".editorconfig" />
     <File Path="codemaid.config" />

@@ -18,10 +18,15 @@
     <PackageReadmeFile>readme.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/SuessLabs/Lite.State</RepositoryUrl>
     <PackageTags>statemachine;lite;fsm;suesslabs;xeno-innovations</PackageTags>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
   </PropertyGroup>
   
   <ItemGroup>
     <None Include="..\..\docs\icon-128x128.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\LICENSE.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
