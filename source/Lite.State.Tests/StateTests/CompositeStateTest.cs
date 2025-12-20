@@ -116,6 +116,7 @@ public class CompositeStateTest
 
   #region State Machine - Regular
 
+  [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test")]
   private class State1 : BaseState<StateId>
   {
     public State1(StateId id) : base(id)
@@ -181,6 +182,7 @@ public class CompositeStateTest
 
   #endregion State Machine - Regular
 
+  [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test")]
   #region State Machine - Fluent
 
   private class StateEx1(StateId id) : BaseState<StateId>(id)
