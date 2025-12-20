@@ -7,10 +7,10 @@ using System.Collections.Generic;
 namespace Lite.State;
 
 /// <summary>A simple base implementation for states with convenient transition builder.</summary>
-/// <remarks>
-///   Consider renaming to, 'State'
-/// </remarks>
-public abstract class BaseState<TState> : IState<TState> where TState : struct, Enum
+/// <typeparam name="TState">Type of state.</typeparam>
+/// <remarks>Consider renaming to, 'State'.</remarks>
+public abstract class BaseState<TState> : IState<TState>
+  where TState : struct, Enum
 {
   private readonly Dictionary<Result, TState> _transitions = new();
 

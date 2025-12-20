@@ -5,6 +5,9 @@ using System.Collections.Generic;
 
 namespace Lite.State;
 
+[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1649:File name should match first type name", Justification = "No need to waste a file.")]
+public interface IPropertyBag : IDictionary<string, object>;
+
 /// <summary>Context parameter stack properties for passing data between states.</summary>
 /// <remarks>
 ///   In a future release, make the keys flexible so we can use enums, strings, etc (2025-12-16 DS).
@@ -13,5 +16,3 @@ namespace Lite.State;
 ///   ]]>
 /// </remarks>
 public class PropertyBag : Dictionary<string, object>;
-
-public interface IPropertyBag : IDictionary<string, object>;
