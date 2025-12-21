@@ -40,8 +40,7 @@ public class CommandStateTests
 
     // Register top-level states
     machine.RegisterState(WorkflowState.Start, () => new StartState());
-    machine.RegisterState(WorkflowState.Processing, () => new ProcessingState());
-    machine.RegisterState(WorkflowState.Processing, (sub) =>
+    machine.RegisterState(WorkflowState.Processing, () => new ProcessingState(), subStates: (sub) =>
     {
       // Register sub-states inside Processing's submachine
       sub.RegisterState(WorkflowState.Load, () => new LoadState());
