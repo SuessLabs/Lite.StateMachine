@@ -424,7 +424,7 @@ public sealed partial class StateMachine<TState>
     /// <summary>Used for composite states.</summary>
     public Action<StateMachine<TState>>? ConfigureSubmachine;
 
-    /// <summary>State factory.</summary>
+    /// <summary>State factory to execute.</summary>
     public Func<IState<TState>>? Factory = default;
 
     public Lazy<IState<TState>>? LazyInstance;
