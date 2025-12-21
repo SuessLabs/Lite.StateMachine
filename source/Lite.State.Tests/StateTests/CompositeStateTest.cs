@@ -28,8 +28,7 @@ public class CompositeStateTest
     var machine = new StateMachine<StateId>();
     machine.RegisterState(StateId.State1, () => new State1(StateId.State1));
 
-    machine.RegisterState(StateId.State2, () => new State2(StateId.State2));
-    machine.RegisterState(StateId.State2, (sub) =>
+    machine.RegisterState(StateId.State2, () => new State2(StateId.State2), subStates: (sub) =>
     {
       sub.RegisterState(StateId.State2_Sub1, () => new State2_Sub1(StateId.State2_Sub1));
       sub.RegisterState(StateId.State2_Sub2, () => new State2_Sub2(StateId.State2_Sub2));
@@ -40,35 +39,6 @@ public class CompositeStateTest
 
     // Configure initial states
     machine.SetInitial(StateId.State1);
-
-    // Act
-    machine.Start();
-
-    // Assert
-    var ctxFinal = machine.Context.Parameters;
-    Assert.IsNotNull(ctxFinal);
-    Assert.AreEqual(SUCCESS, ctxFinal[PARAM_SUB_ENTERED]);
-  }
-
-  [TestMethod]
-  public void RegisterStateEx_Fluent_SuccessTest()
-  {
-    // Assemble
-    var comState2 = new StateEx2(StateId.State2);
-
-    var machine = new StateMachine<StateId>()
-      .RegisterState(StateId.State1, () => new StateEx1(StateId.State1), StateId.State2)
-      .RegisterState(StateId.State2, () => new StateEx2(StateId.State2), StateId.State3);
-
-    machine.RegisterState(StateId.State2, (sub) =>
-    {
-      sub.RegisterState(StateId.State2_Sub1, () => new StateEx2_Sub1(StateId.State2_Sub1));
-      sub.RegisterState(StateId.State2_Sub2, () => new StateEx2_Sub2(StateId.State2_Sub2));
-      sub.SetInitial(StateId.State2_Sub1);
-    });
-
-    machine.RegisterState(StateId.State3, () => new StateEx3(StateId.State3))
-           .SetInitialEx(StateId.State1);
 
     // Act
     machine.Start();
@@ -112,6 +82,36 @@ public class CompositeStateTest
     Assert.IsNotNull(ctxFinal);
     Assert.AreEqual(SUCCESS, ctxFinal[PARAM_SUB_ENTERED]);
     */
+  }
+
+  [TestMethod]
+  public void RegisterStateEx_Fluent_SuccessTest()
+  {
+    // Assemble
+    var comState2 = new StateEx2(StateId.State2);
+
+    var machine = new StateMachine<StateId>()
+      .RegisterState(StateId.State1, () => new StateEx1(StateId.State1), StateId.State2)
+      .RegisterState(
+        StateId.State2,
+        () => new StateEx2(StateId.State2),
+        onSuccess: StateId.State3,
+        subStates: (sub) =>
+      {
+        sub.RegisterState(StateId.State2_Sub1, () => new StateEx2_Sub1(StateId.State2_Sub1));
+        sub.RegisterState(StateId.State2_Sub2, () => new StateEx2_Sub2(StateId.State2_Sub2));
+        sub.SetInitial(StateId.State2_Sub1);
+      })
+      .RegisterState(StateId.State3, () => new StateEx3(StateId.State3))
+      .SetInitialEx(StateId.State1);
+
+    // Act
+    machine.Start();
+
+    // Assert
+    var ctxFinal = machine.Context.Parameters;
+    Assert.IsNotNull(ctxFinal);
+    Assert.AreEqual(SUCCESS, ctxFinal[PARAM_SUB_ENTERED]);
   }
 
   #region State Machine - Regular
@@ -182,9 +182,9 @@ public class CompositeStateTest
 
   #endregion State Machine - Regular
 
-  [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test")]
-  #region State Machine - Fluent
+  #region State machine - Fluent
 
+  [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test")]
   private class StateEx1(StateId id) : BaseState<StateId>(id)
   {
     public override void OnEnter(Context<StateId> context) =>
@@ -217,5 +217,5 @@ public class CompositeStateTest
   private class StateEx3(StateId id)
     : BaseState<StateId>(id);
 
-  #endregion State Machine - Fluent
+  #endregion State machine - Fluent
 }
