@@ -315,24 +315,18 @@ public class ExportUmlDotGraphTests
       .RegisterState(StateId.State2e, () => new StateEx2e(StateId.State2e), StateId.State2)
       .RegisterState(StateId.State2f, () => new StateEx2e(StateId.State2f), StateId.State1)
       .RegisterState(StateId.State3, () => new StateEx3(StateId.State3), StateId.State4)
-      .RegisterState(StateId.State4, () => new StateEx4(StateId.State4), StateId.State5);
-
-    machine.RegisterState(StateId.State4, (sub) =>
-    {
-      sub.RegisterState(StateId.State4_Sub1, () => new StateEx4_Sub1(StateId.State4_Sub1), StateId.State4_Sub2)
-         .RegisterState(StateId.State4_Sub2, () => new StateEx4_Sub1(StateId.State4_Sub2))
-         .SetInitialEx(StateId.State4_Sub1);
-    });
-
-    machine
+      .RegisterState(
+        StateId.State4,
+        () => new StateEx4(StateId.State4),
+        onSuccess: StateId.State5,
+        subStates: (sub) =>
+      {
+        sub.RegisterState(StateId.State4_Sub1, () => new StateEx4_Sub1(StateId.State4_Sub1), StateId.State4_Sub2)
+           .RegisterState(StateId.State4_Sub2, () => new StateEx4_Sub1(StateId.State4_Sub2))
+           .SetInitialEx(StateId.State4_Sub1);
+      })
       .RegisterState(StateId.State5, () => new StateEx5(StateId.State5))
-      .SetInitial(StateId.State1);
-
-    // Register - State4 Sub-States
-    ////state4.Submachine
-    ////  .RegisterStateEx(new StateEx4_Sub1(StateId.State4_Sub1), StateId.State4_Sub2)
-    ////  .RegisterStateEx(new StateEx4_Sub1(StateId.State4_Sub2))
-    ////  .SetInitial(StateId.State4_Sub1);
+      .SetInitialEx(StateId.State1);
 
     // Act - Generate UML
     var uml = machine.ExportUml(includeSubmachines: true);
@@ -343,12 +337,13 @@ public class ExportUmlDotGraphTests
     AssertExtensions.AreEqualIgnoreLines(ExpectedUmlComposite, uml);
   }
 
-  [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test")]
   #region State Machine - Generic
 
+  [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test")]
   private class State1 : BaseState<StateId>
   {
-    public State1() : base(StateId.State1)
+    public State1()
+      : base(StateId.State1)
     {
       AddTransition(Result.Ok, StateId.State2);
     }
@@ -356,22 +351,24 @@ public class ExportUmlDotGraphTests
 
   private class State2 : BaseState<StateId>
   {
-    public State2() : base(StateId.State2) =>
+    public State2()
+      : base(StateId.State2) =>
       AddTransition(Result.Ok, StateId.State3);
   }
 
   private class State3 : BaseState<StateId>
   {
-    public State3() : base(StateId.State3)
+    public State3()
+      : base(StateId.State3)
     {
     }
   }
 
   #endregion State Machine - Generic
 
-  [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test")]
-  #region State Machine Ex
+  #region State Machine - Fluent
 
+  [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test")]
   private class StateEx1(StateId id) : BaseState<StateId>(id);
 
   private class StateEx2(StateId id) : BaseState<StateId>(id);
@@ -396,5 +393,5 @@ public class ExportUmlDotGraphTests
 
   private class StateEx5(StateId id) : BaseState<StateId>(id);
 
-  #endregion State Machine Ex
+  #endregion State Machine - Fluent
 }
