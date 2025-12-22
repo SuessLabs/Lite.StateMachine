@@ -8,11 +8,13 @@ using System;
 /// <summary>
 /// A base class for composite states. The submachine is injected/assigned externally.
 /// </summary>
-public abstract class CompositeState<TState> : BaseState<TState>, ICompositeState<TState> where TState : struct, Enum
+/// <typeparam name="TState">Type of state.</typeparam>
+public abstract class CompositeState<TState> : BaseState<TState>, ICompositeState<TState>
+  where TState : struct, Enum
 {
-  protected CompositeState(TState id) : base(id)
+  protected CompositeState(TState id)
+    : base(id)
   {
-    // : base(name, logger)
   }
 
   public override bool IsComposite => true;
