@@ -7,19 +7,23 @@ using System.Collections.Generic;
 namespace Lite.State;
 
 /// <summary>Base interface for all states.</summary>
-public interface IState<TState> where TState : struct, Enum
+/// <typeparam name="TState">Type of state.</typeparam>
+public interface IState<TState>
+  where TState : struct, Enum
 {
   /// <summary>Gets the state's Id.</summary>
   TState Id { get; }
 
-  /// <summary>Gets a value indicating that the state is hierarchical and has substates.</summary>
+  /// <summary>Gets a value indicating whether that the state is hierarchical and has substates.</summary>
   bool IsComposite { get; }
 
   /// <summary>
-  ///   Outcome-based transitions local to this (sub)machine.
+  ///   Gets outcome-based transitions local to this (sub)machine.
   ///   If the current state cannot resolve an outcome, bubbling occurs to parent composite.
   /// </summary>
   IReadOnlyDictionary<Result, TState> Transitions { get; }
+
+  void SetStateId(TState id);
 
   /// <summary>Transition hook state fully entered.</summary>
   /// <param name="context"><see cref="Context{TState}"/>.</param>

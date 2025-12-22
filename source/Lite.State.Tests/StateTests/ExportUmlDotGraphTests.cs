@@ -378,16 +378,14 @@ public class ExportUmlDotGraphTests
   private class StateEx2(StateId id) : BaseState<StateId>(id);
 
   /// <summary>Error state tests.</summary>
-  /// <param name="id">StateId</param>
+  /// <param name="id">StateId.</param>
   private class StateEx2e(StateId id) : BaseState<StateId>(id);
 
   /// <summary>Failure state tests.</summary>
-  /// <param name="id">StateId</param>
+  /// <param name="id">StateId.</param>
   private class StateEx2f(StateId id) : BaseState<StateId>(id);
 
   private class StateEx3(StateId id) : BaseState<StateId>(id);
-
-  // Composite state tests
 
   private class StateEx4(StateId id) : CompositeState<StateId>(id);
 
