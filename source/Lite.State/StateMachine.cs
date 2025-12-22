@@ -12,7 +12,9 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// The generic, enum-driven state machine with hierarchical bubbling and command-state timeout handling.
 /// </summary>
-public sealed partial class StateMachine<TState> where TState : struct, Enum
+/// <typeparam name="TState">Type of State Id to use (i.e. enum, int, etc.).</typeparam>
+public sealed partial class StateMachine<TState>
+  where TState : struct, Enum
 {
   private readonly IEventAggregator? _eventAggregator;
   private readonly ILogger<StateMachine<TState>>? _logger;
@@ -49,7 +51,7 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
   public int DefaultTimeoutMs { get; set; } = 3000;
 
   /// <summary>
-  ///   Gets or sets whether or not the machine will evict (discard) the state instance after OnExit to conserve memory.
+  ///   Gets or sets a value indicating whether or not the machine will evict (discard) the state instance after OnExit to conserve memory.
   ///   False by default, this is useful if state instances are heavy and can be safely recreated on next entry.
   /// </summary>
   public bool EvictStateInstancesOnExit { get; set; } = false;
@@ -62,18 +64,27 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
   public List<TState> States => [.. _states.Keys];
 
   /// <summary>
-  ///   Configure a composite (hierarchical) state:
-  ///   provide a callback that registers sub-states and sets the submachine's initial state.
-  ///   Called lazily when the composite instance is created.
-  /// </summary>
-  /// <remarks>
-  ///   TODO: Incorporate this with <see cref="RegisterState"/> and <see cref="RegisterStateEx"/>.
+  ///   Register a state by enum id and a factory that creates the state instance.
+  ///   The state's class instance will be created lazily on first entry.
   ///
+  ///   When supplying <paramref name="subStates"/>, the provided callback registers
+  ///   sub-states. You MUST set the submachine's initial state.
+  /// </summary>
+  /// <param name="stateId">State Id (number/enum).</param>
+  /// <param name="state">State class.</param>
+  /// <param name="onSuccess">State Id to transition to on success.</param>
+  /// <param name="onError">State Id to transition to on error.</param>
+  /// <param name="onFailure">State Id to transition to on failure.</param>
+  /// <param name="subStates">Sub-state state machine.</param>
+  /// <returns>This class for fluent design pattern.</returns>
+  /// <remarks>
   ///   Usage:
-  ///     <![CDATA[
-  ///     // NOTE
-  ///     machine.RegisterState(WorkflowState.Processing, () => new ProcessingState());
-  ///     machine.RegisterComposite(WorkflowState.Processing, sub =>
+  ///   <![CDATA[
+  ///     // Standard state
+  ///     machine.RegisterState(WorkflowState.Start, () => new StartState());
+  ///
+  ///     // Composite State
+  ///     machine.RegisterState(WorkflowState.Processing, () => new ProcessingState()), sub =>
   ///     {
   ///       sub.RegisterState(WorkflowState.Load,     () => new LoadState());
   ///       sub.RegisterState(WorkflowState.Validate, () => new ValidateState());
@@ -83,54 +94,23 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
   ///
   ///   Proposal vNext:
   ///     <![CDATA[
-  ///     machine.RegisterComposite<ProcessingState>(WorkflowState.Processing, sub =>
+  ///     machine.RegisterState<StartState>(WorkflowState.Start);
+  ///
+  ///     machine.RegisterState<ProcessingState>(WorkflowState.Processing, sub =>
   ///     {
   ///       sub.RegisterState<LoadState>(WorkflowState.Load);
   ///       sub.RegisterState<ValidateState>(WorkflowState.Validate);
   ///       sub.SetInitial(WorkflowState.Load);
   ///     });
-  ///     ]]>
+  ///     ]]>.
   /// </remarks>
-  public void RegisterState(TState compositeStateId, Action<StateMachine<TState>> configure)
-  {
-    // TODO (2025-12-18): Change exception to, "MissingStateOrInvalidRegistration"
-    if (!_states.TryGetValue(compositeStateId, out var reg))
-      throw new InvalidOperationException($"Composite state '{compositeStateId}' must be registered before configuring.");
-
-    reg.ConfigureSubmachine = configure ?? throw new ArgumentNullException(nameof(configure));
-  }
-
-  /// <summary>
-  ///   Register a state by enum id and a factory that creates the state instance.
-  ///   The instance will be created lazily on first entry.
-  /// </summary>
-  /// <param name="stateId">State Id (number/enum).</param>
-  /// <param name="state">State Factory.</param>
-  /// <remarks>
-  ///   Usage:
-  ///     <![CDATA[
-  ///       machine.RegisterState(WorkflowState.Start, () => new StartState());
-  ///     ]]>
-  ///
-  ///   Proposal vNext:
-  ///     <![CDATA[
-  ///       machine.RegisterState<StartState>(WorkflowState.Start);
-  ///     ]]>
-  /// </remarks>
-  public StateMachine<TState> RegisterState(TState stateId, Func<IState<TState>> state)
-  {
-    ArgumentNullException.ThrowIfNull(state);
-    _states[stateId] = new Registration { Factory = state };
-
-    return this;
-  }
-
   public StateMachine<TState> RegisterState(
     TState stateId,
     Func<IState<TState>> state,
     TState? onSuccess = null,
     TState? onError = null,
-    TState? onFailure = null)
+    TState? onFailure = null,
+    Action<StateMachine<TState>>? subStates = null)
   {
     ArgumentNullException.ThrowIfNull(state);
 
@@ -142,70 +122,67 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
       OnFailure = onFailure,
     };
 
+    // Check for registration errors
+    // TODO (2025-12-18): Change exception to, "MissingStateOrInvalidRegistration"
+    if (!_states.TryGetValue(stateId, out var reg))
+      throw new InvalidOperationException($"Composite state '{stateId}' must be registered before configuring.");
+
+    if (subStates is not null)
+      reg.ConfigureSubmachine = subStates;
+
     return this;
   }
 
-  /*
-  /// <summary>Register state with state machine.</summary>
-  /// <param name="state">Instance of <see cref="IState{TState}"/>.</param>
-  public void RegisterState(IState<TState> state)
-  {
-    ArgumentNullException.ThrowIfNull(state);
-
-    _states[state.Id] = state;
-
-    // Wire composite sub-state machine instance if needed.
-    ////if (state is ICompositeState<TState> comp)
-    if (state is CompositeState<TState> comp)
-    {
-      comp.Submachine = new StateMachine<TState>(this, comp, _eventAggregator)
-      {
-        DefaultTimeoutMs = DefaultTimeoutMs
-      };
-    }
-  }
-  */
-
-  /*
-  /// <summary>Register State (extended fluent pattern).</summary>
-  /// <param name="state">ID of state.</param>
-  /// <param name="onSuccess">OnSuccess State Id. When not defined, the machine exits.</param>
-  /// <param name="onError">(Optional) OnError State Id.</param>
-  /// <param name="onFailure">(Optional) OnFailure State Id.</param>
-  /// <returns>StateMachine instance for fluent definitions.</returns>
-  /// <exception cref="ArgumentNullException">Must include State ID.</exception>
-  public StateMachine<TState> RegisterStateEx(
-    IState<TState> state,
+  /// <summary>Registers a state with the state machine using generics and configures its transitions and optional substates.</summary>
+  /// <typeparam name="TStateClass">
+  ///   The type of the state to register. Must implement the <see cref="IState{TState}"/> interface and have a parameterless constructor.
+  /// </typeparam>
+  /// <param name="stateId">The unique identifier for the state to register.</param>
+  /// <param name="onSuccess">The state to transition to when the registered state completes successfully, or null if no transition is defined.</param>
+  /// <param name="onError">The state to transition to when the registered state encounters an error, or null if no transition is defined.</param>
+  /// <param name="onFailure">The state to transition to when the registered state fails, or null if no transition is defined.</param>
+  /// <param name="subStates">
+  ///   An optional delegate to configure substates for the registered state. If provided, this allows the state to act as
+  ///   a composite state with its own submachine.
+  /// </param>
+  /// <returns>The current <see cref="StateMachine{TState}"/> instance, enabling method chaining.</returns>
+  /// <exception cref="InvalidOperationException">Thrown if the state registration fails due to an invalid or missing state configuration.</exception>
+  /// <remarks>
+  ///   Use this method to add a new state to the state machine and define its transitions. If substates
+  ///   are configured, the registered state will act as a composite state, allowing for hierarchical state machines. This
+  ///   method supports fluent configuration by returning the state machine instance.
+  /// </remarks>
+  public StateMachine<TState> RegisterState<TStateClass>(
+    TState stateId,
     TState? onSuccess = null,
     TState? onError = null,
-    TState? onFailure = null)
+    TState? onFailure = null,
+    Action<StateMachine<TState>>? subStates = null)
+    where TStateClass : class, IState<TState>, new()
   {
+    // Create factory method
+    Func<IState<TState>> state = () => new TStateClass();
     ArgumentNullException.ThrowIfNull(state);
 
-    if (onSuccess is not null)
-      (state as BaseState<TState>)?.AddTransition(Result.Ok, onSuccess.Value);
-
-    if (onError is not null)
-      (state as BaseState<TState>)?.AddTransition(Result.Error, onError.Value);
-
-    if (onFailure is not null)
-      (state as BaseState<TState>)?.AddTransition(Result.Failure, onFailure.Value);
-
-    _states[state.Id] = state;
-
-    // Wire composite sub-state machine instance if needed.
-    ////if (state is ICompositeState<TState> comp)
-    if (state is CompositeState<TState> comp)
+    _states[stateId] = new Registration
     {
-      comp.Submachine = new StateMachine<TState>(this, comp, _eventAggregator)
-      {
-        DefaultTimeoutMs = DefaultTimeoutMs
-      };
-    }
+      // public Func<IState<TState>>? Factory;
+      Factory = state,
+      OnSuccess = onSuccess,
+      OnError = onError,
+      OnFailure = onFailure,
+    };
+
+    // Check for registration errors
+    // TODO (2025-12-18): Change exception to, "MissingStateOrInvalidRegistration"
+    if (!_states.TryGetValue(stateId, out var reg))
+      throw new InvalidOperationException($"Composite state '{stateId}' must be registered before configuring.");
+
+    if (subStates is not null)
+      reg.ConfigureSubmachine = subStates;
 
     return this;
   }
-  */
 
   /// <summary>Set the initial startup state.</summary>
   /// <param name="initial">Initial state from enumeration.</param>
@@ -213,6 +190,7 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
 
   /// <summary>Set the initial startup state (extended fluent pattern).</summary>
   /// <param name="initial">Initial state from enumeration.</param>
+  /// <returns>This class for fluent design pattern.</returns>
   public StateMachine<TState> SetInitialEx(TState initial)
   {
     _initialState = initial;
@@ -250,7 +228,8 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
   }
 
   /// <summary>Internal transition logic used by Context.NextState.</summary>
-  internal void InternalNextState(Result outcome)
+  /// <param name="resultId">Result of state execution.</param>
+  internal void InternalNextState(Result resultId)
   {
     if (_currentState is null)
       throw new InvalidOperationException("No current state.");
@@ -258,7 +237,7 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
     var current = _currentState;
 
     // 1) Try local mapping (sub-state machine level).
-    if (current.Transitions.TryGetValue(outcome, out var nextStateId))
+    if (current.Transitions.TryGetValue(resultId, out var nextStateId))
     {
       ExitCurrent();
       var next = GetInstance(nextStateId);
@@ -278,7 +257,7 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
       _ownerCompositeState.OnExit(Context);
 
       // Continue from parent machine using the same outcome
-      _parentMachine.InternalNextState(outcome);
+      _parentMachine.InternalNextState(resultId);
       return;
     }
 
@@ -289,6 +268,7 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
 
   /// <summary>Command state cancel timer and message subscription.</summary>
   /// <remarks>TODO (2025-12-17): Rename to, CommandStateCancelTimerAndSubscription() or CommandStateCancel().</remarks>
+  [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1501:Statement should not be on a single line", Justification = "We don't need 16 lines for a try/catch.")]
   private void CancelTimerAndSubscription()
   {
     try { _subscription?.Dispose(); } catch { /* ignore */ }
@@ -351,6 +331,9 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
     // if (reg.LazyInstance is null) { ... }
     regState.LazyInstance ??= new Lazy<IState<TState>>(() =>
     {
+      if (regState.Factory is null)
+        throw new NullReferenceException("Provided state factory as null");
+
       var instance = regState.Factory();
 
       if (regState.OnSuccess is not null)
@@ -376,14 +359,15 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
       }
 
       return instance;
-    }, LazyThreadSafetyMode.ExecutionAndPublication);
+    },
+    LazyThreadSafetyMode.ExecutionAndPublication);
 
     return regState.LazyInstance.Value;
   }
 
   /// <summary>Command State initialization and execution.</summary>
   /// <remarks>TODO (2025-12-17): Rename to, `CommandStateInit()`.</remarks>
-  /// <param name="cmd"></param>
+  /// <param name="cmd">Command state.</param>
   private void SetupCommandState(ICommandState<TState> cmd)
   {
     CancelTimerAndSubscription();
@@ -425,12 +409,14 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
     });
   }
 
+  [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:Fields should be private", Justification = "Intentional public fields.")]
   private sealed class Registration
   {
     /// <summary>Used for composite states.</summary>
     public Action<StateMachine<TState>>? ConfigureSubmachine;
 
-    public Func<IState<TState>> Factory = default;
+    /// <summary>State factory to execute.</summary>
+    public Func<IState<TState>>? Factory = default;
 
     public Lazy<IState<TState>>? LazyInstance;
 

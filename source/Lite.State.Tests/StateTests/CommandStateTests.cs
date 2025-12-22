@@ -40,8 +40,7 @@ public class CommandStateTests
 
     // Register top-level states
     machine.RegisterState(WorkflowState.Start, () => new StartState());
-    machine.RegisterState(WorkflowState.Processing, () => new ProcessingState());
-    machine.RegisterState(WorkflowState.Processing, (sub) =>
+    machine.RegisterState(WorkflowState.Processing, () => new ProcessingState(), subStates: (sub) =>
     {
       // Register sub-states inside Processing's submachine
       sub.RegisterState(WorkflowState.Load, () => new LoadState());
@@ -79,34 +78,29 @@ public class CommandStateTests
   // Command state: AwaitMessage (listens to event aggregator; timeout defaults to 3000ms)
   public sealed class AwaitMessageState : CommandState<WorkflowState>
   {
-    public AwaitMessageState() : base(WorkflowState.AwaitMessage)
+    public AwaitMessageState()
+     : base(WorkflowState.AwaitMessage)
     {
       AddTransition(Result.Ok, WorkflowState.Done);
       AddTransition(Result.Error, WorkflowState.Error);
       AddTransition(Result.Failure, WorkflowState.Failed);
     }
 
-    // Optionally override default timeout:
-    // public override int? TimeoutOverrideMs => 5000;
+    /// <summary>Gets the optional override of the default timeout.</summary>
+    public override int? TimeoutOverrideMs => 3000;
 
     // Filter messages (optional). Here we only accept string messages that begin with "go".
     ////public override Func<object, bool> MessageFilter => msg =>
     ////  msg is string s && s.StartsWith("go", StringComparison.OrdinalIgnoreCase);
 
-    public override void OnEnter(Context<WorkflowState> context)
-    {
+    public override void OnEnter(Context<WorkflowState> context) =>
       Console.WriteLine("[AwaitMessage] OnEnter (subscribed; awaiting message)");
-    }
 
-    public override void OnEntering(Context<WorkflowState> context)
-    {
+    public override void OnEntering(Context<WorkflowState> context) =>
       Console.WriteLine("[AwaitMessage] OnEntering");
-    }
 
-    public override void OnExit(Context<WorkflowState> context)
-    {
+    public override void OnExit(Context<WorkflowState> context) =>
       Console.WriteLine("[AwaitMessage] OnExit (unsubscribed; timer cancelled)");
-    }
 
     public override void OnMessage(Context<WorkflowState> context, object message)
     {

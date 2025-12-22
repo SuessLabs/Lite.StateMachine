@@ -6,7 +6,7 @@ namespace Lite.State.Tests.StateTests;
 [TestClass]
 public class CompositeStateTest
 {
-  public const string PARAM_SUB_ENTERED = "SubEntered";
+  public const string ParameterSubStateEntered = "SubEntered";
   public const string SUCCESS = "success";
 
   public enum StateId
@@ -28,8 +28,7 @@ public class CompositeStateTest
     var machine = new StateMachine<StateId>();
     machine.RegisterState(StateId.State1, () => new State1(StateId.State1));
 
-    machine.RegisterState(StateId.State2, () => new State2(StateId.State2));
-    machine.RegisterState(StateId.State2, (sub) =>
+    machine.RegisterState(StateId.State2, () => new State2(StateId.State2), subStates: (sub) =>
     {
       sub.RegisterState(StateId.State2_Sub1, () => new State2_Sub1(StateId.State2_Sub1));
       sub.RegisterState(StateId.State2_Sub2, () => new State2_Sub2(StateId.State2_Sub2));
@@ -47,78 +46,45 @@ public class CompositeStateTest
     // Assert
     var ctxFinal = machine.Context.Parameters;
     Assert.IsNotNull(ctxFinal);
-    Assert.AreEqual(SUCCESS, ctxFinal[PARAM_SUB_ENTERED]);
+    Assert.AreEqual(SUCCESS, ctxFinal[ParameterSubStateEntered]);
   }
 
   [TestMethod]
   public void RegisterStateEx_Fluent_SuccessTest()
   {
     // Assemble
-    var comState2 = new StateEx2(StateId.State2);
-
     var machine = new StateMachine<StateId>()
       .RegisterState(StateId.State1, () => new StateEx1(StateId.State1), StateId.State2)
-      .RegisterState(StateId.State2, () => new StateEx2(StateId.State2), StateId.State3);
-
-    machine.RegisterState(StateId.State2, (sub) =>
-    {
-      sub.RegisterState(StateId.State2_Sub1, () => new StateEx2_Sub1(StateId.State2_Sub1));
-      sub.RegisterState(StateId.State2_Sub2, () => new StateEx2_Sub2(StateId.State2_Sub2));
-      sub.SetInitial(StateId.State2_Sub1);
-    });
-
-    machine.RegisterState(StateId.State3, () => new StateEx3(StateId.State3))
-           .SetInitialEx(StateId.State1);
-
-    // Act
-    machine.Start();
-
-    // Assert
-    var ctxFinal = machine.Context.Parameters;
-    Assert.IsNotNull(ctxFinal);
-    Assert.AreEqual(SUCCESS, ctxFinal[PARAM_SUB_ENTERED]);
-  }
-
-  [TestMethod]
-  [Ignore("Intermixing parent and sub-states fluent design does not work yet.")]
-  public void RegisterStateEx_Fluent_ProofOfConcept_SuccessTest()
-  {
-    /*
-    // Assemble
-    var comState2 = new StateEx2(StateId.State2);
-
-    var machine = new StateMachine<StateId>()
-      .RegisterState(StateId.State1, () => new StateEx1(StateId.State1), StateId.State2)
-      .RegisterState(comState2, StateId.State3)
-      ////.RegisterStateEx(
-      ////  new StateEx2(StateId.State2).Submachine
-      ////    .RegisterStateEx(new StateEx2_Sub1(StateId.State2_Sub1))
-      ////    .RegisterStateEx(new StateEx2_Sub2(StateId.State2_Sub2))
-      ////    .SetInitialEx(StateId.State2_Sub1))
-      ////  StateId.State3)
-      .RegisterStateEx(new StateEx3(StateId.State3))
+      .RegisterState(
+        StateId.State2,
+        () => new StateEx2(StateId.State2),
+        onSuccess: StateId.State3,
+        subStates: (sub) =>
+      {
+        sub
+          .RegisterState(StateId.State2_Sub1, () => new StateEx2_Sub1(StateId.State2_Sub1))
+          .RegisterState(StateId.State2_Sub2, () => new StateEx2_Sub2(StateId.State2_Sub2))
+          .SetInitial(StateId.State2_Sub1);
+      })
+      .RegisterState(StateId.State3, () => new StateEx3(StateId.State3))
       .SetInitialEx(StateId.State1);
 
-    comState2.Submachine
-      .RegisterStateEx(new StateEx2_Sub1(StateId.State2_Sub1))
-      .RegisterStateEx(new StateEx2_Sub2(StateId.State2_Sub2))
-      .SetInitial(StateId.State2_Sub1);
-
     // Act
     machine.Start();
 
     // Assert
     var ctxFinal = machine.Context.Parameters;
     Assert.IsNotNull(ctxFinal);
-    Assert.AreEqual(SUCCESS, ctxFinal[PARAM_SUB_ENTERED]);
-    */
+    Assert.AreEqual(SUCCESS, ctxFinal[ParameterSubStateEntered]);
   }
 
   #region State Machine - Regular
 
+  [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test")]
   private class State1 : BaseState<StateId>
   {
-    public State1(StateId id) : base(id)
+    public State1(StateId id)
+      : base(id)
     {
       AddTransition(Result.Ok, StateId.State2);
     }
@@ -130,8 +96,9 @@ public class CompositeStateTest
   /// <summary>Composite Parent State.</summary>
   private class State2 : CompositeState<StateId>
   {
-    /// <param name="id"></param>
-    public State2(StateId id) : base(id)
+    /// <param name="id">State Id.</param>
+    public State2(StateId id)
+      : base(id)
     {
       AddTransition(Result.Ok, StateId.State3);
     }
@@ -142,21 +109,23 @@ public class CompositeStateTest
 
   private class State2_Sub1 : BaseState<StateId>
   {
-    public State2_Sub1(StateId id) : base(id)
+    public State2_Sub1(StateId id)
+      : base(id)
     {
       AddTransition(Result.Ok, StateId.State2_Sub2);
     }
 
     public override void OnEnter(Context<StateId> context)
     {
-      context.Parameters.Add(PARAM_SUB_ENTERED, SUCCESS);
+      context.Parameters.Add(ParameterSubStateEntered, SUCCESS);
       context.NextState(Result.Ok);
     }
   }
 
   private class State2_Sub2 : BaseState<StateId>
   {
-    public State2_Sub2(StateId id) : base(id)
+    public State2_Sub2(StateId id)
+      : base(id)
     {
       // NOTE: We're not defining the 'NextState' intentionally
       // to demonstrate the bubble-up
@@ -181,8 +150,9 @@ public class CompositeStateTest
 
   #endregion State Machine - Regular
 
-  #region State Machine - Fluent
+  #region State machine - Fluent
 
+  [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test")]
   private class StateEx1(StateId id) : BaseState<StateId>(id)
   {
     public override void OnEnter(Context<StateId> context) =>
@@ -190,7 +160,7 @@ public class CompositeStateTest
   }
 
   /// <summary>Composite Parent State.</summary>
-  /// <param name="id"></param>
+  /// <param name="id">State Id.</param>
   private class StateEx2(StateId id) : CompositeState<StateId>(id)
   {
     public override void OnEnter(Context<StateId> context) =>
@@ -201,7 +171,7 @@ public class CompositeStateTest
   {
     public override void OnEnter(Context<StateId> context)
     {
-      context.Parameters.Add(PARAM_SUB_ENTERED, SUCCESS);
+      context.Parameters.Add(ParameterSubStateEntered, SUCCESS);
       context.NextState(Result.Ok);
     }
   }
@@ -215,5 +185,5 @@ public class CompositeStateTest
   private class StateEx3(StateId id)
     : BaseState<StateId>(id);
 
-  #endregion State Machine - Fluent
+  #endregion State machine - Fluent
 }

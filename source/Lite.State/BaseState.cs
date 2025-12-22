@@ -7,17 +7,21 @@ using System.Collections.Generic;
 namespace Lite.State;
 
 /// <summary>A simple base implementation for states with convenient transition builder.</summary>
-/// <remarks>
-///   Consider renaming to, 'State'
-/// </remarks>
-public abstract class BaseState<TState> : IState<TState> where TState : struct, Enum
+/// <typeparam name="TState">Type of state.</typeparam>
+/// <remarks>Consider renaming to, 'State'.</remarks>
+public abstract class BaseState<TState> : IState<TState>
+  where TState : struct, Enum
 {
   private readonly Dictionary<Result, TState> _transitions = new();
+
+  protected BaseState()
+  {
+  }
 
   protected BaseState(TState id) => Id = id;
 
   /// <inheritdoc/>
-  public TState Id { get; }
+  public TState Id { get; private set; }
 
   /// <inheritdoc/>
   public virtual bool IsComposite => false;
@@ -32,15 +36,20 @@ public abstract class BaseState<TState> : IState<TState> where TState : struct, 
 
   /// <inheritdoc/>
   public virtual void OnEnter(Context<TState> context)
-  { }
+  {
+  }
 
   /// <inheritdoc/>
   public virtual void OnEntering(Context<TState> context)
-  { }
+  {
+  }
 
   /// <inheritdoc/>
   public virtual void OnExit(Context<TState> context)
-  { }
+  {
+  }
+
+  public void SetStateId(TState id) => Id = id;
 }
 
 /*
