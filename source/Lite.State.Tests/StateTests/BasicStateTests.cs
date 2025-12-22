@@ -98,7 +98,8 @@ public class BasicStateTests
 
   private class State1 : BaseState<StateId>
   {
-    public State1() : base(StateId.State1)
+    public State1()
+      : base(StateId.State1)
     {
       AddTransition(Result.Ok, StateId.State2);
     }
@@ -124,7 +125,8 @@ public class BasicStateTests
 
   private class State2 : BaseState<StateId>
   {
-    public State2() : base(StateId.State2) =>
+    public State2()
+      : base(StateId.State2) =>
       AddTransition(Result.Ok, StateId.State3);
 
     public override void OnEnter(Context<StateId> context)
@@ -136,7 +138,8 @@ public class BasicStateTests
 
   private class State3 : BaseState<StateId>
   {
-    public State3() : base(StateId.State3)
+    public State3()
+      : base(StateId.State3)
     {
     }
 
