@@ -23,17 +23,19 @@ public interface IState<TState>
   /// </summary>
   IReadOnlyDictionary<Result, TState> Transitions { get; }
 
-  void SetStateId(TState id);
-
   /// <summary>Transition hook state fully entered.</summary>
   /// <param name="context"><see cref="Context{TState}"/>.</param>
   void OnEnter(Context<TState> context);
 
   /// <summary>Transition hook before entering, initialize items needed by the state.</summary>
   /// <param name="context"><see cref="Context{TState}"/>.</param>
-  void OnEntering(Context<TState> context);  // before entering
+  void OnEntering(Context<TState> context);
 
   /// <summary>Transition hook leaving state.</summary>
   /// <param name="context"><see cref="Context{TState}"/>.</param>
   void OnExit(Context<TState> context);
+
+  /// <summary>Forcibly set the <see cref="TState"/> later.</summary>
+  /// <param name="id">State Id.</param>
+  void SetStateId(TState id);
 }

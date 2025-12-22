@@ -134,13 +134,8 @@ public sealed partial class StateMachine<TState>
   }
 
   /// <summary>Registers a state with the state machine using generics and configures its transitions and optional substates.</summary>
-  /// <remarks>
-  ///   Use this method to add a new state to the state machine and define its transitions. If substates
-  ///   are configured, the registered state will act as a composite state, allowing for hierarchical state machines. This
-  ///   method supports fluent configuration by returning the state machine instance.
-  /// </remarks>
   /// <typeparam name="TStateClass">
-  ///   The type of the state to register. Must implement the IState<TState> interface and have a parameterless constructor.
+  ///   The type of the state to register. Must implement the <see cref="IState{TState}"/> interface and have a parameterless constructor.
   /// </typeparam>
   /// <param name="stateId">The unique identifier for the state to register.</param>
   /// <param name="onSuccess">The state to transition to when the registered state completes successfully, or null if no transition is defined.</param>
@@ -150,8 +145,13 @@ public sealed partial class StateMachine<TState>
   ///   An optional delegate to configure substates for the registered state. If provided, this allows the state to act as
   ///   a composite state with its own submachine.
   /// </param>
-  /// <returns>The current <see cref="StateMachine{TState}"> instance, enabling method chaining.</returns>
+  /// <returns>The current <see cref="StateMachine{TState}"/> instance, enabling method chaining.</returns>
   /// <exception cref="InvalidOperationException">Thrown if the state registration fails due to an invalid or missing state configuration.</exception>
+  /// <remarks>
+  ///   Use this method to add a new state to the state machine and define its transitions. If substates
+  ///   are configured, the registered state will act as a composite state, allowing for hierarchical state machines. This
+  ///   method supports fluent configuration by returning the state machine instance.
+  /// </remarks>
   public StateMachine<TState> RegisterState<TStateClass>(
     TState stateId,
     TState? onSuccess = null,
@@ -183,66 +183,6 @@ public sealed partial class StateMachine<TState>
 
     return this;
   }
-
-  /*
-  /// <summary>Register state with state machine.</summary>
-  /// <param name="state">Instance of <see cref="IState{TState}"/>.</param>
-  public void RegisterState(IState<TState> state)
-  {
-    ArgumentNullException.ThrowIfNull(state);
-
-    _states[state.Id] = state;
-
-    // Wire composite sub-state machine instance if needed.
-    ////if (state is ICompositeState<TState> comp)
-    if (state is CompositeState<TState> comp)
-    {
-      comp.Submachine = new StateMachine<TState>(this, comp, _eventAggregator)
-      {
-        DefaultTimeoutMs = DefaultTimeoutMs
-      };
-    }
-  }
-
-  /// <summary>Register State (extended fluent pattern).</summary>
-  /// <param name="state">ID of state.</param>
-  /// <param name="onSuccess">OnSuccess State Id. When not defined, the machine exits.</param>
-  /// <param name="onError">(Optional) OnError State Id.</param>
-  /// <param name="onFailure">(Optional) OnFailure State Id.</param>
-  /// <returns>StateMachine instance for fluent definitions.</returns>
-  /// <exception cref="ArgumentNullException">Must include State ID.</exception>
-  public StateMachine<TState> RegisterStateEx(
-    IState<TState> state,
-    TState? onSuccess = null,
-    TState? onError = null,
-    TState? onFailure = null)
-  {
-    ArgumentNullException.ThrowIfNull(state);
-
-    if (onSuccess is not null)
-      (state as BaseState<TState>)?.AddTransition(Result.Ok, onSuccess.Value);
-
-    if (onError is not null)
-      (state as BaseState<TState>)?.AddTransition(Result.Error, onError.Value);
-
-    if (onFailure is not null)
-      (state as BaseState<TState>)?.AddTransition(Result.Failure, onFailure.Value);
-
-    _states[state.Id] = state;
-
-    // Wire composite sub-state machine instance if needed.
-    ////if (state is ICompositeState<TState> comp)
-    if (state is CompositeState<TState> comp)
-    {
-      comp.Submachine = new StateMachine<TState>(this, comp, _eventAggregator)
-      {
-        DefaultTimeoutMs = DefaultTimeoutMs
-      };
-    }
-
-    return this;
-  }
-  */
 
   /// <summary>Set the initial startup state.</summary>
   /// <param name="initial">Initial state from enumeration.</param>

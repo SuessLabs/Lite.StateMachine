@@ -19,20 +19,20 @@ You can define the state machine using either the fluent design pattern or stand
 ```cs
 using Lite.State;
 
+// Note the use of generics '<TStateClass>' to strongly-type the state machine
 var machine = new StateMachine<StateId>()
-  .RegisterState(StateId.Start, () => new StartState());
-  .RegisterState(
+  .RegisterState<StartState>(StateId.Start);
+  .RegisterState<ProcessingState>(
     StateId.Processing,
-    () => new ProcessingState()),
     onSuccess: StateId.Finalize,
     subStates: (sub) =>
   {
     sub
-      .RegisterState(StateId.Load,     () => new LoadState());
-      .RegisterState(StateId.Validate, () => new ValidateState());
+      .RegisterState<LoadState>(StateId.Load,);
+      .RegisterState<ValidateState>(StateId.Validate);
       .SetInitial(StateId.Load);
   })
-  .RegisterState(StateId.Finalize, () => new FinalizeState())
+  .RegisterState<FinalizeState>(StateId.Finalize,)
   .SetInitial(StateId.Start);
 
 machine.Start();
@@ -46,14 +46,15 @@ var ctxFinal = machine.Context.Parameters;
 ```
 
 States are represented by classes that implement the `IState` interface.
+
 ```cs
-  private class ProcessingState(StateId id) : CompositeState<StateId>(id)
+  private class ProcessingState() : CompositeState<StateId>()
   {
     public override void OnEnter(Context<StateId> context) =>
       context.NextState(Result.Ok);
   }
 
-  private class LoadState(StateId id) : BaseState<StateId>(id)
+  private class LoadState() : BaseState<StateId>()
   {
     public override void OnEntering(Context<StateId> context)
     {
@@ -73,8 +74,8 @@ States are represented by classes that implement the `IState` interface.
     }
   }
 
-  private class FinalizeState(StateId id)
-    : BaseState<StateId>(id);
+  private class FinalizeState()
+    : BaseState<StateId>();
 ```
 
 ### Generate DOT Graph (GraphViz)

@@ -141,8 +141,12 @@ public class BasicStateTests
     Assert.IsTrue(enums.SequenceEqual(machine.States));
   }
 
+  /// <summary>
+  ///   This test uses the generic `RegisterState<TState>` method
+  ///   but each state class manually sets its own the State Id (double-duty).
+  /// </summary>
   [TestMethod]
-  public void RegisterState_GenericsFluent_SuccessTest()
+  public void RegisterState_GenericsFluent_ManuallySetStateId_SuccessTest()
   {
     // Assemble
     var machine = new StateMachine<StateId>()
@@ -174,7 +178,49 @@ public class BasicStateTests
     Assert.IsTrue(enums.SequenceEqual(machine.States));
   }
 
-  #region State Machine - Generic
+  /// <summary>
+  ///   Verifies that registering states using generics and fluent syntax without explicitly setting an ID results in
+  ///   successful state machine initialization and correct state transitions.
+  /// </summary>
+  /// <remarks>
+  ///   This test ensures that all states are registered, transitions are executed in order, and context
+  ///   parameters are updated as expected when the state machine is started. It also confirms that states are traversed
+  ///   in the correct sequence and that all defined states are included in the state machine.
+  ///   </remarks>
+  [TestMethod]
+  public void RegisterState_GenericsFluent_UnsetId_SuccessTest()
+  {
+    // Assemble
+    var machine = new StateMachine<StateId>()
+      .RegisterState<StateGenerics1>(StateId.State1, StateId.State2)
+      .RegisterState<StateGenerics2>(StateId.State2, StateId.State3)
+      .RegisterState<StateGenerics3>(StateId.State3)
+      .SetInitialEx(StateId.State1);
+
+    // Act - Start your engine!
+    // NOTE: We did NOT pass "ParameterCounter"; it gets added on the fly.
+    var ctxProperties = new PropertyBag() { { ParameterKeyTest, "not-finished" }, };
+    machine.Start(ctxProperties);
+
+    // Assert Results
+    var ctxFinalParams = machine.Context.Parameters;
+    Assert.IsNotNull(ctxFinalParams);
+    Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
+
+    // Ensure all transitions are called
+    Assert.AreEqual(9 - 1, ctxFinalParams[ParameterCounter]);
+
+    var enums = Enum.GetValues<StateId>().Cast<StateId>();
+
+    // Ensure all states are hit
+    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
+
+    // Ensure they're in order
+    Assert.IsTrue(enums.SequenceEqual(machine.States));
+  }
+
+  #region State Machine - Basic State Construction
 
   private class State1 : BaseState<StateId>
   {
@@ -247,7 +293,7 @@ public class BasicStateTests
       context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
   }
 
-  #endregion State Machine - Generic
+  #endregion State Machine - Basic State Construction
 
   #region State Machine - Fluent
 
@@ -291,4 +337,51 @@ public class BasicStateTests
   }
 
   #endregion State Machine - Fluent
+
+  #region State Machine - Generics Fluent
+
+  private class StateGenerics1() : BaseState<StateId>()
+  {
+    public override void OnEnter(Context<StateId> context) =>
+      context.NextState(Result.Ok);
+
+    public override void OnEntering(Context<StateId> context) =>
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
+
+    public override void OnExit(Context<StateId> context) =>
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
+  }
+
+  private class StateGenerics2() : BaseState<StateId>()
+  {
+    public override void OnEnter(Context<StateId> context)
+    {
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
+      context.NextState(Result.Ok);
+    }
+
+    public override void OnEntering(Context<StateId> context) =>
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
+
+    public override void OnExit(Context<StateId> context) =>
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
+  }
+
+  private class StateGenerics3() : BaseState<StateId>()
+  {
+    public override void OnEnter(Context<StateId> context)
+    {
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
+      context.Parameters[ParameterKeyTest] = TestValue;
+      context.NextState(Result.Ok);
+    }
+
+    public override void OnEntering(Context<StateId> context) =>
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
+
+    public override void OnExit(Context<StateId> context) =>
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
+  }
+
+  #endregion State Machine - Generics Fluent
 }
