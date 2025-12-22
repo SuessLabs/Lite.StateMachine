@@ -133,33 +133,40 @@ public sealed partial class StateMachine<TState>
     return this;
   }
 
-  public StateMachine<TState> RegisterState<T>(
+  /// <summary>Registers a state with the state machine using generics and configures its transitions and optional substates.</summary>
+  /// <remarks>
+  ///   Use this method to add a new state to the state machine and define its transitions. If substates
+  ///   are configured, the registered state will act as a composite state, allowing for hierarchical state machines. This
+  ///   method supports fluent configuration by returning the state machine instance.
+  /// </remarks>
+  /// <typeparam name="TStateClass">
+  ///   The type of the state to register. Must implement the IState<TState> interface and have a parameterless constructor.
+  /// </typeparam>
+  /// <param name="stateId">The unique identifier for the state to register.</param>
+  /// <param name="onSuccess">The state to transition to when the registered state completes successfully, or null if no transition is defined.</param>
+  /// <param name="onError">The state to transition to when the registered state encounters an error, or null if no transition is defined.</param>
+  /// <param name="onFailure">The state to transition to when the registered state fails, or null if no transition is defined.</param>
+  /// <param name="subStates">
+  ///   An optional delegate to configure substates for the registered state. If provided, this allows the state to act as
+  ///   a composite state with its own submachine.
+  /// </param>
+  /// <returns>The current <see cref="StateMachine{TState}"> instance, enabling method chaining.</returns>
+  /// <exception cref="InvalidOperationException">Thrown if the state registration fails due to an invalid or missing state configuration.</exception>
+  public StateMachine<TState> RegisterState<TStateClass>(
     TState stateId,
     TState? onSuccess = null,
     TState? onError = null,
     TState? onFailure = null,
     Action<StateMachine<TState>>? subStates = null)
-    where T : new() // class, new() => new T()
+    where TStateClass : class, IState<TState>, new()
   {
-    //// OLD: Func<IState<TState>> state = () => new T();
-
-    // Try-1:
-    ////var lazy = new Lazy<T>(() => new T());
-    ////Func<IState<TState>> state = () => (IState<TState>)lazy;
-
-    // Try-2: public Func<IState<TState>>? Factory;
-    ////var lazy = new Lazy<T>(() => new T());
-    Func<IState<TState>> state = () => (IState<TState>)T;
-
-    ////ArgumentNullException.ThrowIfNull(state);
-    ////_states[stateId] = new Registration { Factory = state };
-
-    ////=============
-
+    // Create factory method
+    Func<IState<TState>> state = () => new TStateClass();
     ArgumentNullException.ThrowIfNull(state);
 
     _states[stateId] = new Registration
     {
+      // public Func<IState<TState>>? Factory;
       Factory = state,
       OnSuccess = onSuccess,
       OnError = onError,

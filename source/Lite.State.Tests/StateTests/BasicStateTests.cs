@@ -24,7 +24,7 @@ public class BasicStateTests
 
   /// <summary>Standard basic state registration with fall-through exiting.</summary>
   [TestMethod]
-  public void RegisterState_BasicStateTransitions_SuccessTest()
+  public void RegisterState_BasicState_SuccessTest()
   {
     // Assemble
     var counter = 0;
@@ -65,7 +65,7 @@ public class BasicStateTests
 
   /// <summary>Defines State Enum ID and `OnSuccess` transitions from the `RegisterStateEx` method.</summary>
   [TestMethod]
-  public void RegisterStateEx_BasicStateTransitions_SuccessTest()
+  public void RegisterState_BasicStateFluent_SuccessTest()
   {
     // Assemble
     var machine = new StateMachine<StateId>()
@@ -88,7 +88,7 @@ public class BasicStateTests
 
   /// <summary>Defines State Enum ID and `OnSuccess` transitions from the `RegisterStateEx` method.</summary>
   [TestMethod]
-  public void RegisterStateEx_BasicStateWithoutInitialContextTransitions_SuccessTest()
+  public void RegisterState_BasicStateFluent_WithoutInitialContextTransitions_SuccessTest()
   {
     // Assemble
     var machine = new StateMachine<StateId>()
@@ -108,7 +108,7 @@ public class BasicStateTests
   }
 
   [TestMethod]
-  public void RegisterStateEx_Generics_SuccessTest()
+  public void RegisterState_Generics_SuccessTest()
   {
     // Assemble
     var machine = new StateMachine<StateId>();
@@ -127,6 +127,51 @@ public class BasicStateTests
     var ctxFinalParams = machine.Context.Parameters;
     Assert.IsNotNull(ctxFinalParams);
     Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
+
+    // Ensure all transitions are called
+    Assert.AreEqual(9 - 1, ctxFinalParams[ParameterCounter]);
+
+    var enums = Enum.GetValues<StateId>().Cast<StateId>();
+
+    // Ensure all states are hit
+    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
+
+    // Ensure they're in order
+    Assert.IsTrue(enums.SequenceEqual(machine.States));
+  }
+
+  [TestMethod]
+  public void RegisterState_GenericsFluent_SuccessTest()
+  {
+    // Assemble
+    var machine = new StateMachine<StateId>()
+      .RegisterState<State1>(StateId.State1, StateId.State2)
+      .RegisterState<State2>(StateId.State2, StateId.State3)
+      .RegisterState<State3>(StateId.State3)
+      .SetInitialEx(StateId.State1);
+
+    // Act - Start your engine!
+    // NOTE: We did NOT pass "ParameterCounter"; it gets added on the fly.
+    var ctxProperties = new PropertyBag() { { ParameterKeyTest, "not-finished" }, };
+    machine.Start(ctxProperties);
+
+    // Assert Results
+    var ctxFinalParams = machine.Context.Parameters;
+    Assert.IsNotNull(ctxFinalParams);
+    Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
+
+    // Ensure all transitions are called
+    Assert.AreEqual(9 - 1, ctxFinalParams[ParameterCounter]);
+
+    var enums = Enum.GetValues<StateId>().Cast<StateId>();
+
+    // Ensure all states are hit
+    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
+
+    // Ensure they're in order
+    Assert.IsTrue(enums.SequenceEqual(machine.States));
   }
 
   #region State Machine - Generic
