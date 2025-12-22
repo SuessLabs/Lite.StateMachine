@@ -5,6 +5,10 @@ using System;
 
 namespace Lite.State.Tests.StateTests;
 
+/// <summary>Tests Exporting of UML to DOT Graph format.</summary>
+/// <remarks>
+///   TODO (2025-12-22 DS): Make outputting legend optional via parameter.
+/// </remarks>
 [TestClass]
 public class ExportUmlDotGraphTests
 {

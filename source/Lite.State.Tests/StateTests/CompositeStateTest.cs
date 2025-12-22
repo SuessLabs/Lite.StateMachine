@@ -6,7 +6,7 @@ namespace Lite.State.Tests.StateTests;
 [TestClass]
 public class CompositeStateTest
 {
-  public const string PARAM_SUB_ENTERED = "SubEntered";
+  public const string ParameterSubStateEntered = "SubEntered";
   public const string SUCCESS = "success";
 
   public enum StateId
@@ -46,7 +46,7 @@ public class CompositeStateTest
     // Assert
     var ctxFinal = machine.Context.Parameters;
     Assert.IsNotNull(ctxFinal);
-    Assert.AreEqual(SUCCESS, ctxFinal[PARAM_SUB_ENTERED]);
+    Assert.AreEqual(SUCCESS, ctxFinal[ParameterSubStateEntered]);
   }
 
   [TestMethod]
@@ -75,7 +75,7 @@ public class CompositeStateTest
     // Assert
     var ctxFinal = machine.Context.Parameters;
     Assert.IsNotNull(ctxFinal);
-    Assert.AreEqual(SUCCESS, ctxFinal[PARAM_SUB_ENTERED]);
+    Assert.AreEqual(SUCCESS, ctxFinal[ParameterSubStateEntered]);
   }
 
   #region State Machine - Regular
@@ -83,7 +83,8 @@ public class CompositeStateTest
   [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test")]
   private class State1 : BaseState<StateId>
   {
-    public State1(StateId id) : base(id)
+    public State1(StateId id)
+      : base(id)
     {
       AddTransition(Result.Ok, StateId.State2);
     }
@@ -95,8 +96,9 @@ public class CompositeStateTest
   /// <summary>Composite Parent State.</summary>
   private class State2 : CompositeState<StateId>
   {
-    /// <param name="id"></param>
-    public State2(StateId id) : base(id)
+    /// <param name="id">State Id.</param>
+    public State2(StateId id)
+      : base(id)
     {
       AddTransition(Result.Ok, StateId.State3);
     }
@@ -107,21 +109,23 @@ public class CompositeStateTest
 
   private class State2_Sub1 : BaseState<StateId>
   {
-    public State2_Sub1(StateId id) : base(id)
+    public State2_Sub1(StateId id)
+      : base(id)
     {
       AddTransition(Result.Ok, StateId.State2_Sub2);
     }
 
     public override void OnEnter(Context<StateId> context)
     {
-      context.Parameters.Add(PARAM_SUB_ENTERED, SUCCESS);
+      context.Parameters.Add(ParameterSubStateEntered, SUCCESS);
       context.NextState(Result.Ok);
     }
   }
 
   private class State2_Sub2 : BaseState<StateId>
   {
-    public State2_Sub2(StateId id) : base(id)
+    public State2_Sub2(StateId id)
+      : base(id)
     {
       // NOTE: We're not defining the 'NextState' intentionally
       // to demonstrate the bubble-up
@@ -167,7 +171,7 @@ public class CompositeStateTest
   {
     public override void OnEnter(Context<StateId> context)
     {
-      context.Parameters.Add(PARAM_SUB_ENTERED, SUCCESS);
+      context.Parameters.Add(ParameterSubStateEntered, SUCCESS);
       context.NextState(Result.Ok);
     }
   }

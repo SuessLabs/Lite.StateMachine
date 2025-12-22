@@ -5,22 +5,22 @@ namespace Lite.State;
 
 using System;
 
-/// <summary>
-/// Context passed to every state. Provides a "Parameter" and a NextState(Result) trigger.
-/// </summary>
-public sealed class Context<TState> where TState : struct, Enum
+/// <summary>Context passed to every state. Provides a "Parameter" and a NextState(Result) trigger.</summary>
+/// <typeparam name="TState">Type of state enum.</typeparam>
+public sealed class Context<TState>
+  where TState : struct, Enum
 {
   private readonly StateMachine<TState> _machine;
 
   internal Context(StateMachine<TState> machine) => _machine = machine;
 
-  /// <summary>Arbitrary collection of errors to pass along to the next state.</summary>
+  /// <summary>Gets or sets an arbitrary collection of errors to pass along to the next state.</summary>
   public PropertyBag ErrorStack { get; set; } = [];
 
-  /// <summary>The previous state's enum value.</summary>
+  /// <summary>Gets the previous state's enum value.</summary>
   public TState LastState { get; internal set; }
 
-  /// <summary>Arbitrary parameter provided by caller to the current action.</summary>
+  /// <summary>Gets or sets an arbitrary parameter provided by caller to the current action.</summary>
   public PropertyBag Parameters { get; set; } = [];
 
   /// <summary>
@@ -28,6 +28,19 @@ public sealed class Context<TState> where TState : struct, Enum
   ///   and if none exists locally (composite sub-state machine exhausted),
   ///   it bubbles to the parent state's OnExit and applies the parent's mapping.
   /// </summary>
+  /// <param name="result">The result outcome to trigger transition.</param>
   public void NextState(Result result) =>
     _machine.InternalNextState(result);
+
+  /// <summary>Get default parameter value as <see cref="int"/> or default.</summary>
+  /// <param name="key">Parameter Key.</param>
+  /// <param name="defaultInt">Default int (default=0).</param>
+  /// <returns>Integer or default.</returns>
+  public int ParameterAsInt(string key, int defaultInt = 0)
+  {
+    if (Parameters.TryGetValue(key, out var value) && value is int intValue)
+      return intValue;
+    else
+      return defaultInt;
+  }
 }

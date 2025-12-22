@@ -32,15 +32,18 @@ public abstract class BaseState<TState> : IState<TState>
 
   /// <inheritdoc/>
   public virtual void OnEnter(Context<TState> context)
-  { }
+  {
+  }
 
   /// <inheritdoc/>
   public virtual void OnEntering(Context<TState> context)
-  { }
+  {
+  }
 
   /// <inheritdoc/>
   public virtual void OnExit(Context<TState> context)
-  { }
+  {
+  }
 }
 
 /*

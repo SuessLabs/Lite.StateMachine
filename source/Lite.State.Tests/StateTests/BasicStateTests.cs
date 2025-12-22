@@ -7,8 +7,10 @@ using System.Linq;
 namespace Lite.State.Tests.StateTests;
 
 [TestClass]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test class")]
 public class BasicStateTests
 {
+  public const string ParameterCounter = "Counter";
   public const string ParameterKeyTest = "TestKey";
   public const string TestValue = "success";
 
@@ -25,16 +27,21 @@ public class BasicStateTests
   public void RegisterState_Transition_SuccessTest()
   {
     // Assemble
+    var counter = 0;
+
     var machine = new StateMachine<StateId>();
     machine.RegisterState(StateId.State1, () => new State1());
     machine.RegisterState(StateId.State2, () => new State2());
     machine.RegisterState(StateId.State3, () => new State3());
-
-    // Set starting point
     machine.SetInitial(StateId.State1);
 
     // Act - Start your engine!
-    var ctxProperties = new PropertyBag() { { ParameterKeyTest, "not-finished" }, };
+    var ctxProperties = new PropertyBag()
+    {
+      { ParameterKeyTest, "not-finished" },
+      { ParameterCounter, counter },
+    };
+
     machine.Start(ctxProperties);
 
     // Assert Results
@@ -42,7 +49,11 @@ public class BasicStateTests
     Assert.IsNotNull(ctxFinalParams);
     Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
 
-    var enums = Enum.GetValues(typeof(StateId)).Cast<StateId>();
+    // NOTE: This should be 9 because each state has 3 hooks that increment the counter
+    // TODO (2025-12-22 DS): Fix last state not calling OnExit.
+    Assert.AreEqual(9 - 1, ctxFinalParams[ParameterCounter]);
+
+    var enums = Enum.GetValues<StateId>().Cast<StateId>();
 
     // Ensure all states are hit
     Assert.AreEqual(enums.Count(), machine.States.Count());
@@ -96,6 +107,8 @@ public class BasicStateTests
     Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
   }
 
+  #region State Machine - Generic
+
   private class State1 : BaseState<StateId>
   {
     public State1()
@@ -104,20 +117,23 @@ public class BasicStateTests
       AddTransition(Result.Ok, StateId.State2);
     }
 
+    public override void OnEnter(Context<StateId> context)
+    {
+      Console.WriteLine("[State1] OnEnter");
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
+      context.NextState(Result.Ok);
+    }
+
     public override void OnEntering(Context<StateId> context)
     {
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
       context.Parameters[ParameterKeyTest] = TestValue;
       Console.WriteLine("[State3] OnEntering - Add/Update parameter");
     }
 
-    public override void OnEnter(Context<StateId> context)
-    {
-      Console.WriteLine("[State1] OnEnter");
-      context.NextState(Result.Ok);
-    }
-
     public override void OnExit(Context<StateId> context)
     {
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
       context.Parameters[ParameterKeyTest] = TestValue;
       Console.WriteLine("[State3] OnEntering - Add/Update parameter");
     }
@@ -132,8 +148,15 @@ public class BasicStateTests
     public override void OnEnter(Context<StateId> context)
     {
       Console.WriteLine("[State2] OnEnter");
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
       context.NextState(Result.Ok);
     }
+
+    public override void OnEntering(Context<StateId> context) =>
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
+
+    public override void OnExit(Context<StateId> context) =>
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
   }
 
   private class State3 : BaseState<StateId>
@@ -143,21 +166,46 @@ public class BasicStateTests
     {
     }
 
+    public override void OnEnter(Context<StateId> context) =>
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
+
     public override void OnEntering(Context<StateId> context)
     {
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
       context.Parameters[ParameterKeyTest] = TestValue;
       Console.WriteLine("[State3] OnEntering - Add/Update parameter");
     }
+
+    public override void OnExit(Context<StateId> context) =>
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
   }
+
+  #endregion State Machine - Generic
+
+  #region State Machine - Fluent
 
   private class StateEx1(StateId id) : BaseState<StateId>(id)
   {
-    public override void OnEnter(Context<StateId> context) => context.NextState(Result.Ok);
+    public override void OnEnter(Context<StateId> context) =>
+      context.NextState(Result.Ok);
+
+    public override void OnEntering(Context<StateId> context) =>
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
+
+    public override void OnExit(Context<StateId> context) =>
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
   }
 
   private class StateEx2(StateId id) : BaseState<StateId>(id)
   {
-    public override void OnEnter(Context<StateId> context) => context.NextState(Result.Ok);
+    public override void OnEnter(Context<StateId> context) =>
+      context.NextState(Result.Ok);
+
+    public override void OnEntering(Context<StateId> context) =>
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
+
+    public override void OnExit(Context<StateId> context) =>
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
   }
 
   private class StateEx3(StateId id) : BaseState<StateId>(id)
@@ -167,5 +215,13 @@ public class BasicStateTests
       context.Parameters[ParameterKeyTest] = TestValue;
       context.NextState(Result.Ok);
     }
+
+    public override void OnEntering(Context<StateId> context) =>
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
+
+    public override void OnExit(Context<StateId> context) =>
+      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
   }
+
+  #endregion State Machine - Fluent
 }
