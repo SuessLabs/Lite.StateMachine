@@ -12,55 +12,69 @@ Date: 2022-06-07<br />
 
 ## Usage
 
-### Standard and Composite State Registration
+Create a _state machine_ by defining the states, transitions, and shared context.
+
+You can define the state machine using either the fluent design pattern or standard line-by-line. Each state is represented by a enum `StateId` in the following example.
 
 ```cs
-  // Standard state
-  machine.RegisterState(WorkflowState.Start, () => new StartState());
+using Lite.State;
 
-  // Composite State
-  machine.RegisterState(WorkflowState.Processing, () => new ProcessingState()), sub =>
+var machine = new StateMachine<StateId>()
+  .RegisterState(StateId.Start, () => new StartState());
+  .RegisterState(
+    StateId.Processing,
+    () => new ProcessingState()),
+    onSuccess: StateId.Finalize,
+    subStates: (sub) =>
   {
-    sub.RegisterState(WorkflowState.Load,     () => new LoadState());
-    sub.RegisterState(WorkflowState.Validate, () => new ValidateState());
-    sub.SetInitial(WorkflowState.Load);
-  });
+    sub
+      .RegisterState(StateId.Load,     () => new LoadState());
+      .RegisterState(StateId.Validate, () => new ValidateState());
+      .SetInitial(StateId.Load);
+  })
+  .RegisterState(StateId.Finalize, () => new FinalizeState())
+  .SetInitial(StateId.Start);
 
-  machine.SetInitial(WorkflowState.Start);
+machine.Start();
+
+// Optional: Start with initial context
+// var ctx = new PropertyBag { { ParameterKeyTest, TestValueBegin } };
+// machine.Start(ctx);
+
+// Extract final context
+var ctxFinal = machine.Context.Parameters;
 ```
 
-### Command State
-
+States are represented by classes that implement the `IState` interface.
 ```cs
-var aggregator = new EventAggregator();
+  private class ProcessingState(StateId id) : CompositeState<StateId>(id)
+  {
+    public override void OnEnter(Context<StateId> context) =>
+      context.NextState(Result.Ok);
+  }
 
-var machine = new StateMachine<WorkflowState>(aggregator)
-{
-  // Set default timeout to 3 seconds (can override per-command state)
-  DefaultTimeoutMs = 3000,
-};
+  private class LoadState(StateId id) : BaseState<StateId>(id)
+  {
+    public override void OnEntering(Context<StateId> context)
+    {
+      // About to enter our state...
+    }
 
-// Register top-level states
-machine.RegisterState(WorkflowState.Start, () => new StartState());
-machine.RegisterState(WorkflowState.Processing, () => new ProcessingState(), subStates: (sub) =>
-{
-  // Register sub-states inside Processing's submachine
-  sub.RegisterState(WorkflowState.Load, () => new LoadState());
-  sub.RegisterState(WorkflowState.Validate, () => new ValidateState());
-  sub.SetInitial(WorkflowState.Load);
-});
+    public override void OnEnter(Context<StateId> context)
+    {
+      // State is now active...
+      context.Parameters.Add("SomeParameterId", "SUCCESS");
+      context.NextState(Result.Ok);
+    }
 
-machine.RegisterState(WorkflowState.AwaitMessage, () => new AwaitMessageState());
-machine.RegisterState(WorkflowState.Done, () => new DoneState());
-machine.RegisterState(WorkflowState.Error, () => new ErrorState());
-machine.RegisterState(WorkflowState.Failed, () => new FailedState());
+    public override void OnExit(Context<StateId> context)
+    {
+      // State is leaving...
+    }
+  }
 
-// Set initial state
-machine.SetInitial(WorkflowState.Start);
-
-// Start workflow
-var ctx = new PropertyBag { { ParameterKeyTest, TestValueBegin } };
-machine.Start(ctx);
+  private class FinalizeState(StateId id)
+    : BaseState<StateId>(id);
 ```
 
 ### Generate DOT Graph (GraphViz)
@@ -71,21 +85,27 @@ var uml = machine.ExportUml(includeSubmachines: true);
 
 ## Features
 
-* Shared Context objects
-* Passing of parameters between state transitions via `Context`
-* Basic Linear state machine
-* Composite States (Sub-states)
-  * Similar to Actor/Director model
-* Command States with optional Timeout
-  * Uses internal Event Aggregator for sending/receiving messages
-  * Allows users to hook to external messaging services (TCP/IP, RabbitMQ, DBus, etc.)
-* State Handlers (pseudo states)
-  * OnEntering - Initial entry of the state
-  * OnEnter - Resting (idle) place for state.
-  * OnExit - (Optional) Thrown during transitioning. Used for housekeeping or exiting activity.
-  * OnMessage (Optional)
+* Passing parameters between state transitions via `Context`
+* Types of States
+  * **Basic Linear State** (`BaseState`)
+  * **Composite** States (`CompositeState`)
+    * Hieratical / Nested Sub-states
+    * Similar to Actor/Director model
+  * **Command States** with optional Timeout (`CommandState`)
+    * Uses internal Event Aggregator for sending/receiving messages
+    * Allows users to hook to external messaging services (TCP/IP, RabbitMQ, DBus, etc.)
+* State Transition Triggers
+  * Transitions are triggered by setting the context's next state result:
+  * On Success: `context.NextState(Result.Ok);`
+  * On Error: `context.NextState(Result.Error);`
+  * On Failure: : `context.NextState(Result.Failure);`
+* State Handlers
+  * `OnEntering` - Initial entry of the state
+  * `OnEnter` - Resting (idle) place for state.
+  * `OnExit` - (Optional) Thrown during transitioning. Used for housekeeping or exiting activity.
+  * `OnMessage` (Optional)
     * Must ensure that code has exited `OnMessage` before going to the next state.
-  * OnTimeout - (Optional) Thrown when the state is auto-transitioning due to timeout exceeded
+  * `OnTimeout` - (Optional) Thrown when the state is auto-transitioning due to timeout exceeded
 * Transition has knowledge of the `PreviousState` and `NextState`
 
 ## vNext Proposals

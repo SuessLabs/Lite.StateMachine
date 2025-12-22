@@ -98,33 +98,48 @@ public class BasicStateTests
 
   private class State1 : BaseState<StateId>
   {
-    public State1() : base(StateId.State1)
+    public State1()
+      : base(StateId.State1)
     {
       AddTransition(Result.Ok, StateId.State2);
     }
 
+    public override void OnEntering(Context<StateId> context)
+    {
+      context.Parameters[ParameterKeyTest] = TestValue;
+      Console.WriteLine("[State3] OnEntering - Add/Update parameter");
+    }
+
     public override void OnEnter(Context<StateId> context)
     {
-      Console.WriteLine("[State1] OnEntering");
+      Console.WriteLine("[State1] OnEnter");
       context.NextState(Result.Ok);
+    }
+
+    public override void OnExit(Context<StateId> context)
+    {
+      context.Parameters[ParameterKeyTest] = TestValue;
+      Console.WriteLine("[State3] OnEntering - Add/Update parameter");
     }
   }
 
   private class State2 : BaseState<StateId>
   {
-    public State2() : base(StateId.State2) =>
+    public State2()
+      : base(StateId.State2) =>
       AddTransition(Result.Ok, StateId.State3);
 
     public override void OnEnter(Context<StateId> context)
     {
-      Console.WriteLine("[State2] OnEntering");
+      Console.WriteLine("[State2] OnEnter");
       context.NextState(Result.Ok);
     }
   }
 
   private class State3 : BaseState<StateId>
   {
-    public State3() : base(StateId.State3)
+    public State3()
+      : base(StateId.State3)
     {
     }
 

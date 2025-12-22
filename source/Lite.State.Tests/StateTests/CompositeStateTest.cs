@@ -50,46 +50,9 @@ public class CompositeStateTest
   }
 
   [TestMethod]
-  [Ignore("Intermixing parent and sub-states fluent design does not work yet.")]
-  public void RegisterStateEx_Fluent_ProofOfConcept_SuccessTest()
-  {
-    /*
-    // Assemble
-    var comState2 = new StateEx2(StateId.State2);
-
-    var machine = new StateMachine<StateId>()
-      .RegisterState(StateId.State1, () => new StateEx1(StateId.State1), StateId.State2)
-      .RegisterState(comState2, StateId.State3)
-      ////.RegisterStateEx(
-      ////  new StateEx2(StateId.State2).Submachine
-      ////    .RegisterStateEx(new StateEx2_Sub1(StateId.State2_Sub1))
-      ////    .RegisterStateEx(new StateEx2_Sub2(StateId.State2_Sub2))
-      ////    .SetInitialEx(StateId.State2_Sub1))
-      ////  StateId.State3)
-      .RegisterStateEx(new StateEx3(StateId.State3))
-      .SetInitialEx(StateId.State1);
-
-    comState2.Submachine
-      .RegisterStateEx(new StateEx2_Sub1(StateId.State2_Sub1))
-      .RegisterStateEx(new StateEx2_Sub2(StateId.State2_Sub2))
-      .SetInitial(StateId.State2_Sub1);
-
-    // Act
-    machine.Start();
-
-    // Assert
-    var ctxFinal = machine.Context.Parameters;
-    Assert.IsNotNull(ctxFinal);
-    Assert.AreEqual(SUCCESS, ctxFinal[PARAM_SUB_ENTERED]);
-    */
-  }
-
-  [TestMethod]
   public void RegisterStateEx_Fluent_SuccessTest()
   {
     // Assemble
-    var comState2 = new StateEx2(StateId.State2);
-
     var machine = new StateMachine<StateId>()
       .RegisterState(StateId.State1, () => new StateEx1(StateId.State1), StateId.State2)
       .RegisterState(
@@ -98,9 +61,10 @@ public class CompositeStateTest
         onSuccess: StateId.State3,
         subStates: (sub) =>
       {
-        sub.RegisterState(StateId.State2_Sub1, () => new StateEx2_Sub1(StateId.State2_Sub1));
-        sub.RegisterState(StateId.State2_Sub2, () => new StateEx2_Sub2(StateId.State2_Sub2));
-        sub.SetInitial(StateId.State2_Sub1);
+        sub
+          .RegisterState(StateId.State2_Sub1, () => new StateEx2_Sub1(StateId.State2_Sub1))
+          .RegisterState(StateId.State2_Sub2, () => new StateEx2_Sub2(StateId.State2_Sub2))
+          .SetInitial(StateId.State2_Sub1);
       })
       .RegisterState(StateId.State3, () => new StateEx3(StateId.State3))
       .SetInitialEx(StateId.State1);
@@ -192,7 +156,7 @@ public class CompositeStateTest
   }
 
   /// <summary>Composite Parent State.</summary>
-  /// <param name="id"></param>
+  /// <param name="id">State Id.</param>
   private class StateEx2(StateId id) : CompositeState<StateId>(id)
   {
     public override void OnEnter(Context<StateId> context) =>
