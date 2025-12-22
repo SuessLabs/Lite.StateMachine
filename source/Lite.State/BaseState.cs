@@ -14,10 +14,14 @@ public abstract class BaseState<TState> : IState<TState>
 {
   private readonly Dictionary<Result, TState> _transitions = new();
 
+  protected BaseState()
+  {
+  }
+
   protected BaseState(TState id) => Id = id;
 
   /// <inheritdoc/>
-  public TState Id { get; }
+  public TState Id { get; private set; }
 
   /// <inheritdoc/>
   public virtual bool IsComposite => false;
@@ -44,6 +48,8 @@ public abstract class BaseState<TState> : IState<TState>
   public virtual void OnExit(Context<TState> context)
   {
   }
+
+  public void SetStateId(TState id) => Id = id;
 }
 
 /*

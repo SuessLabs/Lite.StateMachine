@@ -24,7 +24,7 @@ public class BasicStateTests
 
   /// <summary>Standard basic state registration with fall-through exiting.</summary>
   [TestMethod]
-  public void RegisterState_Transition_SuccessTest()
+  public void RegisterState_BasicStateTransitions_SuccessTest()
   {
     // Assemble
     var counter = 0;
@@ -65,7 +65,7 @@ public class BasicStateTests
 
   /// <summary>Defines State Enum ID and `OnSuccess` transitions from the `RegisterStateEx` method.</summary>
   [TestMethod]
-  public void RegisterStateEx_Transitions_SuccessTest()
+  public void RegisterStateEx_BasicStateTransitions_SuccessTest()
   {
     // Assemble
     var machine = new StateMachine<StateId>()
@@ -88,7 +88,7 @@ public class BasicStateTests
 
   /// <summary>Defines State Enum ID and `OnSuccess` transitions from the `RegisterStateEx` method.</summary>
   [TestMethod]
-  public void RegisterStateEx_WithoutInitialContextTransitions_SuccessTest()
+  public void RegisterStateEx_BasicStateWithoutInitialContextTransitions_SuccessTest()
   {
     // Assemble
     var machine = new StateMachine<StateId>()
@@ -103,6 +103,28 @@ public class BasicStateTests
     // Assert Results
     var ctxFinalParams = machine.Context.Parameters;
 
+    Assert.IsNotNull(ctxFinalParams);
+    Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
+  }
+
+  [TestMethod]
+  public void RegisterStateEx_Generics_SuccessTest()
+  {
+    // Assemble
+    var machine = new StateMachine<StateId>();
+    machine.RegisterState<State1>(StateId.State1, StateId.State2);
+    machine.RegisterState<State2>(StateId.State2, StateId.State3);
+    machine.RegisterState<State3>(StateId.State3);
+
+    // Set starting point
+    machine.SetInitial(StateId.State1);
+
+    // Act - Start your engine!
+    var ctxProperties = new PropertyBag() { { ParameterKeyTest, "not-finished" }, };
+    machine.Start(ctxProperties);
+
+    // Assert Results
+    var ctxFinalParams = machine.Context.Parameters;
     Assert.IsNotNull(ctxFinalParams);
     Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
   }

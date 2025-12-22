@@ -130,26 +130,49 @@ public sealed partial class StateMachine<TState>
     if (subStates is not null)
       reg.ConfigureSubmachine = subStates;
 
-  /*
-  ////public StateMachine<TState> RegisterState(TState stateId, Func<IState<TState>> state)
-  public StateMachine<TState> RegisterState<T>(TState stateId)
+    return this;
+  }
+
+  public StateMachine<TState> RegisterState<T>(
+    TState stateId,
+    TState? onSuccess = null,
+    TState? onError = null,
+    TState? onFailure = null,
+    Action<StateMachine<TState>>? subStates = null)
     where T : new() // class, new() => new T()
   {
-    // OLD:
+    //// OLD: Func<IState<TState>> state = () => new T();
+
+    // Try-1:
+    ////var lazy = new Lazy<T>(() => new T());
+    ////Func<IState<TState>> state = () => (IState<TState>)lazy;
+
+    // Try-2: public Func<IState<TState>>? Factory;
+    ////var lazy = new Lazy<T>(() => new T());
+    Func<IState<TState>> state = () => (IState<TState>)T;
+
     ////ArgumentNullException.ThrowIfNull(state);
     ////_states[stateId] = new Registration { Factory = state };
 
-    // NEW:
-    ////Func<IState<TState>> state = () => new T();
-    var lazy = new Lazy<T>(() => new T());
-    //Func<IState<TState>> state = () => new T();
+    ////=============
 
-    ArgumentNullException.ThrowIfNull(lazy);
-    _states[stateId] = new Registration { Factory = lazy };
+    ArgumentNullException.ThrowIfNull(state);
 
-    return this;
-  }
-  */
+    _states[stateId] = new Registration
+    {
+      Factory = state,
+      OnSuccess = onSuccess,
+      OnError = onError,
+      OnFailure = onFailure,
+    };
+
+    // Check for registration errors
+    // TODO (2025-12-18): Change exception to, "MissingStateOrInvalidRegistration"
+    if (!_states.TryGetValue(stateId, out var reg))
+      throw new InvalidOperationException($"Composite state '{stateId}' must be registered before configuring.");
+
+    if (subStates is not null)
+      reg.ConfigureSubmachine = subStates;
 
     return this;
   }
