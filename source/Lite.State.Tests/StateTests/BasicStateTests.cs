@@ -103,10 +103,22 @@ public class BasicStateTests
       AddTransition(Result.Ok, StateId.State2);
     }
 
+    public override void OnEntering(Context<StateId> context)
+    {
+      context.Parameters[ParameterKeyTest] = TestValue;
+      Console.WriteLine("[State3] OnEntering - Add/Update parameter");
+    }
+
     public override void OnEnter(Context<StateId> context)
     {
-      Console.WriteLine("[State1] OnEntering");
+      Console.WriteLine("[State1] OnEnter");
       context.NextState(Result.Ok);
+    }
+
+    public override void OnExit(Context<StateId> context)
+    {
+      context.Parameters[ParameterKeyTest] = TestValue;
+      Console.WriteLine("[State3] OnEntering - Add/Update parameter");
     }
   }
 
@@ -117,7 +129,7 @@ public class BasicStateTests
 
     public override void OnEnter(Context<StateId> context)
     {
-      Console.WriteLine("[State2] OnEntering");
+      Console.WriteLine("[State2] OnEnter");
       context.NextState(Result.Ok);
     }
   }
