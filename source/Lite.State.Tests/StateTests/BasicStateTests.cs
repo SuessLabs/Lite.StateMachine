@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using Lite.State.Tests.TestData;
 
 namespace Lite.State.Tests.StateTests;
 
@@ -191,11 +192,11 @@ public class BasicStateTests
   public void RegisterState_GenericsFluent_UnsetId_SuccessTest()
   {
     // Assemble
-    var machine = new StateMachine<StateId>()
-      .RegisterState<StateGenerics1>(StateId.State1, StateId.State2)
-      .RegisterState<StateGenerics2>(StateId.State2, StateId.State3)
-      .RegisterState<StateGenerics3>(StateId.State3)
-      .SetInitialEx(StateId.State1);
+    var machine = new StateMachine<GenericStateId>()
+      .RegisterState<StateGenerics1>(GenericStateId.State1, GenericStateId.State2)
+      .RegisterState<StateGenerics2>(GenericStateId.State2, GenericStateId.State3)
+      .RegisterState<StateGenerics3>(GenericStateId.State3)
+      .SetInitialEx(GenericStateId.State1);
 
     // Act - Start your engine!
     // NOTE: We did NOT pass "ParameterCounter"; it gets added on the fly.
@@ -210,7 +211,7 @@ public class BasicStateTests
     // Ensure all transitions are called
     Assert.AreEqual(9 - 1, ctxFinalParams[ParameterCounter]);
 
-    var enums = Enum.GetValues<StateId>().Cast<StateId>();
+    var enums = Enum.GetValues<GenericStateId>().Cast<GenericStateId>();
 
     // Ensure all states are hit
     Assert.AreEqual(enums.Count(), machine.States.Count());
@@ -337,51 +338,4 @@ public class BasicStateTests
   }
 
   #endregion State Machine - Fluent
-
-  #region State Machine - Generics Fluent
-
-  private class StateGenerics1() : BaseState<StateId>()
-  {
-    public override void OnEnter(Context<StateId> context) =>
-      context.NextState(Result.Ok);
-
-    public override void OnEntering(Context<StateId> context) =>
-      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
-
-    public override void OnExit(Context<StateId> context) =>
-      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
-  }
-
-  private class StateGenerics2() : BaseState<StateId>()
-  {
-    public override void OnEnter(Context<StateId> context)
-    {
-      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
-      context.NextState(Result.Ok);
-    }
-
-    public override void OnEntering(Context<StateId> context) =>
-      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
-
-    public override void OnExit(Context<StateId> context) =>
-      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
-  }
-
-  private class StateGenerics3() : BaseState<StateId>()
-  {
-    public override void OnEnter(Context<StateId> context)
-    {
-      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
-      context.Parameters[ParameterKeyTest] = TestValue;
-      context.NextState(Result.Ok);
-    }
-
-    public override void OnEntering(Context<StateId> context) =>
-      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
-
-    public override void OnExit(Context<StateId> context) =>
-      context.Parameters[ParameterCounter] = context.ParameterAsInt(ParameterCounter) + 1;
-  }
-
-  #endregion State Machine - Generics Fluent
 }

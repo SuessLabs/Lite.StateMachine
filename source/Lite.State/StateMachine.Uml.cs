@@ -9,12 +9,13 @@ namespace Lite.State;
 
 /// <summary>
 ///   UML generating partial class.
-///   * Basic state (Node) - Box
-///   * Composite states - Circled
-///   * Command state - Hexagons
+///   * Basic state (Node) - Box.
+///   * Composite states - Circled.
+///   * Command state - Hexagons.
 /// </summary>
-/// <typeparam name="TState">State machine type</typeparam>
-public sealed partial class StateMachine<TState> where TState : struct, Enum
+/// <typeparam name="TState">State machine type.</typeparam>
+public sealed partial class StateMachine<TState>
+  where TState : struct, Enum
 {
   /// <summary>
   ///   Exports a DOT (Graphviz) diagram of the state machine.
@@ -22,10 +23,12 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
   ///   - Composite states are shown as clustered subgraphs
   ///   - Command states are hexagons;
   ///   - Terminal/final states (no transitions) are `doublecircle`
-  ///   - Edge labels show Result (Ok, Error, Failure)
+  ///   - Edge labels show Result (Ok, Error, Failure).
   /// </summary>
   /// <param name="includeSubmachines">Include composite submachines as subgraph clusters.</param>
-  public string ExportUml(bool includeSubmachines = true)
+  /// <param name="appendLegend">Include symbols legend.</param>
+  /// <returns>State diagram.</returns>
+  public string ExportUml(bool includeSubmachines = true, bool appendLegend = false)
   {
     var sb = new StringBuilder();
     sb.AppendLine("digraph StateMachine {");
@@ -60,14 +63,12 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
       {
         var instance = CreateEphemeralInstance(kv.Value);
         if (instance is ICompositeState<TState> comp)
-        {
           AppendCompositeCluster(sb, kv.Key, kv.Value, includeSubmachines, DefaultTimeoutMs);
-        }
       }
     }
 
-    // Legend (TODO (2025-12-17 DS): Make this optional
-    AppendLegend(sb);
+    if (appendLegend)
+      AppendLegend(sb);
 
     sb.AppendLine("}");
     return sb.ToString();
@@ -241,10 +242,13 @@ public sealed partial class StateMachine<TState> where TState : struct, Enum
   }
 
   /// <summary>Create a very short instance of the state to extract the transitions.</summary>
-  /// <param name="reg"></param>
-  /// <returns></returns>
+  /// <param name="reg">State registration.</param>
+  /// <returns>State instance.</returns>
   private IState<TState> CreateEphemeralInstance(Registration reg)
   {
+    if (reg is null || reg.Factory is null)
+      throw new NullReferenceException("Invalid or missing state factory.");
+
     var state = reg.Factory();
 
     if (reg.OnSuccess is not null)
