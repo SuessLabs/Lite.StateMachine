@@ -46,7 +46,7 @@ public class StateGenerics3() : BaseState<GenericStateId>()
   public override void OnEnter(Context<GenericStateId> context)
   {
     context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
-    context.Parameters[ParameterType.KeyTest] = ExpectedValue.StringSuccess;
+    context.Parameters[ParameterType.KeyTest] = ExpectedData.StringSuccess;
     context.NextState(Result.Ok);
   }
 

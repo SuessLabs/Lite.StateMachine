@@ -206,7 +206,7 @@ public class BasicStateTests
     // Assert Results
     var ctxFinalParams = machine.Context.Parameters;
     Assert.IsNotNull(ctxFinalParams);
-    Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
+    Assert.AreEqual(ExpectedData.StringSuccess, ctxFinalParams[ParameterKeyTest]);
 
     // Ensure all transitions are called
     Assert.AreEqual(9 - 1, ctxFinalParams[ParameterCounter]);

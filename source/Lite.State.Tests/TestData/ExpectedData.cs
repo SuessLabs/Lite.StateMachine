@@ -3,7 +3,7 @@
 
 namespace Lite.State.Tests.TestData;
 
-public static class ExpectedValue
+public static class ExpectedData
 {
   public const string StringSuccess = "SUCCESS";
 }
