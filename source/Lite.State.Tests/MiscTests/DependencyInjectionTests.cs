@@ -29,9 +29,9 @@ public class DependencyInjectionTests
     using var provider = services.BuildServiceProvider();
 
     var machine = new StateMachine<GenericStateId>()
-      .RegisterState(GenericStateId.State1, () => new StateGenerics1(), GenericStateId.State2)
-      .RegisterState(GenericStateId.State2, () => new StateGenerics2(), GenericStateId.State3)
-      .RegisterState(GenericStateId.State3, () => new StateGenerics3())
+      .RegisterState(GenericStateId.State1, () => new StateDi1(), GenericStateId.State2)
+      .RegisterState(GenericStateId.State2, () => new StateDi2(), GenericStateId.State3)
+      .RegisterState(GenericStateId.State3, () => new StateDi3())
       .SetInitial(GenericStateId.State1);
 
     // Act - Generate UML
@@ -60,9 +60,9 @@ public class DependencyInjectionTests
     using var provider = services.BuildServiceProvider();
 
     var machine = new StateMachine<GenericStateId>()
-      .RegisterState<StateGenerics1>(GenericStateId.State1, GenericStateId.State2)
-      .RegisterState<StateGenerics2>(GenericStateId.State2, GenericStateId.State3)
-      .RegisterState<StateGenerics3>(GenericStateId.State3)
+      .RegisterState<StateDi1>(GenericStateId.State1, GenericStateId.State2)
+      .RegisterState<StateDi2>(GenericStateId.State2, GenericStateId.State3)
+      .RegisterState<StateDi3>(GenericStateId.State3)
       .SetInitial(GenericStateId.State1);
 
     // Act - Generate UML
