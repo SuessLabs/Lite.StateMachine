@@ -120,6 +120,7 @@ public sealed partial class StateMachine<TState>
       OnSuccess = onSuccess,
       OnError = onError,
       OnFailure = onFailure,
+      FactoryStateId = stateId,
     };
 
     // Check for registration errors
@@ -166,11 +167,11 @@ public sealed partial class StateMachine<TState>
 
     _states[stateId] = new Registration
     {
-      // public Func<IState<TState>>? Factory;
       Factory = state,
       OnSuccess = onSuccess,
       OnError = onError,
       OnFailure = onFailure,
+      FactoryStateId = stateId,
     };
 
     // Check for registration errors
@@ -417,6 +418,9 @@ public sealed partial class StateMachine<TState>
 
     /// <summary>State factory to execute.</summary>
     public Func<IState<TState>>? Factory = default;
+
+    /// <summary>Gets or sets the State Id for ExportUml.</summary>
+    public TState FactoryStateId;
 
     public Lazy<IState<TState>>? LazyInstance;
 

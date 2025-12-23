@@ -47,7 +47,23 @@ public class ExportUmlDotGraphTests
   }
 
   [TestMethod]
-  public void Generates_BasicState_RegisterStateEx_WithError_SuccessTest()
+  public void Generates_BasicState_RegisterStateGenerics_SuccessTest()
+  {
+    // Assemble
+    var machine = new StateMachine<StateId>();
+    machine.RegisterState<GenericsState1>(StateId.State1);
+    machine.RegisterState<GenericsState2>(StateId.State2);
+    machine.RegisterState<GenericsState3>(StateId.State3);
+    machine.SetInitial(StateId.State1);
+
+    // Act/Assert
+    var uml = machine.ExportUml();
+    Assert.IsNotNull(uml);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStates(), uml);
+  }
+
+  [TestMethod]
+  public void Generates_BasicState_RegisterState_WithError_SuccessTest()
   {
     // Assemble
     var machine = new StateMachine<StateId>()
@@ -70,7 +86,7 @@ public class ExportUmlDotGraphTests
   }
 
   [TestMethod]
-  public void Generates_BasicState_RegisterStateEx_WithErrorAndFailure_SuccessTest()
+  public void Generates_BasicState_RegisterState_WithErrorAndFailure_SuccessTest()
   {
     // Assemble
     var machine = new StateMachine<StateId>()
@@ -95,7 +111,7 @@ public class ExportUmlDotGraphTests
   }
 
   [TestMethod]
-  public void Generates_BasicState_RegisterStateWithLegend_SuccessTest()
+  public void Generates_BasicState_RegisterStateWithAndWithLegend_SuccessTest()
   {
     // Assemble
     var machine = new StateMachine<StateId>()
@@ -121,7 +137,7 @@ public class ExportUmlDotGraphTests
   }
 
   [TestMethod]
-  public void Generates_CompositeState_RegisterStateEx_WithErrorAndFailure_SuccessTest()
+  public void Generates_CompositeState_RegisterState_WithErrorAndFailure_SuccessTest()
   {
     // Assemble
     var machine = new StateMachine<StateId>()
@@ -156,7 +172,7 @@ public class ExportUmlDotGraphTests
     AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.Composite(true), uml);
   }
 
-  #region State Machine - Generic
+  #region State Machine - Basic
 
   [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test")]
   private class State1 : BaseState<StateId>
@@ -183,7 +199,33 @@ public class ExportUmlDotGraphTests
     }
   }
 
-  #endregion State Machine - Generic
+  #endregion State Machine - Basic
+
+  #region State Machine - Generics
+
+  [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test")]
+  private class GenericsState1 : BaseState<StateId>
+  {
+    public GenericsState1()
+    {
+      AddTransition(Result.Ok, StateId.State2);
+    }
+  }
+
+  private class GenericsState2 : BaseState<StateId>
+  {
+    public GenericsState2() =>
+      AddTransition(Result.Ok, StateId.State3);
+  }
+
+  private class GenericsState3 : BaseState<StateId>
+  {
+    public GenericsState3()
+    {
+    }
+  }
+
+  #endregion State Machine - Generics
 
   #region State Machine - Fluent
 

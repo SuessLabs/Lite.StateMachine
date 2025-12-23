@@ -45,14 +45,14 @@ public sealed partial class StateMachine<TState>
     // Nodes
     foreach (var kv in _states)
     {
-      var instance = CreateEphemeralInstance(kv.Value);
+      var instance = GetEphemeralInstance(kv.Value);
       AppendNode(sb, instance, DefaultTimeoutMs);
     }
 
     // Edges
     foreach (var kv in _states)
     {
-      var instance = CreateEphemeralInstance(kv.Value);
+      var instance = GetEphemeralInstance(kv.Value);
       AppendEdges(sb, instance);
     }
 
@@ -61,7 +61,7 @@ public sealed partial class StateMachine<TState>
     {
       foreach (var kv in _states)
       {
-        var instance = CreateEphemeralInstance(kv.Value);
+        var instance = GetEphemeralInstance(kv.Value);
         if (instance is ICompositeState<TState> comp)
           AppendCompositeCluster(sb, kv.Key, kv.Value, includeSubmachines, DefaultTimeoutMs);
       }
@@ -89,7 +89,7 @@ public sealed partial class StateMachine<TState>
     var label = Escape(compositeId.ToString());
 
     // Build an ephemeral instance with an ephemeral submachine
-    var instance = CreateEphemeralInstance(reg);
+    var instance = GetEphemeralInstance(reg);
     var comp = (ICompositeState<TState>)instance;
     var sub = comp.Submachine;
 
@@ -106,14 +106,14 @@ public sealed partial class StateMachine<TState>
     // Nodes
     foreach (var kv in sub._states)
     {
-      var subInstance = sub.CreateEphemeralInstance(kv.Value);
+      var subInstance = sub.GetEphemeralInstance(kv.Value);
       AppendSubNode(sb, subInstance, defaultTimeoutMs);
     }
 
     // Edges
     foreach (var kv in sub._states)
     {
-      var subInstance = sub.CreateEphemeralInstance(kv.Value);
+      var subInstance = sub.GetEphemeralInstance(kv.Value);
       AppendSubEdges(sb, subInstance);
     }
 
@@ -122,7 +122,7 @@ public sealed partial class StateMachine<TState>
     {
       foreach (var kv in sub._states)
       {
-        var nestedInstance = sub.CreateEphemeralInstance(kv.Value);
+        var nestedInstance = sub.GetEphemeralInstance(kv.Value);
         if (nestedInstance is ICompositeState<TState> nestedComp)
           sub.AppendCompositeCluster(sb, kv.Key, kv.Value, includeNested, defaultTimeoutMs);
       }
@@ -244,12 +244,17 @@ public sealed partial class StateMachine<TState>
   /// <summary>Create a very short instance of the state to extract the transitions.</summary>
   /// <param name="reg">State registration.</param>
   /// <returns>State instance.</returns>
-  private IState<TState> CreateEphemeralInstance(Registration reg)
+  private IState<TState> GetEphemeralInstance(Registration reg)
   {
     if (reg is null || reg.Factory is null)
       throw new NullReferenceException("Invalid or missing state factory.");
 
     var state = reg.Factory();
+
+    var x = reg.Factory.GetType();
+
+    // Because we're not starting the machine, we need to manually add set the StateId.
+    state.SetStateId(reg.FactoryStateId);
 
     if (reg.OnSuccess is not null)
       (state as BaseState<TState>)?.AddTransition(Result.Ok, reg.OnSuccess.Value);
