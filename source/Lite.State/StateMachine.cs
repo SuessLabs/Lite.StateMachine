@@ -120,6 +120,7 @@ public sealed partial class StateMachine<TState>
       OnSuccess = onSuccess,
       OnError = onError,
       OnFailure = onFailure,
+      FactoryStateId = stateId,
     };
 
     // Check for registration errors
@@ -166,11 +167,11 @@ public sealed partial class StateMachine<TState>
 
     _states[stateId] = new Registration
     {
-      // public Func<IState<TState>>? Factory;
       Factory = state,
       OnSuccess = onSuccess,
       OnError = onError,
       OnFailure = onFailure,
+      FactoryStateId = stateId,
     };
 
     // Check for registration errors
@@ -184,14 +185,10 @@ public sealed partial class StateMachine<TState>
     return this;
   }
 
-  /// <summary>Set the initial startup state.</summary>
-  /// <param name="initial">Initial state from enumeration.</param>
-  public void SetInitial(TState initial) => _initialState = initial;
-
-  /// <summary>Set the initial startup state (extended fluent pattern).</summary>
+  /// <summary>Set the initial startup state (supporting fluent pattern).</summary>
   /// <param name="initial">Initial state from enumeration.</param>
   /// <returns>This class for fluent design pattern.</returns>
-  public StateMachine<TState> SetInitialEx(TState initial)
+  public StateMachine<TState> SetInitial(TState initial)
   {
     _initialState = initial;
     return this;
@@ -417,6 +414,9 @@ public sealed partial class StateMachine<TState>
 
     /// <summary>State factory to execute.</summary>
     public Func<IState<TState>>? Factory = default;
+
+    /// <summary>Gets or sets the State Id, used by ExportUml for <see cref="RegisterState{TStateClass}(TState, TState?, TState?, TState?, Action{StateMachine{TState}}?)"./> .</summary>
+    public TState FactoryStateId;
 
     public Lazy<IState<TState>>? LazyInstance;
 

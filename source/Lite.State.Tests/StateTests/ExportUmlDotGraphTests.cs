@@ -1,7 +1,7 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
-using System;
+using Lite.State.Tests.TestData;
 
 namespace Lite.State.Tests.StateTests;
 
@@ -12,190 +12,6 @@ namespace Lite.State.Tests.StateTests;
 [TestClass]
 public class ExportUmlDotGraphTests
 {
-  private const string ExpectedUmlBasicStates = """
-    digraph StateMachine {
-      rankdir=LR;
-      compound=true;
-      node [fontname="Segoe UI", fontsize=10];
-      edge [fontname="Segoe UI", fontsize=10];
-      start [shape=point];
-      start -> "State1";
-      "State1" [shape=box];
-      "State2" [shape=box];
-      "State3" [shape=doublecircle];
-      "State1" -> "State2" [label="Ok"];
-      "State2" -> "State3" [label="Ok"];
-      subgraph cluster_legend {
-        label="Legend"; style=rounded; color=gray; fontcolor=gray;
-        rankdir=LR;
-        legend_start [label="Start (initial marker)", shape=plaintext];
-        legend_start_sym [shape=point, label=""];
-        legend_start_sym -> legend_start [style=invis];
-        legend_regular [label="Regular state", shape=plaintext];
-        legend_regular_sym [shape=box, label=""];
-        legend_regular_sym -> legend_regular [style=invis];
-        legend_composite [label="Composite (has submachine)", shape=plaintext];
-        legend_composite_sym [shape=box3d, style=rounded, label=""];
-        legend_composite_sym -> legend_composite [style=invis];
-        legend_command [label="Command state (message-driven, timeout)", shape=plaintext];
-        legend_command_sym [shape=hexagon, label=""];
-        legend_command_sym -> legend_command [style=invis];
-        legend_terminal [label="Terminal state (no outgoing transitions)", shape=plaintext];
-        legend_terminal_sym [shape=doublecircle, label=""];
-        legend_terminal_sym -> legend_terminal [style=invis];
-        legend_edge [label="Edges labeled by outcome: Ok, Error, Failure", shape=plaintext];
-        legend_edge_a [shape=box, label="State A"];
-        legend_edge_b [shape=box, label="State B"];
-        legend_edge_a -> legend_edge_b [label="Ok"];
-      }
-    }
-    """;
-
-  private const string ExpectedUmlBasicStatesWithError = """
-    digraph StateMachine {
-      rankdir=LR;
-      compound=true;
-      node [fontname="Segoe UI", fontsize=10];
-      edge [fontname="Segoe UI", fontsize=10];
-      start [shape=point];
-      start -> "State1";
-      "State1" [shape=box];
-      "State2" [shape=box];
-      "State2e" [shape=box];
-      "State3" [shape=doublecircle];
-      "State1" -> "State2" [label="Ok"];
-      "State2" -> "State3" [label="Ok"];
-      "State2" -> "State2e" [label="Error"];
-      "State2e" -> "State2" [label="Ok"];
-      subgraph cluster_legend {
-        label="Legend"; style=rounded; color=gray; fontcolor=gray;
-        rankdir=LR;
-        legend_start [label="Start (initial marker)", shape=plaintext];
-        legend_start_sym [shape=point, label=""];
-        legend_start_sym -> legend_start [style=invis];
-        legend_regular [label="Regular state", shape=plaintext];
-        legend_regular_sym [shape=box, label=""];
-        legend_regular_sym -> legend_regular [style=invis];
-        legend_composite [label="Composite (has submachine)", shape=plaintext];
-        legend_composite_sym [shape=box3d, style=rounded, label=""];
-        legend_composite_sym -> legend_composite [style=invis];
-        legend_command [label="Command state (message-driven, timeout)", shape=plaintext];
-        legend_command_sym [shape=hexagon, label=""];
-        legend_command_sym -> legend_command [style=invis];
-        legend_terminal [label="Terminal state (no outgoing transitions)", shape=plaintext];
-        legend_terminal_sym [shape=doublecircle, label=""];
-        legend_terminal_sym -> legend_terminal [style=invis];
-        legend_edge [label="Edges labeled by outcome: Ok, Error, Failure", shape=plaintext];
-        legend_edge_a [shape=box, label="State A"];
-        legend_edge_b [shape=box, label="State B"];
-        legend_edge_a -> legend_edge_b [label="Ok"];
-      }
-    }
-    """;
-
-  private const string ExpectedUmlBasicStatesWithErrorFailure = """
-    digraph StateMachine {
-      rankdir=LR;
-      compound=true;
-      node [fontname="Segoe UI", fontsize=10];
-      edge [fontname="Segoe UI", fontsize=10];
-      start [shape=point];
-      start -> "State1";
-      "State1" [shape=box];
-      "State2" [shape=box];
-      "State2e" [shape=box];
-      "State2f" [shape=box];
-      "State3" [shape=doublecircle];
-      "State1" -> "State2" [label="Ok"];
-      "State2" -> "State3" [label="Ok"];
-      "State2" -> "State2e" [label="Error"];
-      "State2" -> "State2f" [label="Failure"];
-      "State2e" -> "State2" [label="Ok"];
-      "State2f" -> "State1" [label="Ok"];
-      subgraph cluster_legend {
-        label="Legend"; style=rounded; color=gray; fontcolor=gray;
-        rankdir=LR;
-        legend_start [label="Start (initial marker)", shape=plaintext];
-        legend_start_sym [shape=point, label=""];
-        legend_start_sym -> legend_start [style=invis];
-        legend_regular [label="Regular state", shape=plaintext];
-        legend_regular_sym [shape=box, label=""];
-        legend_regular_sym -> legend_regular [style=invis];
-        legend_composite [label="Composite (has submachine)", shape=plaintext];
-        legend_composite_sym [shape=box3d, style=rounded, label=""];
-        legend_composite_sym -> legend_composite [style=invis];
-        legend_command [label="Command state (message-driven, timeout)", shape=plaintext];
-        legend_command_sym [shape=hexagon, label=""];
-        legend_command_sym -> legend_command [style=invis];
-        legend_terminal [label="Terminal state (no outgoing transitions)", shape=plaintext];
-        legend_terminal_sym [shape=doublecircle, label=""];
-        legend_terminal_sym -> legend_terminal [style=invis];
-        legend_edge [label="Edges labeled by outcome: Ok, Error, Failure", shape=plaintext];
-        legend_edge_a [shape=box, label="State A"];
-        legend_edge_b [shape=box, label="State B"];
-        legend_edge_a -> legend_edge_b [label="Ok"];
-      }
-    }
-    """;
-
-  private const string ExpectedUmlComposite = """
-    digraph StateMachine {
-      rankdir=LR;
-      compound=true;
-      node [fontname="Segoe UI", fontsize=10];
-      edge [fontname="Segoe UI", fontsize=10];
-      start [shape=point];
-      start -> "State1";
-      "State1" [shape=box];
-      "State2" [shape=box];
-      "State2e" [shape=box];
-      "State2f" [shape=box];
-      "State3" [shape=box];
-      "State4" [shape=box3d, style=rounded];
-      "State5" [shape=doublecircle];
-      "State1" -> "State2" [label="Ok"];
-      "State2" -> "State3" [label="Ok"];
-      "State2" -> "State2e" [label="Error"];
-      "State2" -> "State2f" [label="Failure"];
-      "State2e" -> "State2" [label="Ok"];
-      "State2f" -> "State1" [label="Ok"];
-      "State3" -> "State4" [label="Ok"];
-      "State4" -> "State5" [label="Ok"];
-      subgraph cluster_State4 {
-        label="State4"; style=rounded; color=lightgray; fontcolor=gray;
-        rankdir=LR;
-        "start_State4" [shape=point];
-        "start_State4" -> "State4_Sub1";
-        "State4_Sub1" [shape=box];
-        "State4_Sub2" [shape=doublecircle];
-        "State4_Sub1" -> "State4_Sub2" [label="Ok"];
-      }
-      subgraph cluster_legend {
-        label="Legend"; style=rounded; color=gray; fontcolor=gray;
-        rankdir=LR;
-        legend_start [label="Start (initial marker)", shape=plaintext];
-        legend_start_sym [shape=point, label=""];
-        legend_start_sym -> legend_start [style=invis];
-        legend_regular [label="Regular state", shape=plaintext];
-        legend_regular_sym [shape=box, label=""];
-        legend_regular_sym -> legend_regular [style=invis];
-        legend_composite [label="Composite (has submachine)", shape=plaintext];
-        legend_composite_sym [shape=box3d, style=rounded, label=""];
-        legend_composite_sym -> legend_composite [style=invis];
-        legend_command [label="Command state (message-driven, timeout)", shape=plaintext];
-        legend_command_sym [shape=hexagon, label=""];
-        legend_command_sym -> legend_command [style=invis];
-        legend_terminal [label="Terminal state (no outgoing transitions)", shape=plaintext];
-        legend_terminal_sym [shape=doublecircle, label=""];
-        legend_terminal_sym -> legend_terminal [style=invis];
-        legend_edge [label="Edges labeled by outcome: Ok, Error, Failure", shape=plaintext];
-        legend_edge_a [shape=box, label="State A"];
-        legend_edge_b [shape=box, label="State B"];
-        legend_edge_a -> legend_edge_b [label="Ok"];
-      }
-    }
-    """;
-
   /// <summary>State definitions.</summary>
   public enum StateId
   {
@@ -220,36 +36,34 @@ public class ExportUmlDotGraphTests
     machine.RegisterState(StateId.State3, () => new State3());
     machine.SetInitial(StateId.State1);
 
-    // Act - Generate UML
-    var uml = machine.ExportUml(includeSubmachines: true);
-
-    // Assert
+    // Act/Assert
+    var uml = machine.ExportUml(appendLegend: true);
     Assert.IsNotNull(uml);
-    Console.WriteLine(uml);
-    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlBasicStates, uml);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStates(true), uml);
+
+    uml = machine.ExportUml();
+    Assert.IsNotNull(uml);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStates(), uml);
   }
 
   [TestMethod]
-  public void Generates_BasicState_RegisterStateEx_SuccessTest()
+  public void Generates_BasicState_RegisterStateGenerics_SuccessTest()
   {
     // Assemble
-    var machine = new StateMachine<StateId>()
-      .RegisterState(StateId.State1, () => new StateEx1(StateId.State1), StateId.State2)
-      .RegisterState(StateId.State2, () => new StateEx2(StateId.State2), StateId.State3)
-      .RegisterState(StateId.State3, () => new StateEx3(StateId.State3))
-      .SetInitialEx(StateId.State1);
+    var machine = new StateMachine<StateId>();
+    machine.RegisterState<GenericsState1>(StateId.State1);
+    machine.RegisterState<GenericsState2>(StateId.State2);
+    machine.RegisterState<GenericsState3>(StateId.State3);
+    machine.SetInitial(StateId.State1);
 
-    // Act - Generate UML
-    var uml = machine.ExportUml(includeSubmachines: true);
-
-    // Assert
+    // Act/Assert
+    var uml = machine.ExportUml();
     Assert.IsNotNull(uml);
-    Console.WriteLine(uml);
-    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlBasicStates, uml);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStates(), uml);
   }
 
   [TestMethod]
-  public void Generates_BasicState_RegisterStateEx_WithError_SuccessTest()
+  public void Generates_BasicState_RegisterState_WithError_SuccessTest()
   {
     // Assemble
     var machine = new StateMachine<StateId>()
@@ -261,19 +75,18 @@ public class ExportUmlDotGraphTests
         onError: StateId.State2e)
       .RegisterState(StateId.State2e, () => new StateEx2e(StateId.State2e), StateId.State2)
       .RegisterState(StateId.State3, () => new StateEx3(StateId.State3))
-      .SetInitialEx(StateId.State1);
+      .SetInitial(StateId.State1);
 
     // Act - Generate UML
-    var uml = machine.ExportUml(includeSubmachines: true);
+    var uml = machine.ExportUml(appendLegend: true);
 
     // Assert
     Assert.IsNotNull(uml);
-    Console.WriteLine(uml);
-    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlBasicStatesWithError, uml);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStatesWithError(true), uml);
   }
 
   [TestMethod]
-  public void Generates_BasicState_RegisterStateEx_WithErrorAndFailure_SuccessTest()
+  public void Generates_BasicState_RegisterState_WithErrorAndFailure_SuccessTest()
   {
     // Assemble
     var machine = new StateMachine<StateId>()
@@ -287,15 +100,34 @@ public class ExportUmlDotGraphTests
       .RegisterState(StateId.State2e, () => new StateEx2e(StateId.State2e), StateId.State2)
       .RegisterState(StateId.State2f, () => new StateEx2e(StateId.State2f), StateId.State1)
       .RegisterState(StateId.State3, () => new StateEx3(StateId.State3))
-      .SetInitialEx(StateId.State1);
+      .SetInitial(StateId.State1);
 
     // Act - Generate UML
-    var uml = machine.ExportUml(includeSubmachines: true);
+    var uml = machine.ExportUml(appendLegend: true);
 
     // Assert
     Assert.IsNotNull(uml);
-    Console.WriteLine(uml);
-    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlBasicStatesWithErrorFailure, uml);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStatesWithErrorFailure(true), uml);
+  }
+
+  [TestMethod]
+  public void Generates_BasicState_RegisterStateWithAndWithLegend_SuccessTest()
+  {
+    // Assemble
+    var machine = new StateMachine<StateId>()
+      .RegisterState(StateId.State1, () => new StateEx1(StateId.State1), StateId.State2)
+      .RegisterState(StateId.State2, () => new StateEx2(StateId.State2), StateId.State3)
+      .RegisterState(StateId.State3, () => new StateEx3(StateId.State3))
+      .SetInitial(StateId.State1);
+
+    // Act - Generate UML
+    var uml = machine.ExportUml(appendLegend: false);
+    Assert.IsNotNull(uml);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStates(), uml);
+
+    uml = machine.ExportUml(appendLegend: true);
+    Assert.IsNotNull(uml);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStates(true), uml);
   }
 
   [TestMethod]
@@ -305,7 +137,7 @@ public class ExportUmlDotGraphTests
   }
 
   [TestMethod]
-  public void Generates_CompositeState_RegisterStateEx_WithErrorAndFailure_SuccessTest()
+  public void Generates_CompositeState_RegisterState_WithErrorAndFailure_SuccessTest()
   {
     // Assemble
     var machine = new StateMachine<StateId>()
@@ -327,21 +159,20 @@ public class ExportUmlDotGraphTests
       {
         sub.RegisterState(StateId.State4_Sub1, () => new StateEx4_Sub1(StateId.State4_Sub1), StateId.State4_Sub2)
            .RegisterState(StateId.State4_Sub2, () => new StateEx4_Sub1(StateId.State4_Sub2))
-           .SetInitialEx(StateId.State4_Sub1);
+           .SetInitial(StateId.State4_Sub1);
       })
       .RegisterState(StateId.State5, () => new StateEx5(StateId.State5))
-      .SetInitialEx(StateId.State1);
+      .SetInitial(StateId.State1);
 
     // Act - Generate UML
-    var uml = machine.ExportUml(includeSubmachines: true);
+    var uml = machine.ExportUml(appendLegend: true);
 
     // Assert
     Assert.IsNotNull(uml);
-    Console.WriteLine(uml);
-    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlComposite, uml);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.Composite(true), uml);
   }
 
-  #region State Machine - Generic
+  #region State Machine - Basic
 
   [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test")]
   private class State1 : BaseState<StateId>
@@ -368,7 +199,33 @@ public class ExportUmlDotGraphTests
     }
   }
 
-  #endregion State Machine - Generic
+  #endregion State Machine - Basic
+
+  #region State Machine - Generics
+
+  [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test")]
+  private class GenericsState1 : BaseState<StateId>
+  {
+    public GenericsState1()
+    {
+      AddTransition(Result.Ok, StateId.State2);
+    }
+  }
+
+  private class GenericsState2 : BaseState<StateId>
+  {
+    public GenericsState2() =>
+      AddTransition(Result.Ok, StateId.State3);
+  }
+
+  private class GenericsState3 : BaseState<StateId>
+  {
+    public GenericsState3()
+    {
+    }
+  }
+
+  #endregion State Machine - Generics
 
   #region State Machine - Fluent
 
