@@ -419,7 +419,7 @@ public sealed partial class StateMachine<TState>
     /// <summary>State factory to execute.</summary>
     public Func<IState<TState>>? Factory = default;
 
-    /// <summary>Gets or sets the State Id for ExportUml.</summary>
+    /// <summary>Gets or sets the State Id, used by ExportUml for <see cref="RegisterState{TStateClass}(TState, TState?, TState?, TState?, Action{StateMachine{TState}}?)"./> .</summary>
     public TState FactoryStateId;
 
     public Lazy<IState<TState>>? LazyInstance;
