@@ -28,7 +28,7 @@ public class ErrorStateExTest
       .RegisterState(StateId.State2, () => new State2(StateId.State2), StateId.State3, StateId.State2Error)
       .RegisterState(StateId.State2Error, () => new State2Error(StateId.State2Error), StateId.State2)
       .RegisterState(StateId.State3, () => new State3(StateId.State3))
-      .SetInitialEx(StateId.State1);
+      .SetInitial(StateId.State1);
 
     // Act - Start your engine!
     var ctxProperties = new PropertyBag() { { PARAM_TEST, "not-finished" }, };

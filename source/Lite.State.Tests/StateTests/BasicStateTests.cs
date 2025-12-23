@@ -96,7 +96,7 @@ public class BasicStateTests
       .RegisterState(StateId.State1, () => new StateEx1(StateId.State1), StateId.State2)
       .RegisterState(StateId.State2, () => new StateEx2(StateId.State2), StateId.State3)
       .RegisterState(StateId.State3, () => new StateEx3(StateId.State3))
-      .SetInitialEx(StateId.State1);
+      .SetInitial(StateId.State1);
 
     // Act - Start your engine!
     machine.Start();
@@ -154,7 +154,7 @@ public class BasicStateTests
       .RegisterState<State1>(StateId.State1, StateId.State2)
       .RegisterState<State2>(StateId.State2, StateId.State3)
       .RegisterState<State3>(StateId.State3)
-      .SetInitialEx(StateId.State1);
+      .SetInitial(StateId.State1);
 
     // Act - Start your engine!
     // NOTE: We did NOT pass "ParameterCounter"; it gets added on the fly.
@@ -196,7 +196,7 @@ public class BasicStateTests
       .RegisterState<StateGenerics1>(GenericStateId.State1, GenericStateId.State2)
       .RegisterState<StateGenerics2>(GenericStateId.State2, GenericStateId.State3)
       .RegisterState<StateGenerics3>(GenericStateId.State3)
-      .SetInitialEx(GenericStateId.State1);
+      .SetInitial(GenericStateId.State1);
 
     // Act - Start your engine!
     // NOTE: We did NOT pass "ParameterCounter"; it gets added on the fly.

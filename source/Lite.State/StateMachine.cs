@@ -185,14 +185,10 @@ public sealed partial class StateMachine<TState>
     return this;
   }
 
-  /// <summary>Set the initial startup state.</summary>
-  /// <param name="initial">Initial state from enumeration.</param>
-  public void SetInitial(TState initial) => _initialState = initial;
-
-  /// <summary>Set the initial startup state (extended fluent pattern).</summary>
+  /// <summary>Set the initial startup state (supporting fluent pattern).</summary>
   /// <param name="initial">Initial state from enumeration.</param>
   /// <returns>This class for fluent design pattern.</returns>
-  public StateMachine<TState> SetInitialEx(TState initial)
+  public StateMachine<TState> SetInitial(TState initial)
   {
     _initialState = initial;
     return this;

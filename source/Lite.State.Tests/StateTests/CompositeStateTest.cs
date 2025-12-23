@@ -67,7 +67,7 @@ public class CompositeStateTest
           .SetInitial(StateId.State2_Sub1);
       })
       .RegisterState(StateId.State3, () => new StateEx3(StateId.State3))
-      .SetInitialEx(StateId.State1);
+      .SetInitial(StateId.State1);
 
     // Act
     machine.Start();

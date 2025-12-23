@@ -75,7 +75,7 @@ public class ExportUmlDotGraphTests
         onError: StateId.State2e)
       .RegisterState(StateId.State2e, () => new StateEx2e(StateId.State2e), StateId.State2)
       .RegisterState(StateId.State3, () => new StateEx3(StateId.State3))
-      .SetInitialEx(StateId.State1);
+      .SetInitial(StateId.State1);
 
     // Act - Generate UML
     var uml = machine.ExportUml(appendLegend: true);
@@ -100,7 +100,7 @@ public class ExportUmlDotGraphTests
       .RegisterState(StateId.State2e, () => new StateEx2e(StateId.State2e), StateId.State2)
       .RegisterState(StateId.State2f, () => new StateEx2e(StateId.State2f), StateId.State1)
       .RegisterState(StateId.State3, () => new StateEx3(StateId.State3))
-      .SetInitialEx(StateId.State1);
+      .SetInitial(StateId.State1);
 
     // Act - Generate UML
     var uml = machine.ExportUml(appendLegend: true);
@@ -118,7 +118,7 @@ public class ExportUmlDotGraphTests
       .RegisterState(StateId.State1, () => new StateEx1(StateId.State1), StateId.State2)
       .RegisterState(StateId.State2, () => new StateEx2(StateId.State2), StateId.State3)
       .RegisterState(StateId.State3, () => new StateEx3(StateId.State3))
-      .SetInitialEx(StateId.State1);
+      .SetInitial(StateId.State1);
 
     // Act - Generate UML
     var uml = machine.ExportUml(appendLegend: false);
@@ -159,10 +159,10 @@ public class ExportUmlDotGraphTests
       {
         sub.RegisterState(StateId.State4_Sub1, () => new StateEx4_Sub1(StateId.State4_Sub1), StateId.State4_Sub2)
            .RegisterState(StateId.State4_Sub2, () => new StateEx4_Sub1(StateId.State4_Sub2))
-           .SetInitialEx(StateId.State4_Sub1);
+           .SetInitial(StateId.State4_Sub1);
       })
       .RegisterState(StateId.State5, () => new StateEx5(StateId.State5))
-      .SetInitialEx(StateId.State1);
+      .SetInitial(StateId.State1);
 
     // Act - Generate UML
     var uml = machine.ExportUml(appendLegend: true);
