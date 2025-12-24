@@ -82,7 +82,7 @@ public sealed partial class StateMachine<TStateId>
   private void AppendCompositeCluster(
     StringBuilder sb,
     TStateId compositeId,
-    StateRegistration reg,
+    StateRegistration<TStateId> reg,
     bool includeNested,
     int defaultTimeoutMs)
   {
@@ -244,12 +244,12 @@ public sealed partial class StateMachine<TStateId>
   /// <summary>Create a very short instance of the state to extract the transitions.</summary>
   /// <param name="reg">State registration.</param>
   /// <returns>State instance.</returns>
-  private IState<TStateId> GetEphemeralInstance(StateRegistration reg)
+  private IState<TStateId> GetEphemeralInstance(StateRegistration<TStateId> reg)
   {
     if (reg is null || reg.Factory is null)
       throw new NullReferenceException("Invalid or missing state factory.");
 
-    var state = reg.Factory();
+    var state = reg.Factory(_services);
 
     var x = reg.Factory.GetType();
 
@@ -268,7 +268,7 @@ public sealed partial class StateMachine<TStateId>
     // For composites: build an ephemeral submachine for topology inspection (no Start).
     if (state is ICompositeState<TStateId> comp && reg.ConfigureSubmachine != null)
     {
-      var sub = new StateMachine<TStateId>(_eventAggregator);
+      var sub = new StateMachine<TStateId>(_services, _eventAggregator);
       comp.Submachine = sub;
       reg.ConfigureSubmachine(sub);
     }

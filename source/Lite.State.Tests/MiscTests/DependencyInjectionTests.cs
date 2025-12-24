@@ -46,7 +46,6 @@ public class DependencyInjectionTests
   }
   */
 
-  /*
   [TestMethod]
   public void DI_GenericsRegistration_SuccessTest()
   {
@@ -77,5 +76,4 @@ public class DependencyInjectionTests
     Assert.IsNotNull(uml);
     Console.WriteLine(uml);
   }
-  */
 }
