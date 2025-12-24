@@ -6,7 +6,8 @@ using System;
 namespace Lite.State;
 
 /// <summary>Composite (hierarchical) state interface: has an owned submachine.</summary>
-public interface ICompositeState<TState> : IState<TState> where TState : struct, Enum
+public interface ICompositeState<TState> : IState<TState>
+  where TState : struct, Enum
 {
   /// <summary>Gets the sub-states (<see cref="StateMachine{TState}"/>) of the composite state.</summary>
   /// <remarks>

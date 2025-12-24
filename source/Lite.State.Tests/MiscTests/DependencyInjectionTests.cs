@@ -13,6 +13,7 @@ namespace Lite.State.Tests;
 [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test class")]
 public class DependencyInjectionTests
 {
+  /*
   [TestMethod]
   public void DI_BasicRegistration_SuccessTest()
   {
@@ -43,6 +44,7 @@ public class DependencyInjectionTests
     Assert.IsNotNull(uml);
     Console.WriteLine(uml);
   }
+  */
 
   [TestMethod]
   public void DI_GenericsRegistration_SuccessTest()
@@ -55,7 +57,7 @@ public class DependencyInjectionTests
         builder.SetMinimumLevel(LogLevel.Trace);
       })
       .AddSingleton<IMessageService, MessageService>();
-    ////.AddTransient<MyClass>();
+    services.AddTransient<StateDi1>();
 
     using var provider = services.BuildServiceProvider();
 

@@ -1,6 +1,7 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
+/*
 using System;
 
 namespace Lite.State;
@@ -30,3 +31,4 @@ public class MissingStateTransitionException : Exception
   {
   }
 }
+*/
