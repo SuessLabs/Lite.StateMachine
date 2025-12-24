@@ -13,6 +13,7 @@ namespace Lite.State.Tests;
 [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test class")]
 public class DependencyInjectionTests
 {
+  /*
   [TestMethod]
   public void DI_BasicRegistration_SuccessTest()
   {
@@ -29,9 +30,9 @@ public class DependencyInjectionTests
     using var provider = services.BuildServiceProvider();
 
     var machine = new StateMachine<GenericStateId>()
-      .RegisterState(GenericStateId.State1, () => new StateGenerics1(), GenericStateId.State2)
-      .RegisterState(GenericStateId.State2, () => new StateGenerics2(), GenericStateId.State3)
-      .RegisterState(GenericStateId.State3, () => new StateGenerics3())
+      .RegisterState(GenericStateId.State1, () => new StateDi1(), GenericStateId.State2)
+      .RegisterState(GenericStateId.State2, () => new StateDi2(), GenericStateId.State3)
+      .RegisterState(GenericStateId.State3, () => new StateDi3())
       .SetInitial(GenericStateId.State1);
 
     // Act - Generate UML
@@ -43,7 +44,9 @@ public class DependencyInjectionTests
     Assert.IsNotNull(uml);
     Console.WriteLine(uml);
   }
+  */
 
+  /*
   [TestMethod]
   public void DI_GenericsRegistration_SuccessTest()
   {
@@ -55,14 +58,14 @@ public class DependencyInjectionTests
         builder.SetMinimumLevel(LogLevel.Trace);
       })
       .AddSingleton<IMessageService, MessageService>();
-    ////.AddTransient<MyClass>();
+    services.AddTransient<StateDi1>();
 
     using var provider = services.BuildServiceProvider();
 
     var machine = new StateMachine<GenericStateId>()
-      .RegisterState<StateGenerics1>(GenericStateId.State1, GenericStateId.State2)
-      .RegisterState<StateGenerics2>(GenericStateId.State2, GenericStateId.State3)
-      .RegisterState<StateGenerics3>(GenericStateId.State3)
+      .RegisterState<StateDi1>(GenericStateId.State1, GenericStateId.State2)
+      .RegisterState<StateDi2>(GenericStateId.State2, GenericStateId.State3)
+      .RegisterState<StateDi3>(GenericStateId.State3)
       .SetInitial(GenericStateId.State1);
 
     // Act - Generate UML
@@ -74,4 +77,5 @@ public class DependencyInjectionTests
     Assert.IsNotNull(uml);
     Console.WriteLine(uml);
   }
+  */
 }

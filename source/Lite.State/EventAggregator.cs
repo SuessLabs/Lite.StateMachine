@@ -7,16 +7,6 @@ using System.Threading;
 
 namespace Lite.State;
 
-/// <summary>
-/// Simple event aggregator for delivering messages to the current command state.
-/// </summary>
-public interface IEventAggregator
-{
-  void Publish(object message);
-
-  IDisposable Subscribe(Func<object, bool> handler);
-}
-
 public sealed class EventAggregator : IEventAggregator
 {
   private readonly List<Func<object, bool>> _subscribers = new();
@@ -39,7 +29,7 @@ public sealed class EventAggregator : IEventAggregator
 
   public IDisposable Subscribe(Func<object, bool> handler)
   {
-    if (handler == null) throw new ArgumentNullException(nameof(handler));
+    ArgumentNullException.ThrowIfNull(handler);
     _subscribers.Add(handler);
 
     return new Subscription(() => _subscribers.Remove(handler));

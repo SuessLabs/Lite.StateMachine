@@ -136,7 +136,8 @@ public class CommandStateTests
   // Terminal states
   public sealed class DoneState : BaseState<WorkflowState>
   {
-    public DoneState() : base(WorkflowState.Done)
+    public DoneState()
+      : base(WorkflowState.Done)
     {
     }
 
@@ -152,7 +153,8 @@ public class CommandStateTests
 
   public sealed class ErrorState : BaseState<WorkflowState>
   {
-    public ErrorState() : base(WorkflowState.Error)
+    public ErrorState()
+      : base(WorkflowState.Error)
     {
     }
 
@@ -162,7 +164,8 @@ public class CommandStateTests
 
   public sealed class FailedState : BaseState<WorkflowState>
   {
-    public FailedState() : base(WorkflowState.Failed)
+    public FailedState()
+      : base(WorkflowState.Failed)
     {
     }
 
@@ -173,7 +176,8 @@ public class CommandStateTests
   // Sub-state: Load (belongs to Processing submachine)
   public sealed class LoadState : BaseState<WorkflowState>
   {
-    public LoadState() : base(WorkflowState.Load)
+    public LoadState()
+      : base(WorkflowState.Load)
     {
       AddTransition(Result.Ok, WorkflowState.Validate);
       AddTransition(Result.Error, WorkflowState.Validate);   // Example: still go validate to confirm
@@ -198,7 +202,8 @@ public class CommandStateTests
   // Composite state: Processing (submachine controls Load -> Validate)
   public sealed class ProcessingState : CompositeState<WorkflowState>
   {
-    public ProcessingState() : base(WorkflowState.Processing)
+    public ProcessingState()
+      : base(WorkflowState.Processing)
     {
       // When submachine is done and bubbles Outcome:
       // This parent state's transitions will be applied.
@@ -220,7 +225,8 @@ public class CommandStateTests
   // Regular state: Start
   public sealed class StartState : BaseState<WorkflowState>
   {
-    public StartState() : base(WorkflowState.Start)
+    public StartState()
+      : base(WorkflowState.Start)
     {
       // Decide where to go based on outcome
       AddTransition(Result.Ok, WorkflowState.Processing);
@@ -246,7 +252,8 @@ public class CommandStateTests
   // Sub-state: Validate (last sub-state; no local transition on Ok -> bubbles up)
   public sealed class ValidateState : BaseState<WorkflowState>
   {
-    public ValidateState() : base(WorkflowState.Validate)
+    public ValidateState()
+      : base(WorkflowState.Validate)
     {
       // Local mapping only for non-OK; OK intentionally not mapped to demonstrate bubble-up.
       AddTransition(Result.Error, WorkflowState.Validate);   // example self-loop error check

@@ -8,5 +8,5 @@ public enum Result
 {
   Ok,
   Error,
-  Failure
+  Failure,
 }

@@ -1,13 +1,17 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
+using Lite.State.Tests.TestData.Services;
+
 namespace Lite.State.Tests.TestData;
 
 #pragma warning disable SA1649 // File name should match first type name
 #pragma warning disable SA1402 // File may only contain a single type
 
-public class StateGenerics1() : BaseState<GenericStateId>()
+public class StateDi1(IMessageService msg) : BaseState<GenericStateId>()
 {
+  private readonly IMessageService _msg = msg;
+
   public override void OnEnter(Context<GenericStateId> context) =>
     context.NextState(Result.Ok);
 
@@ -18,7 +22,7 @@ public class StateGenerics1() : BaseState<GenericStateId>()
     context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
 }
 
-public class StateGenerics2() : BaseState<GenericStateId>()
+public class StateDi2() : BaseState<GenericStateId>()
 {
   public override void OnEnter(Context<GenericStateId> context)
   {
@@ -33,7 +37,7 @@ public class StateGenerics2() : BaseState<GenericStateId>()
     context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
 }
 
-public class StateGenerics3() : BaseState<GenericStateId>()
+public class StateDi3() : BaseState<GenericStateId>()
 {
   public override void OnEnter(Context<GenericStateId> context)
   {

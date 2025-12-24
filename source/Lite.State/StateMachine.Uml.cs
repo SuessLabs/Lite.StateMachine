@@ -13,9 +13,9 @@ namespace Lite.State;
 ///   * Composite states - Circled.
 ///   * Command state - Hexagons.
 /// </summary>
-/// <typeparam name="TState">State machine type.</typeparam>
-public sealed partial class StateMachine<TState>
-  where TState : struct, Enum
+/// <typeparam name="TStateId">State machine type.</typeparam>
+public sealed partial class StateMachine<TStateId>
+  where TStateId : struct, Enum
 {
   /// <summary>
   ///   Exports a DOT (Graphviz) diagram of the state machine.
@@ -62,7 +62,7 @@ public sealed partial class StateMachine<TState>
       foreach (var kv in _states)
       {
         var instance = GetEphemeralInstance(kv.Value);
-        if (instance is ICompositeState<TState> comp)
+        if (instance is ICompositeState<TStateId> comp)
           AppendCompositeCluster(sb, kv.Key, kv.Value, includeSubmachines, DefaultTimeoutMs);
       }
     }
@@ -81,8 +81,8 @@ public sealed partial class StateMachine<TState>
 
   private void AppendCompositeCluster(
     StringBuilder sb,
-    TState compositeId,
-    Registration reg,
+    TStateId compositeId,
+    StateRegistration reg,
     bool includeNested,
     int defaultTimeoutMs)
   {
@@ -90,7 +90,7 @@ public sealed partial class StateMachine<TState>
 
     // Build an ephemeral instance with an ephemeral submachine
     var instance = GetEphemeralInstance(reg);
-    var comp = (ICompositeState<TState>)instance;
+    var comp = (ICompositeState<TStateId>)instance;
     var sub = comp.Submachine;
 
     sb.AppendLine($"  subgraph cluster_{label} {{");
@@ -123,7 +123,7 @@ public sealed partial class StateMachine<TState>
       foreach (var kv in sub._states)
       {
         var nestedInstance = sub.GetEphemeralInstance(kv.Value);
-        if (nestedInstance is ICompositeState<TState> nestedComp)
+        if (nestedInstance is ICompositeState<TStateId> nestedComp)
           sub.AppendCompositeCluster(sb, kv.Key, kv.Value, includeNested, defaultTimeoutMs);
       }
     }
@@ -131,7 +131,7 @@ public sealed partial class StateMachine<TState>
     sb.AppendLine("  }");
   }
 
-  private void AppendEdges(StringBuilder sb, IState<TState> state)
+  private void AppendEdges(StringBuilder sb, IState<TStateId> state)
   {
     var from = Escape(state.Id.ToString());
     foreach (var tr in state.Transitions)
@@ -176,12 +176,12 @@ public sealed partial class StateMachine<TState>
     sb.AppendLine("  }");
   }
 
-  private void AppendNode(StringBuilder sb, IState<TState> state, int defaultTimeoutMs)
+  private void AppendNode(StringBuilder sb, IState<TStateId> state, int defaultTimeoutMs)
   {
     var name = Escape(state.Id.ToString());
 
     var shape = "box";
-    if (state is ICommandState<TState>)
+    if (state is ICommandState<TStateId>)
       shape = "hexagon";
     else if (state.IsComposite)
       shape = "box3d";
@@ -191,7 +191,7 @@ public sealed partial class StateMachine<TState>
       shape = "doublecircle";
 
     var attrs = new List<string> { $"shape={shape}" };
-    if (state is ICommandState<TState> cmd)
+    if (state is ICommandState<TStateId> cmd)
     {
       var timeout = cmd.TimeoutMs ?? defaultTimeoutMs;
       attrs.Add($"tooltip=\"Command state (timeout={timeout}ms)\"");
@@ -203,7 +203,7 @@ public sealed partial class StateMachine<TState>
     sb.AppendLine($"  \"{name}\" [{string.Join(", ", attrs)}];");
   }
 
-  private void AppendSubEdges(StringBuilder sb, IState<TState> state)
+  private void AppendSubEdges(StringBuilder sb, IState<TStateId> state)
   {
     var from = Escape(state.Id.ToString());
     foreach (var tr in state.Transitions)
@@ -214,12 +214,12 @@ public sealed partial class StateMachine<TState>
     }
   }
 
-  private void AppendSubNode(StringBuilder sb, IState<TState> state, int defaultTimeoutMs)
+  private void AppendSubNode(StringBuilder sb, IState<TStateId> state, int defaultTimeoutMs)
   {
     var name = Escape(state.Id.ToString());
 
     var shape = "box";
-    if (state is ICommandState<TState>)
+    if (state is ICommandState<TStateId>)
       shape = "hexagon";
     else if (state.IsComposite)
       shape = "box3d";
@@ -229,7 +229,7 @@ public sealed partial class StateMachine<TState>
       shape = "doublecircle";
 
     var attrs = new List<string> { $"shape={shape}" };
-    if (state is ICommandState<TState> cmd)
+    if (state is ICommandState<TStateId> cmd)
     {
       var timeout = cmd.TimeoutMs ?? defaultTimeoutMs;
       attrs.Add($"tooltip=\"Command state (timeout={timeout}ms)\"");
@@ -244,7 +244,7 @@ public sealed partial class StateMachine<TState>
   /// <summary>Create a very short instance of the state to extract the transitions.</summary>
   /// <param name="reg">State registration.</param>
   /// <returns>State instance.</returns>
-  private IState<TState> GetEphemeralInstance(Registration reg)
+  private IState<TStateId> GetEphemeralInstance(StateRegistration reg)
   {
     if (reg is null || reg.Factory is null)
       throw new NullReferenceException("Invalid or missing state factory.");
@@ -257,18 +257,18 @@ public sealed partial class StateMachine<TState>
     state.SetStateId(reg.FactoryStateId);
 
     if (reg.OnSuccess is not null)
-      (state as BaseState<TState>)?.AddTransition(Result.Ok, reg.OnSuccess.Value);
+      (state as BaseState<TStateId>)?.AddTransition(Result.Ok, reg.OnSuccess.Value);
 
     if (reg.OnError is not null)
-      (state as BaseState<TState>)?.AddTransition(Result.Error, reg.OnError.Value);
+      (state as BaseState<TStateId>)?.AddTransition(Result.Error, reg.OnError.Value);
 
     if (reg.OnFailure is not null)
-      (state as BaseState<TState>)?.AddTransition(Result.Failure, reg.OnFailure.Value);
+      (state as BaseState<TStateId>)?.AddTransition(Result.Failure, reg.OnFailure.Value);
 
     // For composites: build an ephemeral submachine for topology inspection (no Start).
-    if (state is ICompositeState<TState> comp && reg.ConfigureSubmachine != null)
+    if (state is ICompositeState<TStateId> comp && reg.ConfigureSubmachine != null)
     {
-      var sub = new StateMachine<TState>(_eventAggregator);
+      var sub = new StateMachine<TStateId>(_eventAggregator);
       comp.Submachine = sub;
       reg.ConfigureSubmachine(sub);
     }
