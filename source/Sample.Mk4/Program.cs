@@ -3,7 +3,7 @@
 
 namespace Sample.Mk4a;
 
-internal class Programs
+internal class Program
 {
   private static void Main()
   {

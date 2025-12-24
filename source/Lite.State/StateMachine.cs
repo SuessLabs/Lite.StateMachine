@@ -5,6 +5,7 @@ namespace Lite.State;
 
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -12,31 +13,31 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// The generic, enum-driven state machine with hierarchical bubbling and command-state timeout handling.
 /// </summary>
-/// <typeparam name="TState">Type of State Id to use (i.e. enum, int, etc.).</typeparam>
-public sealed partial class StateMachine<TState>
-  where TState : struct, Enum
+/// <typeparam name="TStateId">Type of State Id to use (i.e. enum, int, etc.).</typeparam>
+public sealed partial class StateMachine<TStateId>
+  where TStateId : struct, Enum
 {
   private readonly IEventAggregator? _eventAggregator;
-  private readonly ILogger<StateMachine<TState>>? _logger;
-  private readonly ICompositeState<TState>? _ownerCompositeState;
-  private readonly StateMachine<TState>? _parentMachine;
+  private readonly ILogger<StateMachine<TStateId>>? _logger;
+  private readonly ICompositeState<TStateId>? _ownerCompositeState;
+  private readonly StateMachine<TStateId>? _parentMachine;
 
   ////private readonly Dictionary<TState, IState<TState>> _states = [];
-  private readonly Dictionary<TState, Registration> _states = [];
+  private readonly Dictionary<TStateId, StateRegistration> _states = [];
 
-  private IState<TState>? _currentState;
-  private TState _initialState;
+  private IState<TStateId>? _currentState;
+  private TStateId _initialState;
   private bool _isStarted;
   private IDisposable? _subscription;
   private CancellationTokenSource? _timeoutCts;
 
-  public StateMachine(IEventAggregator? eventAggregator = null, ILogger<StateMachine<TState>>? logs = null)
+  public StateMachine(IEventAggregator? eventAggregator = null, ILogger<StateMachine<TStateId>>? logs = null)
   {
     _eventAggregator = eventAggregator;
     _logger = logs;
   }
 
-  private StateMachine(StateMachine<TState> parentMachine, ICompositeState<TState> ownerCompositeState, IEventAggregator? eventAggregator = null, ILogger<StateMachine<TState>>? logs = null)
+  private StateMachine(StateMachine<TStateId> parentMachine, ICompositeState<TStateId> ownerCompositeState, IEventAggregator? eventAggregator = null, ILogger<StateMachine<TStateId>>? logs = null)
   {
     _parentMachine = parentMachine;
     _ownerCompositeState = ownerCompositeState;
@@ -45,7 +46,7 @@ public sealed partial class StateMachine<TState>
   }
 
   /// <summary>Gets the context payload passed between the states, and contains methods for transitioning to the next state.</summary>
-  public Context<TState> Context { get; private set; } = default!;
+  public Context<TStateId> Context { get; private set; } = default!;
 
   /// <summary>Gets or sets the default timeout (3000ms default) to be used by <see cref="CommandState{TState}"/>'s OnTimeout.</summary>
   public int DefaultTimeoutMs { get; set; } = 3000;
@@ -61,7 +62,7 @@ public sealed partial class StateMachine<TState>
   ///   Exposed for validations, debugging, etc.
   ///   Previously: <![CDATA[Dictionary<TState, IState<TState>>]]>.
   /// </remarks>
-  public List<TState> States => [.. _states.Keys];
+  public List<TStateId> States => [.. _states.Keys];
 
   /// <summary>
   ///   Register a state by enum id and a factory that creates the state instance.
@@ -104,17 +105,17 @@ public sealed partial class StateMachine<TState>
   ///     });
   ///     ]]>.
   /// </remarks>
-  public StateMachine<TState> RegisterState(
-    TState stateId,
-    Func<IState<TState>> state,
-    TState? onSuccess = null,
-    TState? onError = null,
-    TState? onFailure = null,
-    Action<StateMachine<TState>>? subStates = null)
+  public StateMachine<TStateId> RegisterState(
+    TStateId stateId,
+    Func<IState<TStateId>> state,
+    TStateId? onSuccess = null,
+    TStateId? onError = null,
+    TStateId? onFailure = null,
+    Action<StateMachine<TStateId>>? subStates = null)
   {
     ArgumentNullException.ThrowIfNull(state);
 
-    _states[stateId] = new Registration
+    _states[stateId] = new StateRegistration
     {
       Factory = state,
       OnSuccess = onSuccess,
@@ -153,21 +154,25 @@ public sealed partial class StateMachine<TState>
   ///   are configured, the registered state will act as a composite state, allowing for hierarchical state machines. This
   ///   method supports fluent configuration by returning the state machine instance.
   /// </remarks>
-  public StateMachine<TState> RegisterState<TStateClass>(
-    TState stateId,
-    TState? onSuccess = null,
-    TState? onError = null,
-    TState? onFailure = null,
-    Action<StateMachine<TState>>? subStates = null)
-    where TStateClass : class, IState<TState>, new()
+  public StateMachine<TStateId> RegisterState<TStateClass>(
+    TStateId stateId,
+    TStateId? onSuccess = null,
+    TStateId? onError = null,
+    TStateId? onFailure = null,
+    Action<StateMachine<TStateId>>? subStates = null)
+    where TStateClass : class, IState<TStateId>, new()
+    ////where TStateClass : class, IState<TStateId> // (vNext)
   {
     // Create factory method
-    Func<IState<TState>> state = () => new TStateClass();
+    Func<IState<TStateId>> state = () => new TStateClass();
     ArgumentNullException.ThrowIfNull(state);
 
-    _states[stateId] = new Registration
+    _states[stateId] = new StateRegistration
     {
+      // Factory: Func<IState<TState>>?
       Factory = state,
+      ////Factory = lzy => new CreateInstanceBinder<TStateId>(lzy),  //  (vNext)
+
       OnSuccess = onSuccess,
       OnError = onError,
       OnFailure = onFailure,
@@ -188,7 +193,7 @@ public sealed partial class StateMachine<TState>
   /// <summary>Set the initial startup state (supporting fluent pattern).</summary>
   /// <param name="initial">Initial state from enumeration.</param>
   /// <returns>This class for fluent design pattern.</returns>
-  public StateMachine<TState> SetInitial(TState initial)
+  public StateMachine<TStateId> SetInitial(TStateId initial)
   {
     _initialState = initial;
     return this;
@@ -217,7 +222,7 @@ public sealed partial class StateMachine<TState>
     initParameters ??= [];
     errorStack ??= [];
 
-    Context = new Context<TState>(this) { Parameters = initParameters, ErrorStack = errorStack, };
+    Context = new Context<TStateId>(this) { Parameters = initParameters, ErrorStack = errorStack, };
 
     // Get the state from the Lazy collection
     var initialState = GetInstance(_initialState);
@@ -278,14 +283,14 @@ public sealed partial class StateMachine<TState>
     _timeoutCts = null;
   }
 
-  private void EnterState(IState<TState> state)
+  private void EnterState(IState<TStateId> state)
   {
     _currentState = state;
     state.OnEntering(Context);
     state.OnEnter(Context);
 
     // If Composite State: Start submachine (requires submachine to be configured and initial set)
-    if (state is ICompositeState<TState> comp)
+    if (state is ICompositeState<TStateId> comp)
     {
       // TODO: Ensure submachine has initial and is registered.
       // Submachine will drive transitions until the last state, then bubbles up
@@ -296,7 +301,7 @@ public sealed partial class StateMachine<TState>
     }
 
     // If Command State: Subscribe to aggregator and start timeout
-    if (state is ICommandState<TState> cmd)
+    if (state is ICommandState<TStateId> cmd)
       SetupCommandState(cmd);
   }
 
@@ -320,13 +325,13 @@ public sealed partial class StateMachine<TState>
   /// <summary>Get and generate state instance of the Lazy state.</summary>
   /// <remarks>TODO: Rename to, `InitializeLazyState()`.</remarks>
   /// <returns>Instance of the state.</returns>
-  private IState<TState> GetInstance(TState id)
+  private IState<TStateId> GetInstance(TStateId id)
   {
     if (!_states.TryGetValue(id, out var regState))
       throw new InvalidOperationException($"State '{id}' is not registered.");
 
     // if (reg.LazyInstance is null) { ... }
-    regState.LazyInstance ??= new Lazy<IState<TState>>(() =>
+    regState.LazyInstance ??= new Lazy<IState<TStateId>>(() =>
     {
       if (regState.Factory is null)
         throw new NullReferenceException("Provided state factory as null");
@@ -334,18 +339,18 @@ public sealed partial class StateMachine<TState>
       var instance = regState.Factory();
 
       if (regState.OnSuccess is not null)
-        (instance as BaseState<TState>)?.AddTransition(Result.Ok, regState.OnSuccess.Value);
+        (instance as BaseState<TStateId>)?.AddTransition(Result.Ok, regState.OnSuccess.Value);
 
       if (regState.OnError is not null)
-        (instance as BaseState<TState>)?.AddTransition(Result.Error, regState.OnError.Value);
+        (instance as BaseState<TStateId>)?.AddTransition(Result.Error, regState.OnError.Value);
 
       if (regState.OnFailure is not null)
-        (instance as BaseState<TState>)?.AddTransition(Result.Failure, regState.OnFailure.Value);
+        (instance as BaseState<TStateId>)?.AddTransition(Result.Failure, regState.OnFailure.Value);
 
       // If composite: wire a submachine and run configuration callback.
-      if (instance is ICompositeState<TState> comp)
+      if (instance is ICompositeState<TStateId> comp)
       {
-        var sub = new StateMachine<TState>(this, comp, _eventAggregator)
+        var sub = new StateMachine<TStateId>(this, comp, _eventAggregator)
         {
           DefaultTimeoutMs = DefaultTimeoutMs,
           EvictStateInstancesOnExit = EvictStateInstancesOnExit,
@@ -365,7 +370,7 @@ public sealed partial class StateMachine<TState>
   /// <summary>Command State initialization and execution.</summary>
   /// <remarks>TODO (2025-12-17): Rename to, `CommandStateInit()`.</remarks>
   /// <param name="cmd">Command state.</param>
-  private void SetupCommandState(ICommandState<TState> cmd)
+  private void SetupCommandState(ICommandState<TStateId> cmd)
   {
     CancelTimerAndSubscription();
 
@@ -407,26 +412,28 @@ public sealed partial class StateMachine<TState>
   }
 
   [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:Fields should be private", Justification = "Intentional public fields.")]
-  private sealed class Registration
+  private sealed class StateRegistration
   {
     /// <summary>Used for composite states.</summary>
-    public Action<StateMachine<TState>>? ConfigureSubmachine;
+    public Action<StateMachine<TStateId>>? ConfigureSubmachine;
 
     /// <summary>State factory to execute.</summary>
-    public Func<IState<TState>>? Factory = default;
+    public Func<IState<TStateId>>? Factory = default;
 
-    /// <summary>Gets or sets the State Id, used by ExportUml for <see cref="RegisterState{TStateClass}(TState, TState?, TState?, TState?, Action{StateMachine{TState}}?)"./> .</summary>
-    public TState FactoryStateId;
+    ////public Func<IServiceResolver, IState<TStateId>>? Factory2 = default;
 
-    public Lazy<IState<TState>>? LazyInstance;
+    /// <summary>Gets or sets the State Id, used by ExportUml for <see cref="RegisterState{TStateClass}(TStateId, TStateId?, TStateId?, TStateId?, Action{StateMachine{TStateId}}?)"./> .</summary>
+    public TStateId FactoryStateId;
+
+    public Lazy<IState<TStateId>>? LazyInstance;
 
     /// <summary>Optional auto-wire OnError StateId transition.</summary>
-    public TState? OnError = null;
+    public TStateId? OnError = null;
 
     /// <summary>Optional auto-wire OnFailure StateId transition.</summary>
-    public TState? OnFailure = null;
+    public TStateId? OnFailure = null;
 
     /// <summary>Optional auto-wire OnSuccess StateId transition.</summary>
-    public TState? OnSuccess = null;
+    public TStateId? OnSuccess = null;
   }
 }

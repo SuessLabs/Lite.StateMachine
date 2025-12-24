@@ -8,7 +8,7 @@ namespace Lite.State.Tests.StateTests;
 [TestClass]
 public class ErrorStateExTest
 {
-  public const string PARAM_TEST = "param1";
+  public const string ParameterTest = "param1";
   public const string SUCCESS = "success";
 
   public enum StateId
@@ -31,14 +31,14 @@ public class ErrorStateExTest
       .SetInitial(StateId.State1);
 
     // Act - Start your engine!
-    var ctxProperties = new PropertyBag() { { PARAM_TEST, "not-finished" }, };
+    var ctxProperties = new PropertyBag() { { ParameterTest, "not-finished" }, };
     machine.Start(ctxProperties);
 
     // Assert Results
     var ctxFinalParams = machine.Context.Parameters;
 
     Assert.IsNotNull(ctxFinalParams);
-    Assert.AreEqual(SUCCESS, ctxFinalParams[PARAM_TEST]);
+    Assert.AreEqual(SUCCESS, ctxFinalParams[ParameterTest]);
   }
 
   //// private class State1 : IState<BasicStateTest.BasicFsm>
@@ -90,7 +90,7 @@ public class ErrorStateExTest
 
     public override void OnEntering(Context<StateId> context)
     {
-      context.Parameters[PARAM_TEST] = SUCCESS;
+      context.Parameters[ParameterTest] = SUCCESS;
       Console.WriteLine("[State3] OnEntering");
     }
   }

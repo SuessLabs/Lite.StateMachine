@@ -29,7 +29,7 @@ public sealed class EventAggregator : IEventAggregator
 
   public IDisposable Subscribe(Func<object, bool> handler)
   {
-    if (handler == null) throw new ArgumentNullException(nameof(handler));
+    ArgumentNullException.ThrowIfNull(handler);
     _subscribers.Add(handler);
 
     return new Subscription(() => _subscribers.Remove(handler));

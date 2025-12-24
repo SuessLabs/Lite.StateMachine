@@ -8,7 +8,7 @@ namespace Lite.State.Tests.StateTests;
 [TestClass]
 public class ErrorStateTest
 {
-  public const string PARAM_TEST = "param1";
+  public const string ParameterTest = "param1";
   public const string SUCCESS = "success";
 
   public enum StateId
@@ -34,20 +34,21 @@ public class ErrorStateTest
     machine.SetInitial(StateId.State1);
 
     // Act - Start your engine!
-    var ctxProperties = new PropertyBag() { { PARAM_TEST, "not-finished" }, };
+    var ctxProperties = new PropertyBag() { { ParameterTest, "not-finished" }, };
     machine.Start(ctxProperties);
 
     // Assert Results
     var ctxFinalParams = machine.Context.Parameters;
 
     Assert.IsNotNull(ctxFinalParams);
-    Assert.AreEqual(SUCCESS, ctxFinalParams[PARAM_TEST]);
+    Assert.AreEqual(SUCCESS, ctxFinalParams[ParameterTest]);
   }
 
   //// private class State1 : IState<BasicStateTest.BasicFsm>
   private class State1 : BaseState<StateId>
   {
-    public State1() : base(StateId.State1)
+    public State1()
+     : base(StateId.State1)
     {
       AddTransition(Result.Ok, StateId.State2);
     }
@@ -63,7 +64,8 @@ public class ErrorStateTest
   {
     private int _counter = 0;
 
-    public State2() : base(StateId.State2)
+    public State2()
+      : base(StateId.State2)
     {
       AddTransition(Result.Ok, StateId.State3);
       AddTransition(Result.Error, StateId.State2Error);
@@ -86,7 +88,8 @@ public class ErrorStateTest
   /// <summary>Simulated error state handler, goes back to State2.</summary>
   private class State2Error : BaseState<StateId>
   {
-    public State2Error(StateId id) : base(id)
+    public State2Error(StateId id)
+     : base(id)
     {
       AddTransition(Result.Ok, StateId.State2);
     }
@@ -98,16 +101,12 @@ public class ErrorStateTest
     }
   }
 
-  private class State3 : BaseState<StateId>
+  private class State3(ErrorStateTest.StateId id) : BaseState<StateId>(id)
   {
-    public State3(StateId id) : base(id)
-    {
-    }
-
     public override void OnEntering(Context<StateId> context)
     {
       // TODO: Wait a sec.. we never "said to exit"
-      context.Parameters[PARAM_TEST] = SUCCESS;
+      context.Parameters[ParameterTest] = SUCCESS;
       Console.WriteLine("[State3] OnEntering");
     }
   }
