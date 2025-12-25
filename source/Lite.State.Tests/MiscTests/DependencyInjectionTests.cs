@@ -2,6 +2,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Lite.State.Tests.TestData;
 using Lite.State.Tests.TestData.Services;
@@ -86,6 +87,8 @@ public class DependencyInjectionTests
 
     // DI Factory Resolver:
     Func<Type, object?> factory = t => ActivatorUtilities.CreateInstance(provider, t);
+
+    // Uncomment the following to use Event Aggregator for Command States
     ////var aggregator = provider.GetRequiredService<IEventAggregator>();
     ////var machine = new StateMachine<GenericStateId>(factory, aggregator);
 
@@ -104,52 +107,10 @@ public class DependencyInjectionTests
     // Assert
     Assert.IsNotNull(uml);
     Console.WriteLine(uml);
-  }
-
-  /*
-  [TestMethod]
-  public void RegisterState_GenericsWithMsDi_SuccessTest()
-  {
-    // With Microsoft Dependency Injection
-    var services = new ServiceCollection()
-      .AddLogging(b => b.AddSimpleConsole(o =>
-      {
-        o.SingleLine = true;
-        o.TimestampFormat = "HH:mm:ss ";
-      }))
-      .AddSingleton<IEventAggregator, EventAggregator>()
-      .BuildServiceProvider();
-
-    // DI Factory Resolver:
-    Func<Type, object?> factory = t => ActivatorUtilities.CreateInstance(services, t);
-    var aggregator = services.GetRequiredService<IEventAggregator>();
-
-    // -----------------------------
-    // OLD-4d3 (DI Resolver Helpers):
-    // NOTE: Using resolver helpers MAY be the way to go
-    ////var resolver = new MsDiResolver(services);
-    ////var aggregator = services.GetRequiredService<IEventAggregator>();
-    ////var machine = new StateMachine<StateId>(resolver);
-    //// END OLD --------------------
-
-    // Assemble
-    // NON-DI: var machine = new StateMachine<StateId>();
-    var machine = new StateMachine<StateId>(factory, aggregator) { DefaultTimeoutMs = 3000 };
-    machine.RegisterState<State1>(StateId.State1, StateId.State2);
-    machine.RegisterState<State2>(StateId.State2, StateId.State3);
-    machine.RegisterState<State3>(StateId.State3);
-
-    // Set starting point
-    machine.SetInitial(StateId.State1);
-
-    // Act - Start your engine!
-    var ctxProperties = new PropertyBag() { { ParameterKeyTest, "not-finished" }, };
-    machine.Start(ctxProperties);
 
     // Assert Results
     var ctxFinalParams = machine.Context.Parameters;
     Assert.IsNotNull(ctxFinalParams);
-    Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
 
     // Ensure all transitions are called
     // NOTE: This should be 9 because each state has 3 hooks that increment the counter
@@ -157,14 +118,14 @@ public class DependencyInjectionTests
 
     var enums = Enum.GetValues<StateId>().Cast<StateId>();
 
-    // Ensure all states are hit
+    // Ensure all states are registered
     Assert.AreEqual(enums.Count(), machine.States.Count());
-    Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
 
-    // Ensure they're in order
-    Assert.IsTrue(enums.SequenceEqual(machine.States));
+    // Ensure all states are registered (order doesn't matter)
+    ////Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
+    // Ensure all states are in order
+    ////Assert.IsTrue(enums.SequenceEqual(machine.States));
   }
-  */
 
   [TestMethod]
   public void RegisterState_MsDi_EventAggregatorOnly_SuccessTest()
