@@ -254,7 +254,7 @@ public sealed partial class StateMachine<TStateId>
     var x = reg.Factory.GetType();
 
     // Because we're not starting the machine, we need to manually add set the StateId.
-    state.SetStateId(reg.FactoryStateId);
+    state.SetStateId(reg.StateId);
 
     if (reg.OnSuccess is not null)
       (state as BaseState<TStateId>)?.AddTransition(Result.Ok, reg.OnSuccess.Value);

@@ -48,7 +48,11 @@ public sealed partial class StateMachine<TStateId>
   {
     //// OLD-4d3: _services = services;
 
-    // NOTE:
+    // NOTE-1 (2025-12-25):
+    //  * Create Precheck Sanitization:
+    //    * Verify initial statates are set for core and all sub-states.
+    //    * Throw clear exceptions to inform user what to fix.
+    // NOTE-2 (2025-12-25):
     //  When not using DI (null containerFactory), generate instance with parameterless instance
     //  This means all states CANNOT have parameters in their constructors.
     _containerFactory = containerFactory ?? (t => Activator.CreateInstance(t));
@@ -211,7 +215,7 @@ public sealed partial class StateMachine<TStateId>
       Factory = () => (IState<TStateId>)(_containerFactory(typeof(TStateClass))
         ?? throw new InvalidOperationException($"Factory returned null for {typeof(TStateClass).Name}")),
 
-      FactoryStateId = stateId,  // TODO: Rename to StateId
+      StateId = stateId,
       OnSuccess = onSuccess,
       OnError = onError,
       OnFailure = onFailure,
