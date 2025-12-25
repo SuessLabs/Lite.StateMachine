@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Lite.State.Adapters;
 
+/*
 public sealed class MsDiResolver : IServiceResolver
 {
   private readonly IServiceProvider _provider;
@@ -21,3 +22,4 @@ public sealed class MsDiResolver : IServiceResolver
 
   public object? GetService(Type serviceType) => _provider.GetService(serviceType);
 }
+*/

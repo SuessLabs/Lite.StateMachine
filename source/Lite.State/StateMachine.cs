@@ -7,22 +7,31 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 /// <summary>
 /// The generic, enum-driven state machine with hierarchical bubbling and command-state timeout handling.
 /// </summary>
 /// <typeparam name="TStateId">Type of State Id to use (i.e. enum, int, etc.).</typeparam>
+/// <remarks>
+///   TODO: Do not require creating a new StateMachine for substates.
+///     Composite:  <![CDATA[.RegisterState<ParentState>(Enum.StateId1, isComposite: true, onSuccess, onError, onFailure);]]>.
+///     Substate:   <![CDATA[.RegisterState<SubState>(Enum.StateId2, parentState: Enum.ParentState, onSuccess, onError, onFailure);]]>.
+/// </remarks>
 public sealed partial class StateMachine<TStateId>
   where TStateId : struct, Enum
 {
-  private readonly IEventAggregator? _eventAggregator;
-  private readonly ILogger<StateMachine<TStateId>>? _logger;
-  private readonly ICompositeState<TStateId>? _ownerCompositeState;
-  private readonly StateMachine<TStateId>? _parentMachine;
-  private readonly IServiceResolver? _services;
+  //// OLD-4d3: private readonly IServiceResolver? _services;
+  private readonly Func<Type, object?> _containerFactory;
 
-  ////private readonly Dictionary<TState, IState<TState>> _states = [];
+  private readonly IEventAggregator? _eventAggregator;
+
+  ////private readonly ILogger<StateMachine<TStateId>>? _logger;
+  private readonly ICompositeState<TStateId>? _ownerCompositeState;
+
+  private readonly StateMachine<TStateId>? _parentMachine;
+
+  /// <summary>r4c States with DI.</summary>
+  /// <remarks>Previously: <![CDATA[Dictionary<TState, StateRegistration> _states = [];]]>.</remarks>
   private readonly Dictionary<TStateId, StateRegistration<TStateId>> _states = [];
 
   private IState<TStateId>? _currentState;
@@ -31,21 +40,34 @@ public sealed partial class StateMachine<TStateId>
   private IDisposable? _subscription;
   private CancellationTokenSource? _timeoutCts;
 
-  public StateMachine(IServiceResolver? services = null, IEventAggregator? eventAggregator = null, ILogger<StateMachine<TStateId>>? logs = null)
+  //// OLD-4d3: public StateMachine(IServiceResolver? services = null, IEventAggregator? eventAggregator = null, ILogger<StateMachine<TStateId>>? logs = null)
+  public StateMachine(
+    Func<Type, object?>? containerFactory = null,
+    IEventAggregator? eventAggregator = null)
+  ////ILogger<StateMachine<TStateId>>? logs = null)
   {
-    _services = services;
+    //// OLD-4d3: _services = services;
+    _containerFactory = containerFactory ?? (t => Activator.CreateInstance(t));
     _eventAggregator = eventAggregator;
-    _logger = logs;
+    ////_logger = logs;
   }
 
-  private StateMachine(StateMachine<TStateId> parentMachine, IServiceResolver services, ICompositeState<TStateId> ownerCompositeState, IEventAggregator? eventAggregator = null, ILogger<StateMachine<TStateId>>? logs = null)
+  //// OLD-4d3: private StateMachine(StateMachine<TStateId> parentMachine, ICompositeState<TStateId> ownerCompositeState, IServiceResolver? services, IEventAggregator? eventAggregator = null, ILogger<StateMachine<TStateId>>? logs = null)
+  private StateMachine(
+    StateMachine<TStateId> parentMachine,
+    ICompositeState<TStateId> ownerCompositeState,
+    Func<Type, object?>? containerFactory = null,
+    IEventAggregator? eventAggregator = null)
+  ////ILogger<StateMachine<TStateId>>? logs = null)
   {
     // For submachines within composite states
-    _services = services;
     _parentMachine = parentMachine;
     _ownerCompositeState = ownerCompositeState;
+
+    //// OLD-4d3: _services = services;
+    _containerFactory = containerFactory ?? (t => Activator.CreateInstance(t));
     _eventAggregator = eventAggregator;
-    _logger = logs;
+    ////_logger = logs;
   }
 
   /// <summary>Gets the context payload passed between the states, and contains methods for transitioning to the next state.</summary>
@@ -165,23 +187,34 @@ public sealed partial class StateMachine<TStateId>
     TStateId? onError = null,
     TStateId? onFailure = null,
     Action<StateMachine<TStateId>>? subStates = null)
-    ////where TStateClass : class, IState<TStateId>, new()  // OLD
+    //// OLD-4bx: where TStateClass : class, IState<TStateId>, new()
     where TStateClass : class, IState<TStateId> // (vNext)
   {
-    // OLD: Create factory method
+    // OLD-4bx: Create factory method
     ////Func<IState<TStateId>> state = () => new TStateClass();
     ////ArgumentNullException.ThrowIfNull(state);
+
+    Func<Type, object?>? stateFactory = null;
+    stateFactory = t => Activator.CreateInstance(t);
 
     _states[stateId] = new StateRegistration<TStateId>
     {
       // Factory: Func<IState<TState>>?
-      //// OLD: Factory = state,
-      Factory = lzy => lzy.CreateInstance<TStateClass>(),
+      //// OLD-4bx: Factory = state,
+      //// OLD-4d3: Factory = lzy => lzy!.CreateInstance<TStateClass>(),
 
+      // Lazy-load our class with/without the container
+      Factory = () => (IState<TStateId>)(_containerFactory(typeof(TStateClass))
+        ?? throw new InvalidOperationException($"Factory returned null for {typeof(TStateClass).Name}")),
+
+      FactoryStateId = stateId,  // TODO: Rename to StateId
       OnSuccess = onSuccess,
       OnError = onError,
       OnFailure = onFailure,
-      FactoryStateId = stateId,
+
+      // vNext:
+      // ParentId = parentId,
+      // IsComposite = isComposite,
     };
 
     // Check for registration errors
@@ -335,13 +368,28 @@ public sealed partial class StateMachine<TStateId>
     if (!_states.TryGetValue(id, out var regState))
       throw new InvalidOperationException($"State '{id}' is not registered.");
 
-    // if (reg.LazyInstance is null) { ... }
+    // TEST (2025-12-24): Ensure instance isn't NULL
+    ////// if (reg.LazyInstance is null) { ... }
+    ////if (regState.LazyInstance is null)
+    ////{
+    ////  regState.LazyInstance = new Lazy<IState<TStateId>>(() =>
+    ////  {
+    ////    if (regState.Factory is null)
+    ////      throw new NullReferenceException("Provided state factory as null");
+    ////
+    ////    var instance = regState.Factory();
+    ////
+    ////    return instance;
+    ////  },
+    ////  LazyThreadSafetyMode.ExecutionAndPublication);
+    ////}
+
     regState.LazyInstance ??= new Lazy<IState<TStateId>>(() =>
     {
       if (regState.Factory is null)
         throw new NullReferenceException("Provided state factory as null");
 
-      var instance = regState.Factory(_services);
+      var instance = regState.Factory();
 
       if (regState.OnSuccess is not null)
         (instance as BaseState<TStateId>)?.AddTransition(Result.Ok, regState.OnSuccess.Value);
@@ -353,15 +401,19 @@ public sealed partial class StateMachine<TStateId>
         (instance as BaseState<TStateId>)?.AddTransition(Result.Failure, regState.OnFailure.Value);
 
       // If composite: wire a submachine and run configuration callback.
-      if (instance is ICompositeState<TStateId> comp)
+      if (instance is ICompositeState<TStateId> compositeState)
       {
-        var sub = new StateMachine<TStateId>(this, _services, comp, _eventAggregator)
+        var sub = new StateMachine<TStateId>(
+          this,
+          compositeState,
+          containerFactory: _containerFactory,
+          _eventAggregator)
         {
           DefaultTimeoutMs = DefaultTimeoutMs,
           EvictStateInstancesOnExit = EvictStateInstancesOnExit,
         };
 
-        comp.Submachine = sub;
+        compositeState.Submachine = sub;
         regState.ConfigureSubmachine?.Invoke(sub);
       }
 

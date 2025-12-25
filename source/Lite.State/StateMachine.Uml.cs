@@ -249,7 +249,7 @@ public sealed partial class StateMachine<TStateId>
     if (reg is null || reg.Factory is null)
       throw new NullReferenceException("Invalid or missing state factory.");
 
-    var state = reg.Factory(_services);
+    var state = reg.Factory();
 
     var x = reg.Factory.GetType();
 
@@ -268,7 +268,8 @@ public sealed partial class StateMachine<TStateId>
     // For composites: build an ephemeral submachine for topology inspection (no Start).
     if (state is ICompositeState<TStateId> comp && reg.ConfigureSubmachine != null)
     {
-      var sub = new StateMachine<TStateId>(_services, _eventAggregator);
+      // TOOD (2025-12-25): May be able to just pass: (NULL, NULL)
+      var sub = new StateMachine<TStateId>(_containerFactory, _eventAggregator);
       comp.Submachine = sub;
       reg.ConfigureSubmachine(sub);
     }

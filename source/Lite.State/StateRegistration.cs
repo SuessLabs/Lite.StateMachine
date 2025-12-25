@@ -12,10 +12,6 @@ public sealed class StateRegistration<TStateId>
   /// <summary>Used for composite states.</summary>
   public Action<StateMachine<TStateId>>? ConfigureSubmachine;
 
-  /// <summary>State factory to execute.</summary>
-  //// OLD: public Func<IState<TStateId>>? Factory = default;
-  public Func<IServiceResolver, IState<TStateId>>? Factory = default;
-
   /// <summary>Gets or sets the State Id, used by ExportUml for <see cref="RegisterState{TStateClass}(TStateId, TStateId?, TStateId?, TStateId?, Action{StateMachine{TStateId}}?)"./> .</summary>
   public TStateId FactoryStateId;
 
@@ -29,4 +25,9 @@ public sealed class StateRegistration<TStateId>
 
   /// <summary>Optional auto-wire OnSuccess StateId transition.</summary>
   public TStateId? OnSuccess = null;
+
+  /// <summary>Gets the state factory to execute.</summary>
+  //// OLD: public Func<IState<TStateId>>? Factory = default;
+  //// r4c: public Func<IServiceResolver?, IState<TStateId>>? Factory = default;
+  public Func<IState<TStateId>> Factory { get; init; } = default!;
 }

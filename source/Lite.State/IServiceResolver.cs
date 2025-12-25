@@ -5,6 +5,7 @@ using System;
 
 namespace Lite.State;
 
+/*
 /// <summary>Minimal adapter so the state machine can use any DI container.</summary>
 public interface IServiceResolver
 {
@@ -22,3 +23,4 @@ public interface IServiceResolver
   /// <returns>Service instance or null if not registered.</returns>
   object? GetService(Type serviceType);
 }
+*/
