@@ -65,18 +65,32 @@ public class DependencyInjectionTests
   public void DI_GenericsRegistration_SuccessTest()
   {
     // Assemble
-    var services = new ServiceCollection()
-      .AddLogging(builder =>
-      {
-        builder.AddConsole();
-        builder.SetMinimumLevel(LogLevel.Trace);
-      })
-      .AddSingleton<IMessageService, MessageService>();
-    services.AddTransient<StateDi1>();
+    var services = new ServiceCollection();
 
+    // Register DI Services
+    services.AddLogging(builder =>
+    {
+      builder.AddConsole();
+      builder.SetMinimumLevel(LogLevel.Trace);
+    })
+    .AddSingleton<IMessageService, MessageService>();
+
+    // Register States for DI friendly
+    services.AddTransient<StateDi1>();
+    services.AddTransient<StateDi2>();
+    services.AddTransient<StateDi3>();
+    var provider = services.BuildServiceProvider();
+
+    // TODO (2025-12-25 DS): vNext - PoC builder
     ////using var provider = services.BuildServiceProvider();
 
-    var machine = new StateMachine<GenericStateId>()
+    // DI Factory Resolver:
+    Func<Type, object?> factory = t => ActivatorUtilities.CreateInstance(provider, t);
+    ////var aggregator = provider.GetRequiredService<IEventAggregator>();
+    ////var machine = new StateMachine<GenericStateId>(factory, aggregator);
+
+    var machine = new StateMachine<GenericStateId>(factory);
+    machine
       .RegisterState<StateDi1>(GenericStateId.State1, GenericStateId.State2)
       .RegisterState<StateDi2>(GenericStateId.State2, GenericStateId.State3)
       .RegisterState<StateDi3>(GenericStateId.State3)
@@ -153,12 +167,14 @@ public class DependencyInjectionTests
   */
 
   [TestMethod]
-  public void RegisterState_MsDi_SuccessTest()
+  public void RegisterState_MsDi_EventAggregatorOnly_SuccessTest()
   {
     // Build DI
     var services = new ServiceCollection()
+      //// Register Services
       .AddLogging(b => b.AddSimpleConsole())
       .AddSingleton<IEventAggregator, EventAggregator>()
+      //// Register States
       .AddTransient<FetchState>()
       .AddTransient<WaitForMessageState>()
       .AddTransient<WorkflowParent>()
@@ -171,11 +187,6 @@ public class DependencyInjectionTests
     var aggregator = services.GetRequiredService<IEventAggregator>();
 
     var machine = new StateMachine<StateId>(factory, aggregator) { DefaultTimeoutMs = 3000 };
-
-    ////machine.RegisterComposite<WorkflowParent>(StateId.WorkflowParent, onSuccess: StateId.Done, onError: StateId.Error);
-    ////machine.RegisterSubState<FetchState>(StateId.Fetch, StateId.WorkflowParent, onSuccess: StateId.WaitForMessage);
-    ////machine.RegisterSubState<WaitForMessageState>(StateId.WaitForMessage, StateId.WorkflowParent, onSuccess: default, onError: default, onFailure: default);
-
     machine.RegisterState<WorkflowParent>(
       StateId.WorkflowParent,
       onSuccess: StateId.Done,
@@ -184,6 +195,7 @@ public class DependencyInjectionTests
     {
       sub.RegisterState<FetchState>(StateId.Fetch, onSuccess: StateId.WaitForMessage);
       sub.RegisterState<WaitForMessageState>(StateId.WaitForMessage);
+      sub.SetInitial(StateId.Fetch);
     });
 
     machine.RegisterState<DoneState>(StateId.Done, onSuccess: default);
@@ -265,7 +277,7 @@ public class DependencyInjectionTests
     }
   }
 
-  private sealed class WorkflowParent : BaseState<StateId>
+  private sealed class WorkflowParent : CompositeState<StateId>
   {
     public override void OnEnter(Context<StateId> ctx) =>
       Console.WriteLine("[Parent] OnEnter");

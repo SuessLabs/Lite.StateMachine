@@ -44,9 +44,13 @@ public sealed partial class StateMachine<TStateId>
   public StateMachine(
     Func<Type, object?>? containerFactory = null,
     IEventAggregator? eventAggregator = null)
-  ////ILogger<StateMachine<TStateId>>? logs = null)
+    ////ILogger<StateMachine<TStateId>>? logs = null)
   {
     //// OLD-4d3: _services = services;
+
+    // NOTE:
+    //  When not using DI (null containerFactory), generate instance with parameterless instance
+    //  This means all states CANNOT have parameters in their constructors.
     _containerFactory = containerFactory ?? (t => Activator.CreateInstance(t));
     _eventAggregator = eventAggregator;
     ////_logger = logs;
@@ -367,22 +371,6 @@ public sealed partial class StateMachine<TStateId>
   {
     if (!_states.TryGetValue(id, out var regState))
       throw new InvalidOperationException($"State '{id}' is not registered.");
-
-    // TEST (2025-12-24): Ensure instance isn't NULL
-    ////// if (reg.LazyInstance is null) { ... }
-    ////if (regState.LazyInstance is null)
-    ////{
-    ////  regState.LazyInstance = new Lazy<IState<TStateId>>(() =>
-    ////  {
-    ////    if (regState.Factory is null)
-    ////      throw new NullReferenceException("Provided state factory as null");
-    ////
-    ////    var instance = regState.Factory();
-    ////
-    ////    return instance;
-    ////  },
-    ////  LazyThreadSafetyMode.ExecutionAndPublication);
-    ////}
 
     regState.LazyInstance ??= new Lazy<IState<TStateId>>(() =>
     {
