@@ -12,10 +12,17 @@ public sealed class Context<TState>
 {
   private readonly StateMachine<TState> _machine;
 
-  internal Context(StateMachine<TState> machine) => _machine = machine;
+  internal Context(StateMachine<TState> machine)
+  {
+    _machine = machine;
+    ////EventAggregator = eventAggregator;
+  }
 
   /// <summary>Gets or sets an arbitrary collection of errors to pass along to the next state.</summary>
   public PropertyBag ErrorStack { get; set; } = [];
+
+  /// <summary>Gets the event aggregator for command states (optional).</summary>
+  ////public IEventAggregator? Events { get; }
 
   /// <summary>Gets the previous state's enum value.</summary>
   public TState LastState { get; internal set; }

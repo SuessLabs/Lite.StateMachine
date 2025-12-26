@@ -10,6 +10,11 @@ namespace Lite.State;
 public abstract class CommandState<TState> : BaseState<TState>, ICommandState<TState>
   where TState : struct, Enum
 {
+  protected CommandState()
+    : base()
+  {
+  }
+
   protected CommandState(TState id)
     : base(id)
   {

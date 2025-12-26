@@ -32,25 +32,25 @@ public class CommandStateTests
     // Assemble
     var aggregator = new EventAggregator();
 
-    var machine = new StateMachine<WorkflowState>(aggregator)
+    var machine = new StateMachine<WorkflowState>(eventAggregator: aggregator)
     {
       // Set default timeout to 3 seconds (can override per-command state)
       DefaultTimeoutMs = 3000,
     };
 
     // Register top-level states
-    machine.RegisterState(WorkflowState.Start, () => new StartState());
-    machine.RegisterState(WorkflowState.Processing, () => new ProcessingState(), subStates: (sub) =>
+    machine.RegisterState<StartState>(WorkflowState.Start);
+    machine.RegisterState<ProcessingState>(WorkflowState.Processing, subStates: (sub) =>
     {
       // Register sub-states inside Processing's submachine
-      sub.RegisterState(WorkflowState.Load, () => new LoadState());
-      sub.RegisterState(WorkflowState.Validate, () => new ValidateState());
+      sub.RegisterState<LoadState>(WorkflowState.Load);
+      sub.RegisterState<ValidateState>(WorkflowState.Validate);
       sub.SetInitial(WorkflowState.Load);
     });
-    machine.RegisterState(WorkflowState.AwaitMessage, () => new AwaitMessageState());
-    machine.RegisterState(WorkflowState.Done, () => new DoneState());
-    machine.RegisterState(WorkflowState.Error, () => new ErrorState());
-    machine.RegisterState(WorkflowState.Failed, () => new FailedState());
+    machine.RegisterState<AwaitMessageState>(WorkflowState.AwaitMessage);
+    machine.RegisterState<DoneState>(WorkflowState.Done);
+    machine.RegisterState<ErrorState>(WorkflowState.Error);
+    machine.RegisterState<FailedState>(WorkflowState.Failed);
 
     // Set initial state
     machine.SetInitial(WorkflowState.Start);

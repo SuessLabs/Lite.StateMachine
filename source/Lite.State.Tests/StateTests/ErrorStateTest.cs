@@ -25,10 +25,10 @@ public class ErrorStateTest
     // Assemble
     var machine = new StateMachine<StateId>();
 
-    machine.RegisterState(StateId.State1, () => new State1());
-    machine.RegisterState(StateId.State2, () => new State2());
-    machine.RegisterState(StateId.State2Error, () => new State2Error(StateId.State2Error));
-    machine.RegisterState(StateId.State3, () => new State3(StateId.State3));
+    machine.RegisterState<State1>(StateId.State1);
+    machine.RegisterState<State2>(StateId.State2);
+    machine.RegisterState<State2Error>(StateId.State2Error);
+    machine.RegisterState<State3>(StateId.State3);
 
     // Set starting point
     machine.SetInitial(StateId.State1);
@@ -48,7 +48,7 @@ public class ErrorStateTest
   private class State1 : BaseState<StateId>
   {
     public State1()
-     : base(StateId.State1)
+     : base()
     {
       AddTransition(Result.Ok, StateId.State2);
     }
@@ -65,7 +65,7 @@ public class ErrorStateTest
     private int _counter = 0;
 
     public State2()
-      : base(StateId.State2)
+      : base()
     {
       AddTransition(Result.Ok, StateId.State3);
       AddTransition(Result.Error, StateId.State2Error);
@@ -88,8 +88,8 @@ public class ErrorStateTest
   /// <summary>Simulated error state handler, goes back to State2.</summary>
   private class State2Error : BaseState<StateId>
   {
-    public State2Error(StateId id)
-     : base(id)
+    public State2Error()
+     : base()
     {
       AddTransition(Result.Ok, StateId.State2);
     }
@@ -101,7 +101,7 @@ public class ErrorStateTest
     }
   }
 
-  private class State3(ErrorStateTest.StateId id) : BaseState<StateId>(id)
+  private class State3() : BaseState<StateId>()
   {
     public override void OnEntering(Context<StateId> context)
     {

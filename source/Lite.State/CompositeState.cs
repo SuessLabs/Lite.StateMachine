@@ -5,13 +5,16 @@ namespace Lite.State;
 
 using System;
 
-/// <summary>
-/// A base class for composite states. The submachine is injected/assigned externally.
-/// </summary>
+/// <summary>A base class for composite states. The submachine is injected/assigned externally.</summary>
 /// <typeparam name="TState">Type of state.</typeparam>
 public abstract class CompositeState<TState> : BaseState<TState>, ICompositeState<TState>
   where TState : struct, Enum
 {
+  protected CompositeState()
+    : base()
+  {
+  }
+
   protected CompositeState(TState id)
     : base(id)
   {

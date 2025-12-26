@@ -24,10 +24,10 @@ public class ErrorStateExTest
   {
     // Assemble
     var machine = new StateMachine<StateId>()
-      .RegisterState(StateId.State1, () => new State1(StateId.State1), StateId.State2)
-      .RegisterState(StateId.State2, () => new State2(StateId.State2), StateId.State3, StateId.State2Error)
-      .RegisterState(StateId.State2Error, () => new State2Error(StateId.State2Error), StateId.State2)
-      .RegisterState(StateId.State3, () => new State3(StateId.State3))
+      .RegisterState<State1>(StateId.State1, StateId.State2)
+      .RegisterState<State2>(StateId.State2, StateId.State3, StateId.State2Error)
+      .RegisterState<State2Error>(StateId.State2Error, StateId.State2)
+      .RegisterState<State3>(StateId.State3)
       .SetInitial(StateId.State1);
 
     // Act - Start your engine!
@@ -42,8 +42,8 @@ public class ErrorStateExTest
   }
 
   //// private class State1 : IState<BasicStateTest.BasicFsm>
-  private class State1(StateId id)
-    : BaseState<StateId>(id)
+  private class State1()
+    : BaseState<StateId>()
   {
     public override void OnEnter(Context<StateId> context)
     {
@@ -52,8 +52,8 @@ public class ErrorStateExTest
     }
   }
 
-  private class State2(StateId id)
-    : BaseState<StateId>(id)
+  private class State2()
+    : BaseState<StateId>()
   {
     private int _counter = 0;
 
@@ -72,8 +72,8 @@ public class ErrorStateExTest
   }
 
   /// <summary>Simulated error state handler, goes back to State2.</summary>
-  private class State2Error(StateId id)
-    : BaseState<StateId>(id)
+  private class State2Error()
+    : BaseState<StateId>()
   {
     public override void OnEnter(Context<StateId> context)
     {
@@ -82,8 +82,8 @@ public class ErrorStateExTest
     }
   }
 
-  private class State3(StateId id)
-    : BaseState<StateId>(id)
+  private class State3()
+    : BaseState<StateId>()
   {
     public override void OnEnter(Context<StateId> context) =>
       context.NextState(Result.Ok);
