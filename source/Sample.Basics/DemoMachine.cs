@@ -6,7 +6,7 @@ namespace Sample.Basics;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Lite.State;
+using Lite.StateMachine;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 

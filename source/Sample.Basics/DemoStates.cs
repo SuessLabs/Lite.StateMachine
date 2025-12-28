@@ -5,7 +5,7 @@ namespace Sample.Basics;
 /*
 using System;
 using System.Threading.Tasks;
-using Lite.State;
+using Lite.StateMachine;
 using Microsoft.Extensions.Logging;
 
 public sealed class CompletedState : StateNode
