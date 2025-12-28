@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Lite.State;
+namespace Lite.StateMachine;
 
 /// <summary>Command-state interface: receives messages and can time out.</summary>
 public interface ICommandState<TState> : IState<TState>

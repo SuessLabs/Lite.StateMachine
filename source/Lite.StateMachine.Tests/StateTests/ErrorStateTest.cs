@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Lite.State.Tests.StateTests;
+namespace Lite.StateMachine.Tests.StateTests;
 
 [TestClass]
 public class ErrorStateTest

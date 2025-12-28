@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Lite.State;
+namespace Lite.StateMachine;
 
 /// <summary>Composite (hierarchical) state interface: has an owned submachine.</summary>
 public interface ICompositeState<TState> : IState<TState>

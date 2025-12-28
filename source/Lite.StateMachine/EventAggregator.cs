@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace Lite.State;
+namespace Lite.StateMachine;
 
 public sealed class EventAggregator : IEventAggregator
 {

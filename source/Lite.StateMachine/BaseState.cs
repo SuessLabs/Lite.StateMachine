@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Lite.State;
+namespace Lite.StateMachine;
 
 /// <summary>A simple base implementation for states with convenient transition builder.</summary>
 /// <typeparam name="TState">Type of state.</typeparam>

@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Lite.State;
+namespace Lite.StateMachine;
 
 /// <summary>
 ///   UML generating partial class.

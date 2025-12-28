@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Lite.State;
+namespace Lite.StateMachine;
 
 /*
 /// <summary>Minimal adapter so the state machine can use any DI container.</summary>

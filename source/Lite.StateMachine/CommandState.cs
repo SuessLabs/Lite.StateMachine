@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Lite.State;
+namespace Lite.StateMachine;
 
 /// <summary>A base class for command states, adding no behavior itself (machine handles timer/subscriptions).</summary>
 /// <typeparam name="TState">Type of state.</typeparam>

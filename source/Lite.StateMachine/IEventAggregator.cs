@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Lite.State;
+namespace Lite.StateMachine;
 
 /// <summary>Simple event aggregator for delivering messages to the current command state.</summary>
 public interface IEventAggregator

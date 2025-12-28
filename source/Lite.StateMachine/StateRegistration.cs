@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Lite.State;
+namespace Lite.StateMachine;
 
 [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:Fields should be private", Justification = "Intentional public fields.")]
 public sealed class StateRegistration<TStateId>

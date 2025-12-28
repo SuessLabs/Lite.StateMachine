@@ -2,13 +2,13 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
-using Lite.State;
+using Lite.StateMachine;
 
-namespace Lite.State.Tests.StateTests;
+namespace Lite.StateMachine.Tests.StateTests;
 
 /// <summary>
 ///   Proof of concept
-///   Define transition at state creation and transitions
+///   Define transition at state creation and transitions.
 /// </summary>
 [TestClass]
 public class StateTransitionPocTest

@@ -4,7 +4,7 @@
 using System;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Lite.State.Adapters;
+namespace Lite.StateMachine.Adapters;
 
 /*
 public sealed class MsDiResolver : IServiceResolver

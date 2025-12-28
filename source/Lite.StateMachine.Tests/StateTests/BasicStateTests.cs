@@ -3,11 +3,11 @@
 
 using System;
 using System.Linq;
-using Lite.State.Tests.TestData;
+using Lite.StateMachine.Tests.TestData;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Lite.State.Tests.StateTests;
+namespace Lite.StateMachine.Tests.StateTests;
 
 [TestClass]
 [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test class")]

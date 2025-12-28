@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 
-namespace Lite.State;
+namespace Lite.StateMachine;
 
 [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1649:File name should match first type name", Justification = "No need to waste a file.")]
 public interface IPropertyBag : IDictionary<string, object>;

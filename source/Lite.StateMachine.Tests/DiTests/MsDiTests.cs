@@ -4,12 +4,12 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Lite.State.Tests.TestData;
-using Lite.State.Tests.TestData.Services;
+using Lite.StateMachine.Tests.TestData;
+using Lite.StateMachine.Tests.TestData.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Lite.State.Tests;
+namespace Lite.StateMachine.Tests.DiTests;
 
 [TestClass]
 [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test class")]
