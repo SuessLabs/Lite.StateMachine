@@ -172,7 +172,7 @@ public class MsDiTests
     Task.Delay(500);
     aggregator.Publish("go");
 
-    Console.WriteLine("MS.DI workflow finished."); ;
+    Console.WriteLine("MS.DI workflow finished.");
   }
 
   #region MS-DI States
