@@ -8,12 +8,15 @@ namespace Lite.StateMachine;
 
 public sealed class EventAggregator : IEventAggregator
 {
-  private readonly object _lockGate = new();
-  private readonly List<Func<object, bool>> _subscribers = new();
+  //// Pre .NET 9: private readonly object _lockGate = new();
+  private readonly System.Threading.Lock _lockGate = new();
+
+  ////private readonly List<Func<object, bool>> _subscribers = new();
+  private readonly List<Action<object>> _subscribers = [];
 
   public void Publish(object message)
   {
-    Func<object, bool>[] snapshot;
+    Action<object>[] snapshot;
     lock (_lockGate)
       snapshot = _subscribers.ToArray();
 
@@ -31,8 +34,9 @@ public sealed class EventAggregator : IEventAggregator
     }
   }
 
-  public IDisposable Subscribe(Func<object, bool> handler)
+  public IDisposable Subscribe(Action<object> handler)
   {
+    // Was: Func<object, bool> handler)
     ArgumentNullException.ThrowIfNull(handler);
 
     lock (_lockGate)

@@ -2,10 +2,11 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Threading.Tasks;
 
 namespace Lite.StateMachine;
 
-/// <summary>Command-state interface: receives messages and can time out.</summary>
+/// <summary>Command-state interface: receives messages from subscriptions and can timeout.</summary>
 /// <typeparam name="TStateId">Type of State Id.</typeparam>
 public interface ICommandState<TStateId> : IState<TStateId>
   where TStateId : struct, Enum
@@ -16,9 +17,11 @@ public interface ICommandState<TStateId> : IState<TStateId>
   /// <summary>Receives a message from the event aggregator.</summary>
   /// <param name="context">State context.</param>
   /// <param name="message">Message object.</param>
-  void OnMessage(Context<TStateId> context, object message);
+  /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+  Task OnMessage(Context<TStateId> context, object message);
 
   /// <summary>Fires when no messages are received within the timeout window.</summary>
   /// <param name="context">State context.</param>
-  void OnTimeout(Context<TStateId> context);
+  /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+  Task OnTimeout(Context<TStateId> context);
 }
