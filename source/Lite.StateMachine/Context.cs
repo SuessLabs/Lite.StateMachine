@@ -4,45 +4,48 @@
 namespace Lite.StateMachine;
 
 using System;
+using System.Threading.Tasks;
 
 /// <summary>Context passed to every state. Provides a "Parameter" and a NextState(Result) trigger.</summary>
-/// <typeparam name="TState">Type of state enum.</typeparam>
-public sealed class Context<TState>
-  where TState : struct, Enum
+/// <typeparam name="TStateId">Type of state enum.</typeparam>
+public sealed class Context<TStateId>
+  where TStateId : struct, Enum
 {
-  private readonly StateMachine<TState> _machine;
+  private readonly TaskCompletionSource<Result> _tcs;
 
-  internal Context(StateMachine<TState> machine)
+  internal Context(
+    TStateId current,
+    TaskCompletionSource<Result> tcs,
+    IEventAggregator? eventAggregator = null,
+    Result? lastChildResult = null)
   {
-    _machine = machine;
-    ////EventAggregator = eventAggregator;
+    CurrentStateId = current;
+    _tcs = tcs;
+    EventAggregator = eventAggregator;
+    LastChildResult = lastChildResult;
   }
+
+  /// <summary>Gets the current State's Id.</summary>
+  public TStateId CurrentStateId { get; }
 
   /// <summary>Gets or sets an arbitrary collection of errors to pass along to the next state.</summary>
   public PropertyBag ErrorStack { get; set; } = [];
 
-  /// <summary>Gets the event aggregator for command states (optional).</summary>
-  ////public IEventAggregator? Events { get; }
+  /// <summary>Gets the Event aggregator for Command states (optional).</summary>
+  public IEventAggregator? EventAggregator { get; }
 
-  /// <summary>Gets the previous state's enum value.</summary>
-  public TState LastState { get; internal set; }
+  /// <summary>Gets result emitted by the last child state (for composite parents only).</summary>
+  public Result? LastChildResult { get; }
+
+  /////// <summary>Gets the previous state's enum value.</summary>
+  ////public TStateId LastStateId { get; internal set; }
 
   /// <summary>Gets or sets an arbitrary parameter provided by caller to the current action.</summary>
   public PropertyBag Parameters { get; set; } = [];
 
-  /// <summary>
-  ///   Signals transitioning by outcome. This uses the current state's mapping,
-  ///   and if none exists locally (composite sub-state machine exhausted),
-  ///   it bubbles to the parent state's OnExit and applies the parent's mapping.
-  /// </summary>
-  /// <param name="result">The result outcome to trigger transition.</param>
-  /// <remarks>
-  ///   NOTE (2025-12-25 DS):
-  ///     Consider NOT calling 'InternalNextState()' and allow the 'StateMachine.EnterState's state.OnEnter(Context)
-  ///     to finish, then call, "InternalNextState" after substates run their corse.
-  /// </remarks>
-  public void NextState(Result result) =>
-    _machine.InternalNextState(result);
+  /// <summary>Signal the machine to move forward (only once per state entry).</summary>
+  /// <param name="result">Result to pass to the next state.</param>
+  public void NextState(Result result) => _tcs.TrySetResult(result);
 
   /// <summary>Get default parameter value as <see cref="int"/> or default.</summary>
   /// <param name="key">Parameter Key.</param>

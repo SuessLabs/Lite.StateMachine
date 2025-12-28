@@ -268,7 +268,12 @@ public sealed partial class StateMachine<TStateId>
     initParameters ??= [];
     errorStack ??= [];
 
-    Context = new Context<TStateId>(this) { Parameters = initParameters, ErrorStack = errorStack, };
+    var parentEnterTcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
+    Context = new Context<TStateId>(_initialState, parentEnterTcs)
+    {
+      Parameters = initParameters,
+      ErrorStack = errorStack,
+    };
 
     // Get the state from the Lazy collection
     var initialState = GetInstance(_initialState);

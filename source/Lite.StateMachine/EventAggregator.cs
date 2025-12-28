@@ -3,18 +3,22 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 
 namespace Lite.StateMachine;
 
 public sealed class EventAggregator : IEventAggregator
 {
+  private readonly object _lockGate = new();
   private readonly List<Func<object, bool>> _subscribers = new();
 
   public void Publish(object message)
   {
+    Func<object, bool>[] snapshot;
+    lock (_lockGate)
+      snapshot = _subscribers.ToArray();
+
     // Fan-out; handlers decide whether to consume or ignore.
-    foreach (var sub in _subscribers.ToArray())
+    foreach (var sub in snapshot) // _subscribers.ToArray())
     {
       try
       {
@@ -30,7 +34,9 @@ public sealed class EventAggregator : IEventAggregator
   public IDisposable Subscribe(Func<object, bool> handler)
   {
     ArgumentNullException.ThrowIfNull(handler);
-    _subscribers.Add(handler);
+
+    lock (_lockGate)
+      _subscribers.Add(handler);
 
     return new Subscription(() => _subscribers.Remove(handler));
   }
@@ -38,14 +44,18 @@ public sealed class EventAggregator : IEventAggregator
   private sealed class Subscription : IDisposable
   {
     private readonly Action _unsubscribe;
-    private int _disposed;
+    private bool _disposed;
 
-    public Subscription(Action unsubscribe) => _unsubscribe = unsubscribe;
+    public Subscription(Action unsubscribe) =>
+      _unsubscribe = unsubscribe;
 
     public void Dispose()
     {
-      if (Interlocked.Exchange(ref _disposed, 1) == 0)
-        _unsubscribe();
+      if (_disposed)
+        return;
+
+      _disposed = true;
+      _unsubscribe();
     }
   }
 }
