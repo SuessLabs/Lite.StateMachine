@@ -15,7 +15,7 @@
     <File Path="Directory.Packages.props" />
   </Folder>
   <Folder Name="/Tests/">
-    <Project Path="Lite.State.Tests/Lite.State.Tests.csproj" Id="9644caac-1ac7-49b2-a502-896ca82f7b74" />
+    <Project Path="Lite.StateMachine.Tests/Lite.State.Tests.csproj" Id="9644caac-1ac7-49b2-a502-896ca82f7b74" />
   </Folder>
-  <Project Path="Lite.State/Lite.State.csproj" />
+  <Project Path="Lite.StateMachine/Lite.State.csproj" />
 </Solution>

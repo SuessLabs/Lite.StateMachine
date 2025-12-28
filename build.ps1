@@ -26,7 +26,7 @@ else
   New-Item -Path '.\publish' -ItemType Directory
 }
 
-Move-Item -Path "output/Lite.State/Release/Lite.State.1.0.0.nupkg" -Destination "publish/Lite.State.1.0.0.nupkg"
+Move-Item -Path "output/Lite.StateMachine/Release/Lite.State.1.0.0.nupkg" -Destination "publish/Lite.State.1.0.0.nupkg"
 
 ## Publish build artifacts
 ##dotnet publish src/Lite.EventIpc/Lite.EventIpc.csproj /p:PublishProfile=src/Lite.EventIpc/Properties/PublishProfiles/win-x64.pubxml /p:DebugType=None /p:DebugSymbols=false
