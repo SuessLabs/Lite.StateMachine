@@ -36,6 +36,11 @@ public sealed class Context<TState>
   ///   it bubbles to the parent state's OnExit and applies the parent's mapping.
   /// </summary>
   /// <param name="result">The result outcome to trigger transition.</param>
+  /// <remarks>
+  ///   NOTE (2025-12-25 DS):
+  ///     Consider NOT calling 'InternalNextState()' and allow the 'StateMachine.EnterState's state.OnEnter(Context)
+  ///     to finish, then call, "InternalNextState" after substates run their corse.
+  /// </remarks>
   public void NextState(Result result) =>
     _machine.InternalNextState(result);
 

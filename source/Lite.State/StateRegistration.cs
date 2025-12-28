@@ -13,7 +13,7 @@ public sealed class StateRegistration<TStateId>
   public Action<StateMachine<TStateId>>? ConfigureSubmachine;
 
   /// <summary>Gets or sets the State Id, used by ExportUml for <see cref="RegisterState{TStateClass}(TStateId, TStateId?, TStateId?, TStateId?, Action{StateMachine{TStateId}}?)"./> .</summary>
-  public TStateId FactoryStateId;
+  public TStateId StateId;
 
   public Lazy<IState<TStateId>>? LazyInstance;
 

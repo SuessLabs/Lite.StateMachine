@@ -74,6 +74,14 @@ public class CompositeStateTest
     var ctxFinal = machine.Context.Parameters;
     Assert.IsNotNull(ctxFinal);
     Assert.AreEqual(SUCCESS, ctxFinal[ParameterSubStateEntered]);
+
+    // Ensure all states are hit (-2 because of subs)
+    ////var enums = Enum.GetValues<StateId>().Cast<StateId>();
+    ////Assert.AreEqual(enums.Count(), machine.States.Count());
+    ////Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
+    ////
+    ////// Ensure they're in order
+    ////Assert.IsTrue(enums.SequenceEqual(machine.States));
   }
 
   #region State machine - Fluent
