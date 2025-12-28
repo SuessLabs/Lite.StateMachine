@@ -18,10 +18,10 @@ public abstract class BaseState<TState> : IState<TState>
   {
   }
 
-  protected BaseState(TState id) => Id = id;
+  protected BaseState(TState id) => StateId = id;
 
   /// <inheritdoc/>
-  public TState Id { get; private set; }
+  public TState StateId { get; private set; }
 
   /// <inheritdoc/>
   public virtual bool IsComposite => false;
@@ -49,5 +49,5 @@ public abstract class BaseState<TState> : IState<TState>
   {
   }
 
-  public void SetStateId(TState id) => Id = id;
+  public void SetStateId(TState id) => StateId = id;
 }

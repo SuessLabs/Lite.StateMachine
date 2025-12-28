@@ -13,25 +13,30 @@ using System.Threading.Tasks;
 /// </summary>
 /// <typeparam name="TStateId">Type of State Id to use (i.e. enum, int, etc.).</typeparam>
 /// <remarks>
-///   TODO: Do not require creating a new StateMachine for substates.
-///     Composite:  <![CDATA[.RegisterState<ParentState>(Enum.StateId1, isComposite: true, onSuccess, onError, onFailure);]]>.
-///     Substate:   <![CDATA[.RegisterState<SubState>(Enum.StateId2, parentState: Enum.ParentState, onSuccess, onError, onFailure);]]>.
+///   TODO:
+///   1. Use context to override default ctx.NextState(StateId).
+///   2. Implement custom Exceptions.
+///   3. Ensure context is passed along and bubbled-up.
+///   4. Configuration: Destroy state instance(s) after leaving (customizable to not have GC pressure).
+///   5. Optionally pass in ILogger for state machine logging.
 /// </remarks>
 public sealed partial class StateMachine<TStateId>
   where TStateId : struct, Enum
 {
-  //// OLD-4d3: private readonly IServiceResolver? _services;
+  /////// <summary>Adapter so the state machine can use any DI container</summary>
+  /////// <remarks>OLD-4d3: private readonly IServiceResolver? _services;.</remarks>
+
+  /// <summary>Optional dependency injection container factory.</summary>
   private readonly Func<Type, object?> _containerFactory;
 
   private readonly IEventAggregator? _eventAggregator;
 
   ////private readonly ILogger<StateMachine<TStateId>>? _logger;
-  private readonly ICompositeState<TStateId>? _ownerCompositeState;
 
-  private readonly StateMachine<TStateId>? _parentMachine;
+  /// <summary>Active states.</summary>
+  private readonly Dictionary<TStateId, IState<TStateId>> _instances = [];
 
-  /// <summary>r4c States with DI.</summary>
-  /// <remarks>Previously: <![CDATA[Dictionary<TState, StateRegistration> _states = [];]]>.</remarks>
+  /// <summary>States registered with system.</summary>
   private readonly Dictionary<TStateId, StateRegistration<TStateId>> _states = [];
 
   private IState<TStateId>? _currentState;
@@ -40,55 +45,40 @@ public sealed partial class StateMachine<TStateId>
   private IDisposable? _subscription;
   private CancellationTokenSource? _timeoutCts;
 
-  //// OLD-4d3: public StateMachine(IServiceResolver? services = null, IEventAggregator? eventAggregator = null, ILogger<StateMachine<TStateId>>? logs = null)
+  /// <summary>
+  ///   Initializes a new instance of the <see cref="StateMachine{TStateId}"/> class.
+  ///   Dependency Injection is optional:
+  ///   - If containerFactory is omitted, states are created with Activator.CreateInstance.
+  ///   - If provided, it's used to construct state instances via your container.
+  /// </summary>
+  /// <param name="containerFactory">Optional DI container factory (remember to register states as Transient).</param>
+  /// <param name="eventAggregator">Optional event aggregator for command states.</param>
   public StateMachine(
     Func<Type, object?>? containerFactory = null,
     IEventAggregator? eventAggregator = null)
-    ////ILogger<StateMachine<TStateId>>? logs = null)
   {
-    //// OLD-4d3: _services = services;
+    _containerFactory = containerFactory ?? (t => Activator.CreateInstance(t));
+    _eventAggregator = eventAggregator;
 
     // NOTE-1 (2025-12-25):
     //  * Create Precheck Sanitization:
-    //    * Verify initial statates are set for core and all sub-states.
+    //    * Verify initial states are set for core and all sub-states.
     //    * Throw clear exceptions to inform user what to fix.
     // NOTE-2 (2025-12-25):
     //  When not using DI (null containerFactory), generate instance with parameterless instance
     //  This means all states CANNOT have parameters in their constructors.
-    _containerFactory = containerFactory ?? (t => Activator.CreateInstance(t));
-    _eventAggregator = eventAggregator;
-    ////_logger = logs;
-  }
-
-  //// OLD-4d3: private StateMachine(StateMachine<TStateId> parentMachine, ICompositeState<TStateId> ownerCompositeState, IServiceResolver? services, IEventAggregator? eventAggregator = null, ILogger<StateMachine<TStateId>>? logs = null)
-  private StateMachine(
-    StateMachine<TStateId> parentMachine,
-    ICompositeState<TStateId> ownerCompositeState,
-    Func<Type, object?>? containerFactory = null,
-    IEventAggregator? eventAggregator = null)
-  ////ILogger<StateMachine<TStateId>>? logs = null)
-  {
-    // For submachines within composite states
-    _parentMachine = parentMachine;
-    _ownerCompositeState = ownerCompositeState;
-
-    //// OLD-4d3: _services = services;
-    _containerFactory = containerFactory ?? (t => Activator.CreateInstance(t));
-    _eventAggregator = eventAggregator;
-    ////_logger = logs;
+    //
+    //// OLD-4d3, 4bx:
+    ////  public StateMachine(IServiceResolver? services = null, IEventAggregator? eventAggregator = null, ILogger<StateMachine<TStateId>>? logs = null)
+    ////  _services = services;
+    ////  _logger = logs;
   }
 
   /// <summary>Gets the context payload passed between the states, and contains methods for transitioning to the next state.</summary>
   public Context<TStateId> Context { get; private set; } = default!;
 
-  /// <summary>Gets or sets the default timeout (3000ms default) to be used by <see cref="CommandState{TState}"/>'s OnTimeout.</summary>
+  /// <summary>Gets or sets the default timeout in milliseconds (3000ms default). Used by <see cref="ICommandState{TState}"/>, triggering OnTimeout.</summary>
   public int DefaultTimeoutMs { get; set; } = 3000;
-
-  /// <summary>
-  ///   Gets or sets a value indicating whether or not the machine will evict (discard) the state instance after OnExit to conserve memory.
-  ///   False by default, this is useful if state instances are heavy and can be safely recreated on next entry.
-  /// </summary>
-  public bool EvictStateInstancesOnExit { get; set; } = false;
 
   /// <summary>Gets the collection of all registered states.</summary>
   /// <remarks>
@@ -96,6 +86,296 @@ public sealed partial class StateMachine<TStateId>
   ///   Previously: <![CDATA[Dictionary<TState, IState<TState>>]]>.
   /// </remarks>
   public List<TStateId> States => [.. _states.Keys];
+
+  /// <summary>
+  /// Registers a top-level composite parent state (has no parent state) and explicitly sets:
+  /// - the initial child (initialChildStateId).
+  /// - the next top-level transitions (nextOnOk, nextOnError, nextOnFailure).
+  /// </summary>
+  public StateMachine<TStateId> RegisterComposite<TCompositeParent>(
+    TStateId stateId,
+    TStateId initialChildStateId,
+    TStateId? onSuccess = null,
+    TStateId? onError = null,
+    TStateId? onFailure = null)
+    where TCompositeParent : class, IState<TStateId>
+  {
+    // TODO (2025-12-28 DS): Use exception, DuplicateStateException
+    if (_states.ContainsKey(stateId))
+      throw new InvalidOperationException($"Composite parent '{stateId}' already registered.");
+
+    return RegisterState<TCompositeParent>(
+      stateId: stateId,
+      onSuccess: onSuccess,
+      onError: onError,
+      onFailure: onFailure,
+      parentStateId: null,
+      isCompositeParent: true,
+      initialChildStateId: initialChildStateId);
+  }
+
+  /// <summary>Nested composite (child composite under a parent composite).</summary>
+  public StateMachine<TStateId> RegisterCompositeChild<TCompositeParent>(
+    TStateId stateId,
+    TStateId parentStateId,
+    TStateId initialChildStateId,
+    TStateId? onSuccess = null,
+    TStateId? onError = null,
+    TStateId? onFailure = null)
+    where TCompositeParent : class, IState<TStateId>
+  {
+    // TODO (2025-12-28 DS): Use exception, ParentStateMustBeCompositeException
+    if (!_states.TryGetValue(parentStateId, out var pr) || !pr.IsCompositeParent)
+      throw new InvalidOperationException($"Parent state '{parentStateId}' must be a composite.");
+
+    // TODO (2025-12-28 DS): Use exception, DuplicateStateException
+    if (_states.ContainsKey(stateId))
+      throw new InvalidOperationException($"Composite child state '{stateId}' already registered.");
+
+    return RegisterState<TCompositeParent>(
+      stateId: stateId,
+      onSuccess: onSuccess,
+      onError: onError,
+      onFailure: onFailure,
+      parentStateId: parentStateId,
+      isCompositeParent: true,
+      initialChildStateId: initialChildStateId);
+  }
+
+  /// <summary>Registers a regular or command state (optionally with transitions).</summary>
+  /// <remarks>Example: <![CDATA[RegisterState<T>(StateId.State1, StateId.State2);]]>.</remarks>
+  /// <param name="stateId">State Id.</param>
+  /// <param name="onSuccess">State Id to transition to on success.</param>
+  /// <returns>Instance of this class.</returns>
+  /// <typeparam name="TState">State class.</typeparam>
+  public StateMachine<TStateId> RegisterState<TState>(TStateId stateId, TStateId? onSuccess)
+    where TState : class, IState<TStateId>
+  {
+    return RegisterState<TState>(stateId, onSuccess, onError: null, onFailure: null, parentStateId: null, isCompositeParent: false, initialChildStateId: null);
+  }
+
+  /// <summary>
+  ///   Registers a new state with the state machine and configures its transitions and hierarchy.
+  /// </summary>
+  /// <remarks>
+  ///   Use this method to add states and define their transitions and hierarchy before starting the
+  ///   state machine. Registering duplicate state identifiers is not allowed.
+  /// </remarks>
+  /// <typeparam name="TState">The type of the state to register. Must implement <see cref="IState{TStateId}"/>.</typeparam>
+  /// <param name="stateId">The unique identifier for the state to register.</param>
+  /// <param name="onSuccess">The identifier of the state to transition to when the registered state completes successfully, or null if no transition is defined.</param>
+  /// <param name="onError">The identifier of the state to transition to when the registered state encounters an error, or null if no transition is defined.</param>
+  /// <param name="onFailure">The identifier of the state to transition to when the registered state fails, or null if no transition is defined.</param>
+  /// <param name="parentStateId">The identifier of the parent state if the registered state is part of a composite state; otherwise, null.</param>
+  /// <param name="isCompositeParent">true if the registered state is a composite parent state; otherwise, false.</param>
+  /// <param name="initialChildStateId">The identifier of the initial child state to activate when entering a composite parent state; otherwise, null.</param>
+  /// <returns>The current StateMachine<TStateId> instance, enabling method chaining.</returns>
+  /// <exception cref="InvalidOperationException">Thrown if a state with the specified stateId is already registered or if the state factory returns null.</exception>
+  public StateMachine<TStateId> RegisterState<TState>(
+    TStateId stateId,
+    TStateId? onSuccess,
+    TStateId? onError,
+    TStateId? onFailure,
+    TStateId? parentStateId = null,
+    bool isCompositeParent = false,
+    TStateId? initialChildStateId = null)
+    where TState : class, IState<TStateId>
+  {
+    // TODO (2025-12-28 DS): Use custom exception, DuplicateStateException
+    if (_states.ContainsKey(stateId))
+      throw new InvalidOperationException($"State '{stateId}' already registered.");
+
+    var reg = new StateRegistration<TStateId>
+    {
+      StateId = stateId,
+      Factory = () => (IState<TStateId>)(_containerFactory(typeof(TState))
+        ?? throw new InvalidOperationException($"Factory returned null for {typeof(TState).Name}")),
+      ParentId = parentStateId,
+      IsCompositeParent = isCompositeParent,
+      InitialChildId = initialChildStateId,
+      OnSuccess = onSuccess,
+      OnError = onError,
+      OnFailure = onFailure,
+    };
+
+    _states[stateId] = reg;
+
+    return this;
+  }
+
+  /// <summary>
+  /// Registers a composite's sub-state (regular/leaf or command state) under a composite parent.
+  /// The nextOnOk is nullable: null means this is the last child, so bubble to the parent's OnExit.
+  /// </summary>
+  public StateMachine<TStateId> RegisterSubState<TChildClass>(
+    TStateId stateId,
+    TStateId parentStateId,
+    TStateId? onSuccess,
+    TStateId? onError = null,
+    TStateId? onFailure = null)
+    where TChildClass : class, IState<TStateId>
+  {
+    // TODO (2025-12-28 DS): Use exception, ParentStateMustBeCompositeException
+    if (!_states.TryGetValue(parentStateId, out var pr) || !pr.IsCompositeParent)
+      throw new InvalidOperationException($"Parent '{parentStateId}' must be registered as a composite parent.");
+
+    // TODO (2025-12-28 DS): Use exception, DuplicateStateException
+    if (_states.ContainsKey(stateId))
+      throw new InvalidOperationException($"Child state '{stateId}' already registered.");
+
+    return RegisterState<TChildClass>(
+      stateId,
+      onSuccess,
+      onError,
+      onFailure,
+      parentStateId,
+      isCompositeParent: false,
+      initialChildStateId: null);
+  }
+
+  /// <summary>Starts the machine at the initial state.</summary>
+  /// <param name="initialState">Initial startup state.</param>
+  /// <param name="parameterStack">Initial <see cref="PropertyBag"/> parameter stack.</param>
+  /// <param name="errorStack">Error Stack <see cref="PropertyBag"/>.</param>
+  /// <param name="cancellationToken">Cancellation Token.</param>
+  /// <returns>Async task.</returns>
+  /// <exception cref="InvalidOperationException">Thrown if the specified state identifier has not been registered.</exception>
+  public async Task RunAsync(
+    TStateId initialState,
+    PropertyBag? parameterStack = null,
+    PropertyBag? errorStack = null,
+    CancellationToken cancellationToken = default)
+  {
+    // TODO (2025-12-28 DS): Use custom exception, InvalidMissingStartupStateException
+    if (!_states.ContainsKey(initialState))
+      throw new InvalidOperationException($"Initial state '{initialState}' was not registered.");
+
+    var current = initialState;
+
+    while (!cancellationToken.IsCancellationRequested)
+    {
+      var reg = GetRegistration(current);
+
+      // TODO (2025-12-28 DS): Configure context and pass it along
+      var tcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
+      var ctx = new Context<TStateId>(reg.StateId, tcs)
+      {
+        Parameters = parameterStack ?? [],
+        ErrorStack = errorStack ?? [],
+      };
+
+      // Run any state (composite or leaf) recursively.
+      var result = await RunAnyStateRecursiveAsync(reg, parameterStack, errorStack, cancellationToken).ConfigureAwait(false);
+      if (result is null)
+        break;
+
+      var nextId = ResolveNext(reg, result.Value);
+      if (nextId is null)
+        break;
+
+      current = nextId.Value;
+    }
+  }
+
+  /// <summary>
+  ///   Retrieves an existing state instance associated with the specified registration,
+  ///   or creates and stores a new instance if none exists.
+  /// </summary>
+  /// <param name="reg">
+  ///   The state registration containing the state identifier and factory method used to
+  ///   create the instance if it does not already exist.</param>
+  /// <returns>The state instance corresponding to the specified registration.</returns>
+  private IState<TStateId> GetOrCreateInstance(StateRegistration<TStateId> reg)
+  {
+    // NOTE (2025-12-28): In the future, should optionally destroy states after `OnExit` via config param
+    if (_instances.TryGetValue(reg.StateId, out var instance))
+      return instance;
+
+    var stateInstance = reg.Factory();
+    _instances[reg.StateId] = stateInstance;
+    return stateInstance;
+  }
+
+  /// <summary>Retrieves the registration information for the specified state identifier.</summary>
+  /// <param name="stateId">The identifier of the state whose registration information is to be retrieved.</param>
+  /// <returns>The registration associated with the specified state identifier.</returns>
+  /// <exception cref="InvalidOperationException">Thrown if the specified state identifier has not been registered.</exception>
+  private StateRegistration<TStateId> GetRegistration(TStateId stateId)
+  {
+    // TODO (2025-12-27 DS): Use custom exception, UnregisteredNextStateException
+    // Because states can override/customize the "NextState" on the fly, we need a unique exception.
+    if (!_states.TryGetValue(stateId, out var reg))
+      throw new InvalidOperationException($"Next state '{stateId}' was not registered.");
+
+    return reg;
+  }
+
+  /// <summary>Get next state transition based on state's result.</summary>
+  /// <param name="reg">State registration.</param>
+  /// <param name="result">State's returned result.</param>
+  /// <returns><see cref="TStateId"/> to go to next or NULL to bubble-up or end state machine process.</returns>
+  private TStateId? ResolveNext(StateRegistration<TStateId> reg, Result result)
+  {
+    return result switch
+    {
+      Result.Ok => reg.OnSuccess,
+      Result.Error => reg.OnError,
+      Result.Failure => reg.OnFailure,
+      _ => null,
+    };
+  }
+
+  private async Task<Result?> RunAnyStateRecursiveAsync(
+    StateRegistration<TStateId> reg,
+    PropertyBag? parameterStack,
+    PropertyBag? errorStack,
+    CancellationToken cancellationToken)
+  {
+    // Run Normal or Command State
+    if (!reg.IsCompositeParent)
+      return await RunLeafAsync(reg, parameterStack, errorStack, cancellationToken).ConfigureAwait(false);
+
+    // Composite States
+    var instance = GetOrCreateInstance(reg);
+    var parentEnterTcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
+    var parentEnterCtx = new Context<TStateId>(reg.StateId, parentEnterTcs)
+    {
+      Parameters = parameterStack ?? [],
+      ErrorStack = errorStack ?? [],
+    };
+
+    await instance.OnEntering(parentEnterCtx).ConfigureAwait(false);
+    await instance.OnEnter(parentEnterCtx).ConfigureAwait(false);
+
+    // TODO (2025-12-28 DS): Consider StateMachine config param to just move along or throw exception
+    // TODO (2025-12-28 DS): Use custom exception, InvalidMissingInitialSubStateException
+    if (reg.InitialChildId is null)
+      throw new InvalidOperationException($"Composite '{reg.StateId}' must have an initial child (InitialChildId).");
+  }
+
+  // Rename: RunSingleStateAsync(...)
+  private async Task<Result?> RunLeafAsync(
+    StateRegistration<TStateId> reg,
+    PropertyBag? parameterStack,
+    PropertyBag? errorStack,
+    CancellationToken cancellationToken)
+  {
+    var instance = GetOrCreateInstance(reg);
+    var tcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
+    var ctx = new Context<TStateId>(reg.StateId, tcs)
+    {
+      Parameters = parameterStack ?? [],
+      ErrorStack = errorStack ?? [],
+    };
+
+    IDisposable? sub = null;
+    CancellationTokenSource? timeoutCts = null;
+
+    if (instance is ICommandState<TStateId> cmd)
+    {
+
+    }
+  }
 
   /*
   /// <summary>
@@ -168,7 +448,6 @@ public sealed partial class StateMachine<TStateId>
 
     return this;
   }
-  */
 
   /// <summary>Registers a state with the state machine using generics and configures its transitions and optional substates.</summary>
   /// <typeparam name="TStateClass">
@@ -324,11 +603,11 @@ public sealed partial class StateMachine<TStateId>
   [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1501:Statement should not be on a single line", Justification = "We don't need 16 lines for a try/catch.")]
   private void CancelTimerAndSubscription()
   {
-    try { _subscription?.Dispose(); } catch { /* ignore */ }
+    try { _subscription?.Dispose(); } catch { /* ignore * / }
 
     _subscription = null;
 
-    try { _timeoutCts?.Cancel(); } catch { /* ignore */ }
+    try { _timeoutCts?.Cancel(); } catch { /* ignore * / }
 
     _timeoutCts?.Dispose();
     _timeoutCts = null;
@@ -369,7 +648,7 @@ public sealed partial class StateMachine<TStateId>
 
     // Optional: Evict instance to conserve memory
     // Let GC collect; will recreate on next entry
-    if (EvictStateInstancesOnExit && _states.TryGetValue(_currentState.Id, out var reg))
+    if (EvictStateInstancesOnExit && _states.TryGetValue(_currentState.StateId, out var reg))
       reg.LazyInstance = null;
   }
 
@@ -464,4 +743,5 @@ public sealed partial class StateMachine<TStateId>
       }
     });
   }
+  */
 }

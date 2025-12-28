@@ -5,29 +5,37 @@ using System;
 
 namespace Lite.StateMachine;
 
-[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:Fields should be private", Justification = "Intentional public fields.")]
-public sealed class StateRegistration<TStateId>
+/// <summary>State registration class for lazy-loading.</summary>
+/// <typeparam name="TStateId">State Id.</typeparam>
+internal sealed class StateRegistration<TStateId>
   where TStateId : struct, Enum
 {
-  /// <summary>Used for composite states.</summary>
-  public Action<StateMachine<TStateId>>? ConfigureSubmachine;
-
-  /// <summary>Gets or sets the State Id, used by ExportUml for <see cref="RegisterState{TStateClass}(TStateId, TStateId?, TStateId?, TStateId?, Action{StateMachine{TStateId}}?)"./> .</summary>
-  public TStateId StateId;
-
-  public Lazy<IState<TStateId>>? LazyInstance;
-
-  /// <summary>Optional auto-wire OnError StateId transition.</summary>
-  public TStateId? OnError = null;
-
-  /// <summary>Optional auto-wire OnFailure StateId transition.</summary>
-  public TStateId? OnFailure = null;
-
-  /// <summary>Optional auto-wire OnSuccess StateId transition.</summary>
-  public TStateId? OnSuccess = null;
-
   /// <summary>Gets the state factory to execute.</summary>
-  //// OLD: public Func<IState<TStateId>>? Factory = default;
-  //// r4c: public Func<IServiceResolver?, IState<TStateId>>? Factory = default;
+  /// <remarks>OLD: <![CDATA[public Func<IState<TStateId>>? Factory = default;]]>.</remarks>
   public Func<IState<TStateId>> Factory { get; init; } = default!;
+
+  /// <summary>Gets a value indicating whether this is a composite parent state or not.</summary>
+  public bool IsCompositeParent { get; init; }
+
+  /// <summary>Gets the initial child <see cref="TStateId"/> (for Composite states only).</summary>
+  public TStateId? InitialChildId { get; init; }
+
+  /// <summary>Gets or sets an optional auto-wire OnError StateId transition.</summary>
+  public TStateId? OnError { get; set; } = null;
+
+  /// <summary>Gets or sets an optional auto-wire OnFailure StateId transition.</summary>
+  public TStateId? OnFailure { get; set; } = null;
+
+  /// <summary>Gets or sets an optional auto-wire OnSuccess StateId transition.</summary>
+  public TStateId? OnSuccess { get; set; } = null;
+
+  /// <summary>Gets the sub-state's parent State Id (optional).</summary>
+  public TStateId? ParentId { get; init; }
+
+  /// <summary>Gets the State Id, used by ExportUml for <see cref="RegisterState{TStateClass}(TStateId, TStateId?, TStateId?, TStateId?, Action{StateMachine{TStateId}}?)"./> .</summary>
+  public TStateId StateId { get; init; }
+
+  //// INFO: Though dict lookup is more flexible, properties are faster. Leaving this here for reference.
+  /////// <summary>Gets the state result transitions OnSuccess, OnError, OnFailure.</summary>
+  ////public Dictionary<Result, TStateId?> Transitions { get; } = new();
 }

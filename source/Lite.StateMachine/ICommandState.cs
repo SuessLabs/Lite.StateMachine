@@ -6,24 +6,19 @@ using System;
 namespace Lite.StateMachine;
 
 /// <summary>Command-state interface: receives messages and can time out.</summary>
-public interface ICommandState<TState> : IState<TState>
-  where TState : struct, Enum
+/// <typeparam name="TStateId">Type of State Id.</typeparam>
+public interface ICommandState<TStateId> : IState<TStateId>
+  where TStateId : struct, Enum
 {
-  /// <summary>
-  /// Gets optional message filter; return true to deliver to this state, false to ignore.
-  /// Default: accept all messages.
-  /// </summary>
-  Func<object, bool> MessageFilter => _ => true;
-
   /// <summary>Gets optional override of timeout for this state; null uses machine default.</summary>
   int? TimeoutMs => null;
 
   /// <summary>Receives a message from the event aggregator.</summary>
   /// <param name="context">State context.</param>
   /// <param name="message">Message object.</param>
-  void OnMessage(Context<TState> context, object message);
+  void OnMessage(Context<TStateId> context, object message);
 
   /// <summary>Fires when no messages are received within the timeout window.</summary>
   /// <param name="context">State context.</param>
-  void OnTimeout(Context<TState> context);
+  void OnTimeout(Context<TStateId> context);
 }

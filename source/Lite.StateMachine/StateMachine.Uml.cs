@@ -1,6 +1,6 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
-
+/*
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -133,7 +133,7 @@ public sealed partial class StateMachine<TStateId>
 
   private void AppendEdges(StringBuilder sb, IState<TStateId> state)
   {
-    var from = Escape(state.Id.ToString());
+    var from = Escape(state.StateId.ToString());
     foreach (var tr in state.Transitions)
     {
       var to = Escape(tr.Value.ToString());
@@ -178,7 +178,7 @@ public sealed partial class StateMachine<TStateId>
 
   private void AppendNode(StringBuilder sb, IState<TStateId> state, int defaultTimeoutMs)
   {
-    var name = Escape(state.Id.ToString());
+    var name = Escape(state.StateId.ToString());
 
     var shape = "box";
     if (state is ICommandState<TStateId>)
@@ -205,7 +205,7 @@ public sealed partial class StateMachine<TStateId>
 
   private void AppendSubEdges(StringBuilder sb, IState<TStateId> state)
   {
-    var from = Escape(state.Id.ToString());
+    var from = Escape(state.StateId.ToString());
     foreach (var tr in state.Transitions)
     {
       var to = Escape(tr.Value.ToString());
@@ -216,7 +216,7 @@ public sealed partial class StateMachine<TStateId>
 
   private void AppendSubNode(StringBuilder sb, IState<TStateId> state, int defaultTimeoutMs)
   {
-    var name = Escape(state.Id.ToString());
+    var name = Escape(state.StateId.ToString());
 
     var shape = "box";
     if (state is ICommandState<TStateId>)
@@ -277,3 +277,4 @@ public sealed partial class StateMachine<TStateId>
     return state;
   }
 }
+*/
