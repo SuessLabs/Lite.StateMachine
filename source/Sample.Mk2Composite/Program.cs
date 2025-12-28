@@ -4,9 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Lite.State;
+using Lite.StateMachine;
 
-namespace Sample.Mk2Composite;
+namespace Sample.Mk2.Composite;
 
 internal class Program
 {

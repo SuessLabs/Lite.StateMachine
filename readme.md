@@ -4,7 +4,7 @@ Flexible lightweight finite state machine (FSM) for .NET, supporting shared cont
 
 The Lite State Machine is designed for vertical scaling. Meaning, it can be used for the most basic (tiny) system and beyond medical-grade robotics systems.
 
-Download [Lite.State @ NuGet.org](https://www.nuget.org/packages/Lite.State) today!
+Download [Lite.StateMachine @ NuGet.org](https://www.nuget.org/packages/Lite.StateMachine) today!
 
 Copyright 2022-2025 Xeno Innovations, Inc. (dba, Suess Labs)<br />
 Created by: Damian Suess<br />
@@ -17,7 +17,7 @@ Create a _state machine_ by defining the states, transitions, and shared context
 You can define the state machine using either the fluent design pattern or standard line-by-line. Each state is represented by a enum `StateId` in the following example.
 
 ```cs
-using Lite.State;
+using Lite.StateMachine;
 
 // Note the use of generics '<TStateClass>' to strongly-type the state machine
 var machine = new StateMachine<StateId>()
