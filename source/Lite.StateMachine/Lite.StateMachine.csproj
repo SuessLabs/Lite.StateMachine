@@ -7,10 +7,11 @@
   <PropertyGroup>
     <Title>Lite State Machine</Title>
     <Description>Flexible lightweight finite state machine (FSM) for .NET supporting shared context for passing parameters, composite (sub) states, command states, lazy-loading and thread safe. Cross-platform and optimized for speed for use in enterprise, robotic and even tiny applications.</Description>
+
     <AssemblyVersion>2.0.0</AssemblyVersion>
     <FileVersion>$(AssemblyVersion)</FileVersion>
     <VersionPrefix>$(AssemblyVersion)</VersionPrefix>
-    <VersionSuffix>-alpha1</VersionSuffix>
+    <VersionSuffix>-alpha2</VersionSuffix>
     <Version>$(VersionPrefix)$(VersionSuffix)</Version>
 
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -20,6 +21,7 @@
     <RepositoryUrl>https://github.com/SuessLabs/Lite.StateMachine</RepositoryUrl>
     <PackageTags>statemachine;lite;fsm;suesslabs;xeno-innovations</PackageTags>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <PackageReleaseNotes>Overhauled framework to include enhanced state definitions for deep sub-state hierarchy, async/await friendly state classes, RegisterState overloads with friendly naming conventions, uses new namespace "Lite.StateMachine".</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
