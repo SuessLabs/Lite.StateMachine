@@ -7,25 +7,28 @@
   <PropertyGroup>
     <Title>Lite State Machine</Title>
     <Description>Flexible lightweight finite state machine (FSM) for .NET supporting shared context for passing parameters, composite (sub) states, command states, lazy-loading and thread safe. Cross-platform and optimized for speed for use in enterprise, robotic and even tiny applications.</Description>
-    <AssemblyVersion>1.1.0</AssemblyVersion>
-    <FileVersion>1.1.0</FileVersion>
-    <Version>$(VersionPrefix)</Version>
+    <AssemblyVersion>2.0.0</AssemblyVersion>
+    <FileVersion>$(AssemblyVersion)</FileVersion>
+    <VersionPrefix>$(AssemblyVersion)</VersionPrefix>
+    <Version>$(VersionPrefix)$(VersionSuffix)</Version>
 
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <PackageProjectUrl>https://github.com/SuessLabs/Lite.State</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/SuessLabs/Lite.StateMachine</PackageProjectUrl>
     <PackageIcon>icon-128x128.png</PackageIcon>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/SuessLabs/Lite.State</RepositoryUrl>
+    <RepositoryUrl>https://github.com/SuessLabs/Lite.StateMachine</RepositoryUrl>
     <PackageTags>statemachine;lite;fsm;suesslabs;xeno-innovations</PackageTags>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+    <VersionSuffix>-alpha</VersionSuffix>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <VersionSuffix></VersionSuffix>
   </PropertyGroup>
   
   <ItemGroup>

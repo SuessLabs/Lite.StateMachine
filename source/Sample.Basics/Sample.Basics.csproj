@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Lite.State\Lite.State.csproj" />
+    <ProjectReference Include="..\Lite.StateMachine\Lite.StateMachine.csproj" />
   </ItemGroup>
 
 </Project>
