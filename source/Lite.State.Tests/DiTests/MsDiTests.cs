@@ -13,7 +13,7 @@ namespace Lite.State.Tests;
 
 [TestClass]
 [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test class")]
-public class DependencyInjectionTests
+public class MsDiTests
 {
   public const string ParameterCounter = "Counter";
   public const string ParameterKeyTest = "TestKey";
