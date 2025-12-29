@@ -2,51 +2,55 @@
 // See the LICENSE file in the project root for more information.
 
 /*
+using Lite.StateMachine.Tests.TestData.Services;
+
 namespace Lite.StateMachine.Tests.TestData;
 
 #pragma warning disable SA1649 // File name should match first type name
 #pragma warning disable SA1402 // File may only contain a single type
 
-public class StateGenerics1() : BaseState<GenericStateId>()
+public class StateDi1(IMessageService msg) : BaseState<FlatStateId>()
 {
-  public override void OnEnter(Context<GenericStateId> context) =>
+  private readonly IMessageService _msg = msg;
+
+  public override void OnEnter(Context<FlatStateId> context) =>
     context.NextState(Result.Ok);
 
-  public override void OnEntering(Context<GenericStateId> context) =>
+  public override void OnEntering(Context<FlatStateId> context) =>
     context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
 
-  public override void OnExit(Context<GenericStateId> context) =>
+  public override void OnExit(Context<FlatStateId> context) =>
     context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
 }
 
-public class StateGenerics2() : BaseState<GenericStateId>()
+public class StateDi2() : BaseState<FlatStateId>()
 {
-  public override void OnEnter(Context<GenericStateId> context)
+  public override void OnEnter(Context<FlatStateId> context)
   {
     context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
     context.NextState(Result.Ok);
   }
 
-  public override void OnEntering(Context<GenericStateId> context) =>
+  public override void OnEntering(Context<FlatStateId> context) =>
     context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
 
-  public override void OnExit(Context<GenericStateId> context) =>
+  public override void OnExit(Context<FlatStateId> context) =>
     context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
 }
 
-public class StateGenerics3() : BaseState<GenericStateId>()
+public class StateDi3() : BaseState<FlatStateId>()
 {
-  public override void OnEnter(Context<GenericStateId> context)
+  public override void OnEnter(Context<FlatStateId> context)
   {
     context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
     context.Parameters[ParameterType.KeyTest] = ExpectedData.StringSuccess;
     context.NextState(Result.Ok);
   }
 
-  public override void OnEntering(Context<GenericStateId> context) =>
+  public override void OnEntering(Context<FlatStateId> context) =>
     context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
 
-  public override void OnExit(Context<GenericStateId> context) =>
+  public override void OnExit(Context<FlatStateId> context) =>
     context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
 }
 

@@ -18,8 +18,11 @@ public interface IStateMachine<TStateId>
   /// <summary>Gets the context payload passed between the states, and contains methods for transitioning to the next state.</summary>
   Context<TStateId> Context { get; }
 
-  /// <summary>Gets or sets the default timeout in milliseconds (3000ms default). Used by <see cref="ICommandState{TState}"/>, triggering OnTimeout.</summary>
-  int DefaultTimeoutMs { get; set; }
+  /// <summary>Gets or sets the default <see cref="ICommandState{TState}"/> timeout in milliseconds (3000ms default). Triggering OnTimeout in the event of elapsed time.</summary>
+  int DefaultCommandTimeoutMs { get; set; }
+
+  /// <summary>Gets or sets the default <see cref="IState{TState}"/> timeout in milliseconds (<see cref="Timeout.Infinite"/>ms default). Set timeout to ensure no stuck states (i.e., robotics).</summary>
+  int DefaultStateTimeoutMs { get; set; }
 
   /// <summary>Gets the collection of all registered states.</summary>
   /// <remarks>
@@ -47,7 +50,7 @@ public interface IStateMachine<TStateId>
   /// <param name="stateId">State identifier.</param>
   /// <param name="parentStateId">Parent state identifier.</param>
   /// <param name="initialChildStateId">Initial child state identifier.</param>
-  /// <param name="onSuccess">Transition to next state on success. NULL if last state to exit <see cref="StateMachine{TStateId}"/>.</param>
+  /// <param name="onSuccess">Transition to next state on success, or NULL if last state to exit <see cref="StateMachine{TStateId}"/>.</param>
   /// <param name="onError">Optional transition to next state on error.</param>
   /// <param name="onFailure">Optional transition to next state on failure.</param>
   /// <returns>State machine instance.</returns>
@@ -57,7 +60,7 @@ public interface IStateMachine<TStateId>
 
   /// <summary>Registers a regular or command state (optionally with transitions).</summary>
   /// <param name="stateId">State Id.</param>
-  /// <param name="onSuccess">State Id to transition to on success.</param>
+  /// <param name="onSuccess">State Id to transition to on success, or null to denote last state and exit <see cref="StateMachine{TStateId}"/>.</param>
   /// <returns>Instance of this class.</returns>
   /// <typeparam name="TState">State class.</typeparam>
   /// <remarks>Example: <![CDATA[RegisterState<T>(StateId.State1, StateId.State2);]]>.</remarks>
@@ -95,7 +98,7 @@ public interface IStateMachine<TStateId>
   /// <param name="onError">The identifier of the state to transition to when the registered state encounters an error, or null if no transition is defined.</param>
   /// <param name="onFailure">The identifier of the state to transition to when the registered state fails, or null if no transition is defined.</param>
   /// <returns>The current <see cref="StateMachine{TStateId}"/> instance, enabling method chaining.</returns>
-  StateMachine<TStateId> RegisterSubState<TChildClass>(TStateId stateId, TStateId parentStateId, TStateId? onSuccess, TStateId? onError = null, TStateId? onFailure = null)
+  StateMachine<TStateId> RegisterSubState<TChildClass>(TStateId stateId, TStateId parentStateId, TStateId? onSuccess = null, TStateId? onError = null, TStateId? onFailure = null)
     where TChildClass : class, IState<TStateId>;
 
   /// <summary>Starts the machine at the initial state.</summary>

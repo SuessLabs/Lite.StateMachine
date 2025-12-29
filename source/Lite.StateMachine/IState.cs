@@ -11,9 +11,6 @@ namespace Lite.StateMachine;
 public interface IState<TState>
   where TState : struct, Enum
 {
-  /// <summary>Gets the state's Id.</summary>
-  TState StateId { get; }
-
   /// <summary>Transition hook state fully entered.</summary>
   /// <param name="context"><see cref="Context{TState}"/>.</param>
   /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>

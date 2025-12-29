@@ -17,7 +17,7 @@ public static class TestApp
 
     var machine = new StateMachine<WorkflowState>(aggregator)
     {
-      DefaultTimeoutMs = 3000 // as requested (can override per-command state)
+      DefaultCommandTimeoutMs = 3000 // as requested (can override per-command state)
     };
 
     // Register top-level states

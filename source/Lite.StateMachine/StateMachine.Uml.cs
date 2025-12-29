@@ -46,7 +46,7 @@ public sealed partial class StateMachine<TStateId>
     foreach (var kv in _states)
     {
       var instance = GetEphemeralInstance(kv.Value);
-      AppendNode(sb, instance, DefaultTimeoutMs);
+      AppendNode(sb, instance, DefaultCommandTimeoutMs);
     }
 
     // Edges
@@ -63,7 +63,7 @@ public sealed partial class StateMachine<TStateId>
       {
         var instance = GetEphemeralInstance(kv.Value);
         if (instance is ICompositeState<TStateId> comp)
-          AppendCompositeCluster(sb, kv.Key, kv.Value, includeSubmachines, DefaultTimeoutMs);
+          AppendCompositeCluster(sb, kv.Key, kv.Value, includeSubmachines, DefaultCommandTimeoutMs);
       }
     }
 

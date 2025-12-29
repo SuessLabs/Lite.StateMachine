@@ -67,7 +67,10 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   public Context<TStateId> Context { get; private set; } = default!;
 
   /// <inheritdoc/>
-  public int DefaultTimeoutMs { get; set; } = 3000;
+  public int DefaultCommandTimeoutMs { get; set; } = 3000;
+
+  /// <inheritdoc/>
+  public int DefaultStateTimeoutMs { get; set; } = Timeout.Infinite;
 
   /// <inheritdoc/>
   public List<TStateId> States => [.. _states.Keys];
@@ -124,7 +127,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   }
 
   /// <inheritdoc/>
-  public StateMachine<TStateId> RegisterState<TState>(TStateId stateId, TStateId? onSuccess)
+  public StateMachine<TStateId> RegisterState<TState>(TStateId stateId, TStateId? onSuccess = null)
     where TState : class, IState<TStateId>
   {
     return RegisterState<TState>(stateId, onSuccess, onError: null, onFailure: null, parentStateId: null, isCompositeParent: false, initialChildStateId: null);
@@ -167,7 +170,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   public StateMachine<TStateId> RegisterSubState<TChildClass>(
     TStateId stateId,
     TStateId parentStateId,
-    TStateId? onSuccess,
+    TStateId? onSuccess = null,
     TStateId? onError = null,
     TStateId? onFailure = null)
     where TChildClass : class, IState<TStateId>
@@ -332,14 +335,17 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       if (nextChildId is null)
         break;
 
-      // Ensure next state is apart of the same composite parent
+      // Ensure next state is apart of the same composite parent (DisjointedNextSubStateException)
       // TODO (2025-12-28 DS): Use custom exception, DisjointedNextStateException
       var mappedReg = GetRegistration(nextChildId.Value);
       if (!Equals(mappedReg.ParentId, reg.StateId))
         throw new InvalidOperationException($"Child '{childId}' maps to '{nextChildId}', which is not a sibling under '{reg.StateId}'.");
+
+      // Proceed to the next substate
+      childId = nextChildId.Value;
     }
 
-    // Parent exit decides Ok/Error/Failure; Inform parent of last child's result via Context
+    // Parent's OnExit decides Ok/Error/Failure; Inform parent of last child's result via Context
     // TODO (2025-12-28 DS): Pass one Context object. Just clear "lastChildResult" after the OnExit.
     var parentExitTcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
     var parentExitCtx = new Context<TStateId>(reg.StateId, parentEnterTcs, _eventAggregator, lastChildResult)
@@ -350,9 +356,11 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
     await instance.OnExit(parentExitCtx).ConfigureAwait(false);
 
+    // Getting stuck coming out of composite state's OnExit
     var parentDecision = await WaitForNextOrCancelAsync(parentExitTcs.Task, ct).ConfigureAwait(false);
+    if (parentDecision is null)
+      return null;
 
-    // if (parentDecision is null) { log-something }
     return parentDecision;
   }
 
@@ -388,7 +396,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 #pragma warning restore SA1501 // Statement should not be on a single line
         });
 
-        var timeoutMs = cmd.TimeoutMs ?? DefaultTimeoutMs;
+        var timeoutMs = cmd.TimeoutMs ?? DefaultCommandTimeoutMs;
         if (timeoutMs > 0)
         {
           timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -417,7 +425,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
       var result = await WaitForNextOrCancelAsync(tcs.Task, cancellationToken).ConfigureAwait(false);
 
-      // TODO (2025-12-28 DS): We should always call `OnExit` to allow states to cleanup.
+      // TODO (2025-12-28 DS): Even leaving OnEnter without NextState(Result.OK), we should always call `OnExit` to allow states to cleanup.
       if (result is null)
         return null;
 
@@ -435,7 +443,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   private async Task<Result?> WaitForNextOrCancelAsync(Task<Result> t, CancellationToken ct)
   {
     var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-    var cancelTask = Task.Delay(Timeout.Infinite, cts.Token);
+    var cancelTask = Task.Delay(DefaultStateTimeoutMs, cts.Token);
     var completed = await Task.WhenAny(t, cancelTask).ConfigureAwait(false);
     cts.Cancel();
 

@@ -48,7 +48,7 @@ public void Generates_BasicState_RegisterState_SuccessTest()
 }
 
 [TestMethod]
-  public void Generates_BasicState_RegisterStateGenerics_SuccessTest()
+  public void Generates_BasicState_RegisterFlatState_SuccessTest()
   {
     // Assemble
     var machine = new StateMachine<StateId>();

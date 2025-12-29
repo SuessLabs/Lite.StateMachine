@@ -36,7 +36,7 @@ public class CommandStateTests
     var machine = new StateMachine<WorkflowState>(eventAggregator: aggregator)
     {
       // Set default timeout to 3 seconds (can override per-command state)
-      DefaultTimeoutMs = 3000,
+      DefaultCommandTimeoutMs = 3000,
     };
 
     // Register top-level states
