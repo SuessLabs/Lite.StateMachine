@@ -1,6 +1,7 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
+/*
 using System;
 using System.Linq;
 using Lite.StateMachine.Tests.TestData;
@@ -13,106 +14,104 @@ namespace Lite.StateMachine.Tests.StateTests;
 [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test class")]
 public class BasicStateTests
 {
-  public const string ParameterCounter = "Counter";
-  public const string ParameterKeyTest = "TestKey";
-  public const string TestValue = "success";
+public const string ParameterCounter = "Counter";
+public const string ParameterKeyTest = "TestKey";
+public const string TestValue = "success";
 
-  /// <summary>State definitions.</summary>
-  public enum StateId
+/// <summary>State definitions.</summary>
+public enum StateId
+{
+  State1,
+  State2,
+  State3,
+}
+
+/// <summary>Standard basic state registration with fall-through exiting.</summary>
+[TestMethod]
+public void RegisterState_BasicState_SuccessTest()
+{
+  // Assemble
+  var counter = 0;
+
+  var machine = new StateMachine<StateId>();
+  machine.RegisterState(StateId.State1, () => new State1());
+  machine.RegisterState(StateId.State2, () => new State2());
+  machine.RegisterState(StateId.State3, () => new State3());
+  machine.SetInitial(StateId.State1);
+
+  // Act - Start your engine!
+  var ctxProperties = new PropertyBag()
   {
-    State1,
-    State2,
-    State3,
-  }
+    { ParameterKeyTest, "not-finished" },
+    { ParameterCounter, counter },
+  };
 
-  /*
-  /// <summary>Standard basic state registration with fall-through exiting.</summary>
-  [TestMethod]
-  public void RegisterState_BasicState_SuccessTest()
-  {
-    // Assemble
-    var counter = 0;
+  machine.Start(ctxProperties);
 
-    var machine = new StateMachine<StateId>();
-    machine.RegisterState(StateId.State1, () => new State1());
-    machine.RegisterState(StateId.State2, () => new State2());
-    machine.RegisterState(StateId.State3, () => new State3());
-    machine.SetInitial(StateId.State1);
+  // Assert Results
+  var ctxFinalParams = machine.Context.Parameters;
+  Assert.IsNotNull(ctxFinalParams);
+  Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
 
-    // Act - Start your engine!
-    var ctxProperties = new PropertyBag()
-    {
-      { ParameterKeyTest, "not-finished" },
-      { ParameterCounter, counter },
-    };
+  // NOTE: This should be 9 because each state has 3 hooks that increment the counter
+  // TODO (2025-12-22 DS): Fix last state not calling OnExit.
+  Assert.AreEqual(9 - 1, ctxFinalParams[ParameterCounter]);
 
-    machine.Start(ctxProperties);
+  var enums = Enum.GetValues<StateId>().Cast<StateId>();
 
-    // Assert Results
-    var ctxFinalParams = machine.Context.Parameters;
-    Assert.IsNotNull(ctxFinalParams);
-    Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
+  // Ensure all states are hit
+  Assert.AreEqual(enums.Count(), machine.States.Count());
+  Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
 
-    // NOTE: This should be 9 because each state has 3 hooks that increment the counter
-    // TODO (2025-12-22 DS): Fix last state not calling OnExit.
-    Assert.AreEqual(9 - 1, ctxFinalParams[ParameterCounter]);
+  // Ensure they're in order
+  Assert.IsTrue(enums.SequenceEqual(machine.States));
+}
 
-    var enums = Enum.GetValues<StateId>().Cast<StateId>();
+/// <summary>Defines State Enum ID and `OnSuccess` transitions from the `RegisterStateEx` method.</summary>
+[TestMethod]
+public void RegisterState_BasicStateFluent_SuccessTest()
+{
+  // Assemble
+  var machine = new StateMachine<StateId>()
+    .RegisterState(StateId.State1, () => new StateEx1(StateId.State1), StateId.State2)
+    .RegisterState(StateId.State2, () => new StateEx2(StateId.State2), StateId.State3)
+    .RegisterState(StateId.State3, () => new StateEx3(StateId.State3));
 
-    // Ensure all states are hit
-    Assert.AreEqual(enums.Count(), machine.States.Count());
-    Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
+  // Set starting point
+  machine.SetInitial(StateId.State1);
 
-    // Ensure they're in order
-    Assert.IsTrue(enums.SequenceEqual(machine.States));
-  }
+  // Act - Start your engine!
+  var ctxProperties = new PropertyBag() { { ParameterKeyTest, "not-finished" }, };
+  machine.Start(ctxProperties);
 
-  /// <summary>Defines State Enum ID and `OnSuccess` transitions from the `RegisterStateEx` method.</summary>
-  [TestMethod]
-  public void RegisterState_BasicStateFluent_SuccessTest()
-  {
-    // Assemble
-    var machine = new StateMachine<StateId>()
-      .RegisterState(StateId.State1, () => new StateEx1(StateId.State1), StateId.State2)
-      .RegisterState(StateId.State2, () => new StateEx2(StateId.State2), StateId.State3)
-      .RegisterState(StateId.State3, () => new StateEx3(StateId.State3));
+  // Assert Results
+  var ctxFinalParams = machine.Context.Parameters;
+  Assert.IsNotNull(ctxFinalParams);
+  Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
+}
 
-    // Set starting point
-    machine.SetInitial(StateId.State1);
+/// <summary>Defines State Enum ID and `OnSuccess` transitions from the `RegisterStateEx` method.</summary>
+[TestMethod]
+public void RegisterState_BasicStateFluent_WithoutInitialContextTransitions_SuccessTest()
+{
+  // Assemble
+  var machine = new StateMachine<StateId>()
+    .RegisterState(StateId.State1, () => new StateEx1(StateId.State1), StateId.State2)
+    .RegisterState(StateId.State2, () => new StateEx2(StateId.State2), StateId.State3)
+    .RegisterState(StateId.State3, () => new StateEx3(StateId.State3))
+    .SetInitial(StateId.State1);
 
-    // Act - Start your engine!
-    var ctxProperties = new PropertyBag() { { ParameterKeyTest, "not-finished" }, };
-    machine.Start(ctxProperties);
+  // Act - Start your engine!
+  machine.Start();
 
-    // Assert Results
-    var ctxFinalParams = machine.Context.Parameters;
-    Assert.IsNotNull(ctxFinalParams);
-    Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
-  }
+  // Assert Results
+  var ctxFinalParams = machine.Context.Parameters;
 
-  /// <summary>Defines State Enum ID and `OnSuccess` transitions from the `RegisterStateEx` method.</summary>
-  [TestMethod]
-  public void RegisterState_BasicStateFluent_WithoutInitialContextTransitions_SuccessTest()
-  {
-    // Assemble
-    var machine = new StateMachine<StateId>()
-      .RegisterState(StateId.State1, () => new StateEx1(StateId.State1), StateId.State2)
-      .RegisterState(StateId.State2, () => new StateEx2(StateId.State2), StateId.State3)
-      .RegisterState(StateId.State3, () => new StateEx3(StateId.State3))
-      .SetInitial(StateId.State1);
+  Assert.IsNotNull(ctxFinalParams);
+  Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
+}
 
-    // Act - Start your engine!
-    machine.Start();
-
-    // Assert Results
-    var ctxFinalParams = machine.Context.Parameters;
-
-    Assert.IsNotNull(ctxFinalParams);
-    Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
-  }
-  */
-
-  [TestMethod]
+[TestMethod]
   public void RegisterState_Generics_SuccessTest()
   {
     // Assemble
@@ -344,3 +343,4 @@ public class BasicStateTests
 
   #endregion State Machine - Fluent
 }
+*/

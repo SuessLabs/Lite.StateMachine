@@ -28,11 +28,11 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   /// <summary>States registered with system.</summary>
   private readonly Dictionary<TStateId, StateRegistration<TStateId>> _states = [];
 
-  private IState<TStateId>? _currentState;
-  private TStateId _initialState;
-  private bool _isStarted;
-  private IDisposable? _subscription;
-  private CancellationTokenSource? _timeoutCts;
+  ////private IState<TStateId>? _currentState;
+  ////private TStateId _initialState;
+  ////private bool _isStarted;
+  ////private IDisposable? _subscription;
+  ////private CancellationTokenSource? _timeoutCts;
 
   /// <summary>
   ///   Initializes a new instance of the <see cref="StateMachine{TStateId}"/> class.

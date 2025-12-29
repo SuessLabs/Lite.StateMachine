@@ -21,7 +21,7 @@ public sealed class EventAggregator : IEventAggregator
       snapshot = _subscribers.ToArray();
 
     // Fan-out; handlers decide whether to consume or ignore.
-    foreach (var sub in snapshot) // _subscribers.ToArray())
+    foreach (var sub in snapshot)
     {
       try
       {
