@@ -8,21 +8,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-/// <summary>
-/// The generic, enum-driven state machine with hierarchical bubbling and command-state timeout handling.
-/// </summary>
-/// <typeparam name="TStateId">Type of State Id to use (i.e. enum, int, etc.).</typeparam>
-/// <remarks>
-///   TODO:
-///   1. Use context to override default ctx.NextState(StateId).
-///   2. Implement custom Exceptions.
-///   3. Ensure context is passed along and bubbled-up.
-///   4. Configuration: Destroy state instance(s) after leaving (customizable to not have GC pressure).
-///   5. Optionally pass in ILogger for state machine logging.
-///   6. Add "IsSanitizedStates()" to check that defined state-chaining is valid.
-///      i.e. (i) Sub-States must have the same parent. (ii) 'NextState' is registered.
-/// </remarks>
-public sealed partial class StateMachine<TStateId>
+/// <inheritdoc/>
+public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   where TStateId : struct, Enum
 {
   /////// <summary>Adapter so the state machine can use any DI container</summary>
@@ -76,24 +63,16 @@ public sealed partial class StateMachine<TStateId>
     ////  _logger = logs;
   }
 
-  /// <summary>Gets the context payload passed between the states, and contains methods for transitioning to the next state.</summary>
+  /// <inheritdoc/>
   public Context<TStateId> Context { get; private set; } = default!;
 
-  /// <summary>Gets or sets the default timeout in milliseconds (3000ms default). Used by <see cref="ICommandState{TState}"/>, triggering OnTimeout.</summary>
+  /// <inheritdoc/>
   public int DefaultTimeoutMs { get; set; } = 3000;
 
-  /// <summary>Gets the collection of all registered states.</summary>
-  /// <remarks>
-  ///   Exposed for validations, debugging, etc.
-  ///   Previously: <![CDATA[Dictionary<TState, IState<TState>>]]>.
-  /// </remarks>
+  /// <inheritdoc/>
   public List<TStateId> States => [.. _states.Keys];
 
-  /// <summary>
-  /// Registers a top-level composite parent state (has no parent state) and explicitly sets:
-  /// - the initial child (initialChildStateId).
-  /// - the next top-level transitions (nextOnOk, nextOnError, nextOnFailure).
-  /// </summary>
+  /// <inheritdoc/>
   public StateMachine<TStateId> RegisterComposite<TCompositeParent>(
     TStateId stateId,
     TStateId initialChildStateId,
@@ -116,7 +95,7 @@ public sealed partial class StateMachine<TStateId>
       initialChildStateId: initialChildStateId);
   }
 
-  /// <summary>Nested composite (child composite under a parent composite).</summary>
+  /// <inheritdoc/>
   public StateMachine<TStateId> RegisterCompositeChild<TCompositeParent>(
     TStateId stateId,
     TStateId parentStateId,
@@ -144,35 +123,14 @@ public sealed partial class StateMachine<TStateId>
       initialChildStateId: initialChildStateId);
   }
 
-  /// <summary>Registers a regular or command state (optionally with transitions).</summary>
-  /// <remarks>Example: <![CDATA[RegisterState<T>(StateId.State1, StateId.State2);]]>.</remarks>
-  /// <param name="stateId">State Id.</param>
-  /// <param name="onSuccess">State Id to transition to on success.</param>
-  /// <returns>Instance of this class.</returns>
-  /// <typeparam name="TState">State class.</typeparam>
+  /// <inheritdoc/>
   public StateMachine<TStateId> RegisterState<TState>(TStateId stateId, TStateId? onSuccess)
     where TState : class, IState<TStateId>
   {
     return RegisterState<TState>(stateId, onSuccess, onError: null, onFailure: null, parentStateId: null, isCompositeParent: false, initialChildStateId: null);
   }
 
-  /// <summary>
-  ///   Registers a new state with the state machine and configures its transitions and hierarchy.
-  /// </summary>
-  /// <remarks>
-  ///   Use this method to add states and define their transitions and hierarchy before starting the
-  ///   state machine. Registering duplicate state identifiers is not allowed.
-  /// </remarks>
-  /// <typeparam name="TState">The type of the state to register. Must implement <see cref="IState{TStateId}"/>.</typeparam>
-  /// <param name="stateId">The unique identifier for the state to register.</param>
-  /// <param name="onSuccess">The identifier of the state to transition to when the registered state completes successfully, or null if no transition is defined.</param>
-  /// <param name="onError">The identifier of the state to transition to when the registered state encounters an error, or null if no transition is defined.</param>
-  /// <param name="onFailure">The identifier of the state to transition to when the registered state fails, or null if no transition is defined.</param>
-  /// <param name="parentStateId">The identifier of the parent state if the registered state is part of a composite state; otherwise, null.</param>
-  /// <param name="isCompositeParent">true if the registered state is a composite parent state; otherwise, false.</param>
-  /// <param name="initialChildStateId">The identifier of the initial child state to activate when entering a composite parent state; otherwise, null.</param>
-  /// <returns>The current StateMachine<TStateId> instance, enabling method chaining.</returns>
-  /// <exception cref="InvalidOperationException">Thrown if a state with the specified stateId is already registered or if the state factory returns null.</exception>
+  /// <inheritdoc/>
   public StateMachine<TStateId> RegisterState<TState>(
     TStateId stateId,
     TStateId? onSuccess,
@@ -205,10 +163,7 @@ public sealed partial class StateMachine<TStateId>
     return this;
   }
 
-  /// <summary>
-  /// Registers a composite's sub-state (regular/leaf or command state) under a composite parent.
-  /// The nextOnOk is nullable: null means this is the last child, so bubble to the parent's OnExit.
-  /// </summary>
+  /// <inheritdoc/>
   public StateMachine<TStateId> RegisterSubState<TChildClass>(
     TStateId stateId,
     TStateId parentStateId,
@@ -235,13 +190,7 @@ public sealed partial class StateMachine<TStateId>
       initialChildStateId: null);
   }
 
-  /// <summary>Starts the machine at the initial state.</summary>
-  /// <param name="initialState">Initial startup state.</param>
-  /// <param name="parameterStack">Initial <see cref="PropertyBag"/> parameter stack.</param>
-  /// <param name="errorStack">Error Stack <see cref="PropertyBag"/>.</param>
-  /// <param name="cancellationToken">Cancellation Token.</param>
-  /// <returns>Async task.</returns>
-  /// <exception cref="InvalidOperationException">Thrown if the specified state identifier has not been registered.</exception>
+  /// <inheritdoc/>
   public async Task RunAsync(
     TStateId initialState,
     PropertyBag? parameterStack = null,

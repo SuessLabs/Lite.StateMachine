@@ -3,7 +3,7 @@
 
 namespace Lite.StateMachine;
 
-/// <summary>Default state transition.</summary>
+/// <summary>State result for transitions.</summary>
 public enum Result
 {
   Ok,
