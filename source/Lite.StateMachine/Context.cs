@@ -47,6 +47,14 @@ public sealed class Context<TStateId>
   /// <param name="result">Result to pass to the next state.</param>
   public void NextState(Result result) => _tcs.TrySetResult(result);
 
+  public bool ParameterAsBool(string key, bool defaultBool = false)
+  {
+    if (Parameters.TryGetValue(key, out var value) && value is bool boolValue)
+      return boolValue;
+    else
+      return defaultBool;
+  }
+
   /// <summary>Get default parameter value as <see cref="int"/> or default.</summary>
   /// <param name="key">Parameter Key.</param>
   /// <param name="defaultInt">Default int (default=0).</param>

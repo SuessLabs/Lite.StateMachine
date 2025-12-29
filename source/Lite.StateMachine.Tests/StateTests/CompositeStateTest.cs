@@ -17,7 +17,7 @@ public class CompositeStateTest
   {
     // Assemble
     var machine = new StateMachine<CompositeL1StateId>();
-    ////machine.DefaultStateTimeoutMs = 5000;
+    machine.DefaultStateTimeoutMs = 5000;
 
     machine.RegisterState<CompositeL1_State1>(CompositeL1StateId.State1, CompositeL1StateId.State2);
 

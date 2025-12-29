@@ -348,7 +348,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     // Parent's OnExit decides Ok/Error/Failure; Inform parent of last child's result via Context
     // TODO (2025-12-28 DS): Pass one Context object. Just clear "lastChildResult" after the OnExit.
     var parentExitTcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
-    var parentExitCtx = new Context<TStateId>(reg.StateId, parentEnterTcs, _eventAggregator, lastChildResult)
+    var parentExitCtx = new Context<TStateId>(reg.StateId, parentExitTcs, _eventAggregator, lastChildResult)
     {
       Parameters = parameterStack ?? [],
       ErrorStack = errorStack ?? [],
@@ -358,8 +358,12 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
     // Getting stuck coming out of composite state's OnExit
     var parentDecision = await WaitForNextOrCancelAsync(parentExitTcs.Task, ct).ConfigureAwait(false);
-    if (parentDecision is null)
-      return null;
+
+    // vNext:
+    ////if (parentDecision is null)
+    ////{
+    ////  log null decision, possible timeout. }
+    ////
 
     return parentDecision;
   }

@@ -1,8 +1,6 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
-using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using static Lite.StateMachine.Tests.StateTests.CompositeStateTest;
 
@@ -15,8 +13,8 @@ public class BaseState : IState<CompositeL1StateId>
 {
   public void Log(string method, string message = "")
   {
-    Debug.WriteLine($"[{this.GetType().Name}] [{method}] {message}");
-    ////Console.WriteLine($"[{this.GetType().Name}] [{method}] {message}");
+    ////System.Console.WriteLine($"[{this.GetType().Name}] [{method}] {message}");
+    System.Diagnostics.Debug.WriteLine($"[{this.GetType().Name}] [{method}] {message}");
   }
 
   public virtual Task OnEnter(Context<CompositeL1StateId> context)
@@ -42,7 +40,7 @@ public class CompositeL1_State1() : BaseState
 {
   public override Task OnEnter(Context<CompositeL1StateId> context)
   {
-    Log("OnEnter", "=> OK"); //// Debug.WriteLine("[CompositeL1_State1] [OnEnter] => OK");
+    Log("OnEnter", "=> OK");
     context.NextState(Result.Ok);
     return Task.CompletedTask;
   }
@@ -54,7 +52,7 @@ public class CompositeL1_State2() : BaseState
 {
   public override Task OnEnter(Context<CompositeL1StateId> context)
   {
-    Log("OnEnter", "=> OK"); //// Debug.WriteLine("[CompositeL1_State2] [OnEnter] => OK");
+    Log("OnEnter", "=> OK");
     context.NextState(Result.Ok);
     return Task.CompletedTask;
   }
@@ -72,7 +70,7 @@ public class CompositeL1_State2_Sub1() : BaseState
 {
   public override Task OnEnter(Context<CompositeL1StateId> context)
   {
-    Log("OnEnter", "=> GO-TO Child"); //// Debug.WriteLine("[CompositeL1_State2] [OnEnter (CTX)] => OK");
+    Log("OnEnter", "=> GO-TO Child");
     context.Parameters.Add(ParameterSubStateEntered, SUCCESS);
     context.NextState(Result.Ok);
     return Task.CompletedTask;
@@ -83,7 +81,7 @@ public class CompositeL1_State2_Sub2() : BaseState
 {
   public override Task OnEnter(Context<CompositeL1StateId> context)
   {
-    Log("OnEnter", "=> OK"); //// Debug.WriteLine("[CompositeL1_State2_Sub2] [OnEnter] => OK");
+    Log("OnEnter", "=> OK");
     context.NextState(Result.Ok);
     return Task.CompletedTask;
   }
@@ -93,7 +91,7 @@ public class CompositeL1_State3() : BaseState
 {
   public override Task OnEnter(Context<CompositeL1StateId> context)
   {
-    Log("OnEnter", "=> OK"); //// Debug.WriteLine("[CompositeL1_State3] [OnEnter] => OK");
+    Log("OnEnter", "=> OK");
     context.NextState(Result.Ok);
     return Task.CompletedTask;
   }

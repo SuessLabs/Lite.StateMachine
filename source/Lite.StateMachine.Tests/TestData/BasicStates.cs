@@ -39,7 +39,12 @@ public class BasicState2() : IState<BasicStateId>
   public Task OnEnter(Context<BasicStateId> context)
   {
     context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
-    context.NextState(Result.Ok);
+
+    // Only move to the next state if we are not testing hanging state avoidance
+    var testHangingState = context.ParameterAsBool(ParameterType.HungStateAvoidance);
+    if (!testHangingState)
+      context.NextState(Result.Ok);
+
     Console.WriteLine($"[BasicState2][OnEnter] {context.Parameters[ParameterType.Counter]} => OK");
     return Task.CompletedTask;
   }
