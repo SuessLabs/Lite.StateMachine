@@ -71,7 +71,7 @@ public class BasicState3() : IState<BasicStateId>
   public Task OnEnter(Context<BasicStateId> context)
   {
     context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
-    context.Parameters[ParameterType.KeyTest] = ExpectedData.StringSuccess;
+    context.Parameters[ParameterType.KeyTest] = MessageType.SuccessResponse;
     context.NextState(Result.Ok);
     Console.WriteLine($"[BasicState3][OnEnter] {context.Parameters[ParameterType.Counter]}");
     return Task.CompletedTask;

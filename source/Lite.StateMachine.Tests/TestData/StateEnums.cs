@@ -22,4 +22,15 @@ public enum CompositeL1StateId
   State3,
 }
 
+public enum CompositeMsgStateId
+{
+  Entry,
+  Parent,
+  Parent_Fetch,
+  Parent_WaitMessage,
+  Done,
+  Error,
+  Failure,
+}
+
 #pragma warning restore SA1649 // File name should match first type name

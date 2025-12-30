@@ -43,7 +43,7 @@ public class BaseState : IState<StateId>
   public virtual Task OnExit(Context<StateId> context) => Task.CompletedTask;
 }
 
-public class BasicState1() : IState<StateId>
+public class BasicState1() : BaseState
 {
   public async Task OnEnter(Context<BasicStateId> context)
   {
@@ -52,7 +52,7 @@ public class BasicState1() : IState<StateId>
   }
 }
 
-public class BasicState2() : IState<StateId>
+public class BasicState2() : BaseState
 {
   public Task OnEnter(Context<StateId> context)
   {
@@ -61,7 +61,7 @@ public class BasicState2() : IState<StateId>
   }
 }
 
-public class BasicState3() : IState<StateId>
+public class BasicState3() : BaseState
 {
   public Task OnEnter(Context<StateId> context)
   {

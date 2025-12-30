@@ -57,11 +57,6 @@ public class CompositeStateTest
 
     // Ensure they're in order
     Assert.IsTrue(enums.SequenceEqual(machine.States));
-
-    // vNext: Certify context after exiting
-    ////var ctxFinal = machine.Context.Parameters;
-    ////Assert.IsNotNull(ctxFinal);
-    ////Assert.AreEqual(SUCCESS, ctxFinal[ParameterSubStateEntered]);
   }
 
   /// <summary>Same as <see cref="Level1_Basic_RegisterHelpers_SuccessTestAsync"/> but using only RegisterState.</summary>
@@ -70,7 +65,7 @@ public class CompositeStateTest
   public async Task Level1_Basic_RegisterState_SuccessTestAsync()
   {
     // Assemble
-    // RegisterState<TState>(TStateId stateId, TStateId? onSuccess, TStateId? onError, TStateId? onFailure, TStateId? parentStateId, bool isCompositeParent, TStateId? initialChildStateId)
+    // RegisterState<TStateId>(TStateId stateId, TStateId? onSuccess, TStateId? onError, TStateId? onFailure, TStateId? parentStateId, bool isCompositeParent, TStateId? initialChildStateId)
     var machine = new StateMachine<CompositeL1StateId>();
     machine.RegisterState<CompositeL1_State1>(CompositeL1StateId.State1, CompositeL1StateId.State2);
     machine.RegisterState<CompositeL1_State2>(CompositeL1StateId.State2, CompositeL1StateId.State3, null, null, null, false, CompositeL1StateId.State2_Sub1);

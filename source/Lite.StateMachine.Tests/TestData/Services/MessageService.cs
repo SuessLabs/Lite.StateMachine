@@ -1,21 +1,30 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
+using System.Collections.Generic;
+
 namespace Lite.StateMachine.Tests.TestData.Services;
 
 [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1649:File name should match first type name", Justification = "Allowed for testing.")]
 public interface IMessageService
 {
-  int GetNumber();
+  int Counter1 { get; set; }
 
-  void SetNumber(int number);
+  int Counter2 { get; set; }
+
+  List<string> Messages { get; }
+
+  void AddMessage(string message);
 }
 
 public class MessageService : IMessageService
 {
-  private int _cache;
+  public int Counter1 { get; set; }
 
-  public int GetNumber() => _cache;
+  public int Counter2 { get; set; }
 
-  public void SetNumber(int number) => _cache = number;
+  public List<string> Messages { get; } = [];
+
+  public void AddMessage(string message) =>
+    Messages.Add(message);
 }
