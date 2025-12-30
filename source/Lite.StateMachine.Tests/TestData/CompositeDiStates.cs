@@ -2,6 +2,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData.Services;
 using Microsoft.Extensions.Logging;
@@ -50,7 +51,16 @@ public class ParentSub_WaitMessageState(IMessageService msg, ILogger<ParentSub_W
   {
     MessageService.Number++;
     MessageService.AddMessage(GetType().Name + " OnEnter");
-    Log.LogInformation("[OnEnter] => OK");
+
+    Log.LogInformation("[OnEnter]");
+    Debug.WriteLine($"[{GetType().Name}] [OnEnter] (counter={MessageService.Number}");
+
+    if (MessageService.Number > 12)
+    {
+      Debug.WriteLine($"[{GetType().Name}] [OnEnter] (Sending: {ExpectedData.ReceivedBadData}");
+      context.EventAggregator?.Publish(ExpectedData.ReceivedBadData);
+    }
+
     return Task.CompletedTask;
   }
 
@@ -59,15 +69,17 @@ public class ParentSub_WaitMessageState(IMessageService msg, ILogger<ParentSub_W
     MessageService.Number++;
     MessageService.AddMessage(GetType().Name + " OnEnter");
 
-    if (message is string s && s.Equals(ExpectedData.StringSuccess, StringComparison.OrdinalIgnoreCase))
+    if (message is string s && s.Equals(ExpectedData.MessageSuccess, StringComparison.OrdinalIgnoreCase))
     {
       context.NextState(Result.Ok);
       Log.LogInformation("[OnMessage] => OK");
+      Debug.WriteLine($"[{GetType().Name}] [OnMessage] => OK");
     }
     else
     {
       context.NextState(Result.Error);
       Log.LogInformation("[OnMessage] => Error");
+      Debug.WriteLine($"[{GetType().Name}] [OnMessage] => OK");
     }
 
     return Task.CompletedTask;
@@ -78,8 +90,11 @@ public class ParentSub_WaitMessageState(IMessageService msg, ILogger<ParentSub_W
     MessageService.Number++;
     MessageService.AddMessage(GetType().Name + " OnEnter");
     context.NextState(Result.Failure);
+    Log.LogInformation("[OnTimeout] => Failure; (Publishing: ReceivedTimeout)");
+    Debug.WriteLine($"[{GetType().Name}] [OnTimeout] => Failure; (Publishing: ReceivedTimeout)");
 
-    Log.LogInformation("[OnTimeout] => Failure");
+    // Publish timeout event
+    context.EventAggregator?.Publish(ExpectedData.ReceivedTimeout);
     return Task.CompletedTask;
   }
 }
@@ -97,6 +112,17 @@ public class Workflow_ErrorState(IMessageService msg, ILogger<Workflow_ErrorStat
 public class Workflow_FailureState(IMessageService msg, ILogger<Workflow_FailureState> log)
   : BaseStateDI<Workflow_FailureState, CompositeMsgStateId>(msg, log)
 {
+  public override Task OnEnter(Context<CompositeMsgStateId> context)
+  {
+    MessageService.Number++;
+    MessageService.AddMessage(GetType().Name + " OnEnter");
+
+    Log.LogInformation("[{StateName}] [OnEnter] => OK", GetType().Name);
+    Debug.WriteLine($"[{GetType().Name}] [OnEnter] => OK");
+
+    context.NextState(Result.Ok);
+    return Task.CompletedTask;
+  }
 }
 
 #pragma warning restore SA1649 // File name should match first type name

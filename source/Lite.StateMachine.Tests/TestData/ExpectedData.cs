@@ -5,6 +5,8 @@ namespace Lite.StateMachine.Tests.TestData;
 
 public static class ExpectedData
 {
-  public const string StringBadData = "BadData~!";
-  public const string StringSuccess = "SUCCESS";
+  public const string MessageBadData = "BadData~!";
+  public const string MessageSuccess = "SUCCESS";
+  public const string ReceivedBadData = "ReceivedBadData";
+  public const string ReceivedTimeout = "ReceivedTimeout";
 }

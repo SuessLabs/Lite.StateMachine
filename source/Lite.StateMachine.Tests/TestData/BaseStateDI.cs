@@ -2,6 +2,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData.Services;
 using Microsoft.Extensions.Logging;
@@ -23,7 +24,9 @@ public class BaseStateDI<TStateClass, TStateId>(IMessageService msg, ILogger<TSt
     _msgService.Number++;
     _msgService.AddMessage(GetType().Name + " OnEnter");
     _logger.LogInformation("[{StateName}] [OnEnter] => OK", GetType().Name);
+
     Console.WriteLine($"[{GetType().Name}] [OnEnter] => OK");
+    Debug.WriteLine($"[{GetType().Name}] [OnEnter] => OK");
 
     context.NextState(Result.Ok);
     return Task.CompletedTask;
@@ -35,6 +38,7 @@ public class BaseStateDI<TStateClass, TStateId>(IMessageService msg, ILogger<TSt
     _msgService.AddMessage(GetType().Name + " OnEntering");
     _logger.LogInformation("[{StateName}] [OnEntering]", GetType().Name);
     Console.WriteLine($"[{GetType().Name}] [OnEntering]");
+    Debug.WriteLine($"[{GetType().Name}] [OnEntering]");
 
     return Task.CompletedTask;
   }
@@ -44,6 +48,7 @@ public class BaseStateDI<TStateClass, TStateId>(IMessageService msg, ILogger<TSt
     _msgService.Number++;
     _msgService.AddMessage(GetType().Name + " OnExit");
     _logger.LogInformation("[{StateName}] [OnExit]", GetType().Name);
+    Debug.WriteLine($"[{GetType().Name}] [OnExit]");
 
     context.NextState(Result.Ok);
     return Task.CompletedTask;

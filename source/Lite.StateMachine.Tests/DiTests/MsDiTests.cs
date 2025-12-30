@@ -2,6 +2,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -135,6 +136,9 @@ public class MsDiTests
 
   /// <summary>Following demonstrates Composite + Command States with Dependency Injection.</summary>
   /// <remarks>
+  ///   You MUST publish while in the ParentSub_WaitMessageState
+  ///   otherwise the message is never received (rightfully so).
+  ///
   ///   Test StateMachine Flow:
   ///   1. EntryState => ParentState => ParentSub_FetchState => ParentSub_WaitMessageState (waits for messages from the EventAggregator).
   ///   2. ParentState => FailureState => ParentState => ParentSub_FetchState => ParentSub_WaitMessageState
@@ -181,7 +185,7 @@ public class MsDiTests
     var machine = new StateMachine<CompositeMsgStateId>(factory, aggregator)
     {
       DefaultCommandTimeoutMs = 200,
-      DefaultStateTimeoutMs = 8000,
+      DefaultStateTimeoutMs = 5000,
     };
 
     machine.RegisterState<EntryState>(CompositeMsgStateId.Entry, CompositeMsgStateId.Parent);
@@ -194,21 +198,40 @@ public class MsDiTests
     machine.RegisterSubState<ParentSub_FetchState>(CompositeMsgStateId.Parent_Fetch, CompositeMsgStateId.Parent, CompositeMsgStateId.Parent_WaitMessage);
     machine.RegisterSubState<ParentSub_WaitMessageState>(CompositeMsgStateId.Parent_WaitMessage, CompositeMsgStateId.Parent);
     machine.RegisterState<Workflow_DoneState>(CompositeMsgStateId.Done);
-    machine.RegisterState<Workflow_ErrorState>(CompositeMsgStateId.Error);
-    machine.RegisterState<Workflow_FailureState>(CompositeMsgStateId.Failure, null);
+    machine.RegisterState<Workflow_ErrorState>(CompositeMsgStateId.Error, CompositeMsgStateId.Parent);
+    machine.RegisterState<Workflow_FailureState>(CompositeMsgStateId.Failure, CompositeMsgStateId.Parent);
+
+    // vNext:  (for now, we send a message during WaitFor's OnEnter and send back.
+    // 1. Start the state machine (CommandTimeout set to 200ms)
+    // 2. ParentSub_WaitMessageState will Timeout, not receiving a message at all
+    // 3. The OnTimeout publishes, "TimeoutReceived" message, which is caught by the aggregator subscription below.
+    // 4. Next we reply with, "BadData" to trigger an error
+    // 5. Next we publish, "SUCCESS" to complete the workflow.
+    aggregator.Subscribe(msg =>
+    {
+      if (msg is not string)
+        return;
+
+      // NOTE:
+      //  You MUST publish while in the ParentSub_WaitMessageState
+      //  otherwise the message is never received (rightfully so).
+      if ((string)msg == ExpectedData.ReceivedTimeout)
+      {
+        Debug.WriteLine("> RCV 'Timeout' > SEND: " + ExpectedData.MessageBadData);
+        aggregator.Publish(ExpectedData.MessageBadData);
+      }
+      else if ((string)msg == ExpectedData.ReceivedBadData)
+      {
+        Debug.WriteLine("> RCV 'BadData' > SEND: " + ExpectedData.MessageSuccess);
+        aggregator.Publish(ExpectedData.MessageSuccess);
+      }
+    });
 
     // Act - Run the state machine and send messages
     await machine.RunAsync(CompositeMsgStateId.Entry, null, null, CancellationToken.None);
 
-    // Drive command state
-    ////await Task.Delay(500);
-    ////aggregator.Publish(ExpectedData.StringBadData);
-
-    await Task.Delay(500);
-    aggregator.Publish(ExpectedData.StringSuccess);
-
     Console.WriteLine("MS.DI workflow finished.");
-    Assert.HasCount(16, messages.Messages);
-    Assert.AreEqual(16, messages.Number);
+    Assert.HasCount(29, messages.Messages);
+    Assert.AreEqual(29, messages.Number);
   }
 }
