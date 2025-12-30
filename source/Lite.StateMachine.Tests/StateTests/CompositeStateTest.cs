@@ -57,11 +57,6 @@ public class CompositeStateTest
 
     // Ensure they're in order
     Assert.IsTrue(enums.SequenceEqual(machine.States));
-
-    // vNext: Certify context after exiting
-    ////var ctxFinal = machine.Context.Parameters;
-    ////Assert.IsNotNull(ctxFinal);
-    ////Assert.AreEqual(SUCCESS, ctxFinal[ParameterSubStateEntered]);
   }
 
   /// <summary>Same as <see cref="Level1_Basic_RegisterHelpers_SuccessTestAsync"/> but using only RegisterState.</summary>
