@@ -52,14 +52,19 @@ public class CompositeL1_State2() : BaseState
 {
   public override Task OnEnter(Context<CompositeL1StateId> context)
   {
-    Log("OnEnter", "=> OK");
+    // NOTE:
+    //  Signify we're ready to go to sub-states
+    //  The true entry point of the state. You MUST return a Result here, else you'll hang!!
     context.NextState(Result.Ok);
+    Log("OnEnter", "=> OK");
     return Task.CompletedTask;
   }
 
   public override Task OnExit(Context<CompositeL1StateId> context)
   {
-    // NOTE: The true exit point of the state. You MUST return a Result here, else you'll hang!!
+    // NOTE:
+    //  Signify we're ready to go to next state after composite
+    //  The true exit point of the state. You MUST return a Result here, else you'll hang!!
     Log("OnExit", "=> OK");
     context.NextState(Result.Ok);
     return Task.CompletedTask;

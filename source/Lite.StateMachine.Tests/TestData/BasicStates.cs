@@ -11,12 +11,14 @@ namespace Lite.StateMachine.Tests.TestData;
 
 public class BasicState1() : IState<BasicStateId>
 {
-  public Task OnEnter(Context<BasicStateId> context)
+  public async Task OnEnter(Context<BasicStateId> context)
   {
+    // Some async work here...
+    await Task.Yield();
+
     context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
     context.NextState(Result.Ok);
     Console.WriteLine($"[BasicState1][OnEnter] {context.Parameters[ParameterType.Counter]} => OK");
-    return Task.CompletedTask;
   }
 
   public Task OnEntering(Context<BasicStateId> context)
