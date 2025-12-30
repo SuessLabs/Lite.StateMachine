@@ -88,6 +88,27 @@ public class CompositeStateTest
   }
 
   [TestMethod]
+  public void Level1_ExportUml_SuccessTest()
+  {
+    // Assemble
+    var machine = new StateMachine<CompositeL1StateId>()
+      .RegisterState<CompositeL1_State1>(CompositeL1StateId.State1, CompositeL1StateId.State2)
+      .RegisterState<CompositeL1_State2>(CompositeL1StateId.State2, CompositeL1StateId.State3, null, null, null, false, CompositeL1StateId.State2_Sub1)
+      .RegisterState<CompositeL1_State2_Sub1>(CompositeL1StateId.State2_Sub1, CompositeL1StateId.State2_Sub2, null, null, CompositeL1StateId.State2, false, null)
+      .RegisterState<CompositeL1_State2_Sub2>(CompositeL1StateId.State2_Sub2, null, null, null, CompositeL1StateId.State2)
+      .RegisterState<CompositeL1_State3>(CompositeL1StateId.State3);
+
+    // Act - Generate UML
+    var uml = machine.ExportUml(includeLegend: false);
+    Assert.IsNotNull(uml);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.Composite(false), uml);
+
+    uml = machine.ExportUml(includeLegend: true);
+    Assert.IsNotNull(uml);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.Composite(true), uml);
+  }
+
+  [TestMethod]
   public async Task Level1_Fluent_RegisterHelpers_SuccessTestAsync()
   {
     // Assemble/Act

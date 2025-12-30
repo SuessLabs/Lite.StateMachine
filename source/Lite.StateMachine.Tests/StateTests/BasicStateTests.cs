@@ -132,6 +132,32 @@ public class BasicStateTests
   }
 
   [TestMethod]
+  public void ExportUml_SuccessTest()
+  {
+    // Assemble
+    var machine = new StateMachine<BasicStateId>()
+      .RegisterState<BasicState1>(BasicStateId.State1, BasicStateId.State2)
+      .RegisterState<BasicState2>(BasicStateId.State2, BasicStateId.State3)
+      .RegisterState<BasicState3>(BasicStateId.State3);
+
+    // Act
+    var uml = machine.ExportUml(includeLegend: false, graphName: "BasicStateMachine");
+    Console.WriteLine(uml);
+
+    // Assert Results
+    Assert.IsNotNull(uml);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStates123(), uml);
+    Assert.Contains("digraph \"BasicStateMachine\"", uml);
+    Assert.Contains("State1", uml);
+    Assert.Contains("State2", uml);
+    Assert.Contains("State3", uml);
+
+    uml = machine.ExportUml(includeLegend: true, graphName: "BasicStateMachine");
+    Console.WriteLine(uml);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStates123(true), uml);
+  }
+
+  [TestMethod]
   public async Task HungState_Proceeds_DefaultStateTimeout_SuccessTestAsync()
   {
     // TODO (2025-12-29 DS): Add test for ensuring the hung state was captured (i.e. State3 was skipped; state history).

@@ -59,34 +59,53 @@ public class MsDiTests
   }
 
   [TestMethod]
-  [Ignore]
   public async Task Basic_GeneratesExportUml_SuccessTestAsync()
   {
-    // Assemble with Dependency Injection
+    // Build DI
     var services = new ServiceCollection()
       //// Register Services
+      .AddLogging(b => b.AddSimpleConsole())
+      .AddSingleton<IEventAggregator, EventAggregator>()
       .AddSingleton<IMessageService, MessageService>()
       //// Register States
-      .AddTransient<BasicDiState1>()
-      .AddTransient<BasicDiState2>()
-      .AddTransient<BasicDiState3>()
+      .AddTransient<EntryState>()
+      .AddTransient<ParentState>()
+      .AddTransient<ParentSub_FetchState>()
+      .AddTransient<ParentSub_WaitMessageState>()
+      .AddTransient<Workflow_DoneState>()
+      .AddTransient<Workflow_ErrorState>()
+      .AddTransient<Workflow_FailureState>()
       .BuildServiceProvider();
 
+    var aggregator = services.GetRequiredService<IEventAggregator>();
+
+    // Factory uses DI to construct states
     Func<Type, object?> factory = t => ActivatorUtilities.CreateInstance(services, t);
+    var machine = new StateMachine<CompositeMsgStateId>(factory, aggregator);
 
-    var machine = new StateMachine<BasicStateId>(factory)
-      .RegisterState<BasicDiState1>(BasicStateId.State1, BasicStateId.State2)
-      .RegisterState<BasicDiState2>(BasicStateId.State2, BasicStateId.State3)
-      .RegisterState<BasicDiState3>(BasicStateId.State3);
+    machine.RegisterState<EntryState>(CompositeMsgStateId.Entry, CompositeMsgStateId.Parent);
+    machine.RegisterComposite<ParentState>(
+      stateId: CompositeMsgStateId.Parent,
+      initialChildStateId: CompositeMsgStateId.Parent_Fetch,
+      onSuccess: CompositeMsgStateId.Done,
+      onError: CompositeMsgStateId.Error,
+      onFailure: CompositeMsgStateId.Failure);
+    machine.RegisterSubState<ParentSub_FetchState>(CompositeMsgStateId.Parent_Fetch, CompositeMsgStateId.Parent, CompositeMsgStateId.Parent_WaitMessage);
+    machine.RegisterSubState<ParentSub_WaitMessageState>(CompositeMsgStateId.Parent_WaitMessage, CompositeMsgStateId.Parent);
+    machine.RegisterState<Workflow_DoneState>(CompositeMsgStateId.Done);
+    machine.RegisterState<Workflow_ErrorState>(CompositeMsgStateId.Error, CompositeMsgStateId.Parent);
+    machine.RegisterState<Workflow_FailureState>(CompositeMsgStateId.Failure, CompositeMsgStateId.Parent);
 
-    var result = await machine.RunAsync(BasicStateId.State1);
+    // Act - Generate UML
+    var uml = machine.ExportUml(includeLegend: false);
+    Assert.IsNotNull(uml);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.CompositeWithErrorFailure(false), uml);
 
-    ////// Act - Generate UML
-    ////var uml = machine.ExportUml();
+    uml = machine.ExportUml(includeLegend: true);
+    Assert.IsNotNull(uml);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.CompositeWithErrorFailure(true), uml);
 
-    Assert.IsNotNull(result);
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    Console.WriteLine(uml);
   }
 
   [TestMethod]

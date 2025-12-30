@@ -1,8 +1,9 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
-/*
+
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Lite.StateMachine;
@@ -17,264 +18,159 @@ namespace Lite.StateMachine;
 public sealed partial class StateMachine<TStateId>
   where TStateId : struct, Enum
 {
-  /// <summary>
-  ///   Exports a DOT (Graphviz) diagram of the state machine.
-  ///   - Top-level machine (`rankdir=LR`)
-  ///   - Composite states are shown as clustered subgraphs
-  ///   - Command states are hexagons;
-  ///   - Terminal/final states (no transitions) are `doublecircle`
-  ///   - Edge labels show Result (Ok, Error, Failure).
-  /// </summary>
-  /// <param name="includeSubmachines">Include composite submachines as subgraph clusters.</param>
-  /// <param name="appendLegend">Include symbols legend.</param>
-  /// <returns>State diagram.</returns>
-  public string ExportUml(bool includeSubmachines = true, bool appendLegend = false)
+  /// <summary>Export the state machine's topology as DOT (Graphviz).</summary>
+  /// <param name="includeLegend">Include a legend subgraph that explains shapes and colors.</param>
+  /// <param name="transitionColors">
+  ///   Optional color overrides for Result-based transitions. Keys not present fall back to defaults:
+  ///   Ok=Blue, Error=Yellow, Failure=Red.
+  /// </param>
+  /// <param name="parentToChildColor">Color used for parent → initial-child transition edges (default "Green").</param>
+  /// <param name="graphName">Logical graph name (default "StateMachine").</param>
+  /// <param name="rankLeftToRight">If true, left-to-right layout (DOT: rankdir=LR), else top-to-bottom.</param>
+  /// <param name="nodeLabelSelector">Optional label selector for nodes. Defaults to <c>stateId.ToString()</c>.</param>
+  /// <param name="legendText">Optional custom legend description text. If null, a sensible default is emitted.</param>
+  /// <returns>DOT text suitable for Graphviz.</returns>
+  public string ExportUml(
+    bool includeLegend = true,
+    IDictionary<Result, string>? transitionColors = null,
+    string parentToChildColor = "Green",
+    string graphName = "StateMachine",
+    bool rankLeftToRight = true,
+    Func<TStateId, string>? nodeLabelSelector = null,
+    string? legendText = null)
   {
+    // Defaults for Result edge colors
+    var colors = new Dictionary<Result, string>
+    {
+      [Result.Ok] = "Blue",
+      [Result.Error] = "Yellow",
+      [Result.Failure] = "Red",
+    };
+
+    if (transitionColors != null)
+    {
+      foreach (var kvp in transitionColors)
+        colors[kvp.Key] = kvp.Value ?? colors[kvp.Key];
+    }
+
+    nodeLabelSelector ??= id => id.ToString();
+
     var sb = new StringBuilder();
-    sb.AppendLine("digraph StateMachine {");
-    sb.AppendLine("  rankdir=LR;");
+    sb.AppendLine($"digraph \"{Escape(graphName)}\" {{");
+
+    // allow edges into subgraphs
     sb.AppendLine("  compound=true;");
-    sb.AppendLine("  node [fontname=\"Segoe UI\", fontsize=10];");
-    sb.AppendLine("  edge [fontname=\"Segoe UI\", fontsize=10];");
+    if (rankLeftToRight)
+      sb.AppendLine("  rankdir=LR;");
 
-    // Start marker
-    sb.AppendLine("  start [shape=point];");
-    if (_states.ContainsKey(_initialState))
-      sb.AppendLine($"  start -> \"{Escape(_initialState.ToString())}\";");
+    sb.AppendLine("  fontsize=12;");
 
-    // Nodes
-    foreach (var kv in _states)
+    // First, define all nodes and cluster composite parents with their children.
+    // Group registrations by ParentId (null = root-level nodes).
+    var regs = _states.Values.ToList();
+
+    // Emit clusters for composite parents
+    foreach (var parent in regs.Where(r => r.IsCompositeParent))
     {
-      var instance = GetEphemeralInstance(kv.Value);
-      AppendNode(sb, instance, DefaultCommandTimeoutMs);
-    }
+      var parentId = parent.StateId;
+      var clusterName = $"cluster_{Escape(parentId.ToString())}";
+      sb.AppendLine($"  subgraph {clusterName} {{");
+      sb.AppendLine($"    label=\"{Escape(nodeLabelSelector(parentId))}\";");
+      sb.AppendLine($"    style=rounded;");
+      sb.AppendLine($"    color=\"#888888\";");
 
-    // Edges
-    foreach (var kv in _states)
-    {
-      var instance = GetEphemeralInstance(kv.Value);
-      AppendEdges(sb, instance);
-    }
+      // Emit parent node inside the cluster (doublecircle)
+      sb.AppendLine($"    \"{Escape(parentId.ToString())}\" [shape=doublecircle, label=\"{Escape(nodeLabelSelector(parentId))}\"];");
 
-    // Composite clusters
-    if (includeSubmachines)
-    {
-      foreach (var kv in _states)
+      // Emit children under this parent (ellipse)
+      var children = regs.Where(r => Equals(r.ParentId, parentId)).ToList();
+      foreach (var child in children)
       {
-        var instance = GetEphemeralInstance(kv.Value);
-        if (instance is ICompositeState<TStateId> comp)
-          AppendCompositeCluster(sb, kv.Key, kv.Value, includeSubmachines, DefaultCommandTimeoutMs);
+        var childId = child.StateId;
+        sb.AppendLine($"    \"{Escape(childId.ToString())}\" [shape=ellipse, label=\"{Escape(nodeLabelSelector(childId))}\"];");
       }
+
+      // End of cluster
+      sb.AppendLine("  }");
     }
 
-    if (appendLegend)
-      AppendLegend(sb);
+    // Emit nodes that are NOT part of any composite parent cluster
+    foreach (var reg in regs.Where(r => !r.IsCompositeParent && r.ParentId is null))
+    {
+      var id = reg.StateId;
+      sb.AppendLine($"  \"{Escape(id.ToString())}\" [shape=ellipse, label=\"{Escape(nodeLabelSelector(id))}\"];");
+    }
+
+    // Parent → initial child edges (green)
+    foreach (var parent in regs.Where(r => r.IsCompositeParent && r.InitialChildId is not null))
+    {
+      var parentId = parent.StateId;
+      var childId = parent.InitialChildId!.Value;
+      sb.AppendLine($"  \"{Escape(parentId.ToString())}\" -> \"{Escape(childId.ToString())}\" [color=\"{Escape(parentToChildColor)}\", label=\"initial\"];");
+    }
+
+    // Result-based transitions (Ok, Error, Failure) with labels and color overrides
+    foreach (var reg in regs)
+    {
+      var fromId = reg.StateId;
+
+      void Emit(Result res, TStateId? toId)
+      {
+        if (toId is null)
+          return;
+
+        var color = colors.TryGetValue(res, out var c) ? c : "Black";
+        var label = res.ToString();
+        sb.AppendLine($"  \"{Escape(fromId.ToString())}\" -> \"{Escape(toId.Value.ToString())}\" [color=\"{Escape(color)}\", label=\"{Escape(label)}\"];");
+      }
+
+      Emit(Result.Ok, reg.OnSuccess);
+      Emit(Result.Error, reg.OnError);
+      Emit(Result.Failure, reg.OnFailure);
+    }
+
+    // Optional legend
+    if (includeLegend)
+    {
+      sb.AppendLine("  subgraph cluster_legend {");
+      sb.AppendLine("    label=\"Legend\";");
+      sb.AppendLine("    style=dashed;");
+      sb.AppendLine("    color=\"#BBBBBB\";");
+
+      sb.AppendLine("    legend_composite [shape=doublecircle, label=\"Composite parent\"];");
+      sb.AppendLine("    legend_leaf [shape=ellipse, label=\"Leaf state\"];");
+
+      var legendOkColor = Escape(colors[Result.Ok]);
+      var legendErrColor = Escape(colors[Result.Error]);
+      var legendFailColor = Escape(colors[Result.Failure]);
+      var legendParentColor = Escape(parentToChildColor);
+
+      sb.AppendLine($"    legend_composite -> legend_leaf [color=\"{legendParentColor}\", label=\"parent → initial child\"];");
+      sb.AppendLine($"    legend_leaf -> legend_leaf_ok   [color=\"{legendOkColor}\",   label=\"Ok\"];");
+      sb.AppendLine($"    legend_leaf -> legend_leaf_err  [color=\"{legendErrColor}\", label=\"Error\"];");
+      sb.AppendLine($"    legend_leaf -> legend_leaf_fail [color=\"{legendFailColor}\", label=\"Failure\"];");
+
+      sb.AppendLine("    legend_leaf_ok   [shape=point, label=\"\"];");
+      sb.AppendLine("    legend_leaf_err  [shape=point, label=\"\"];");
+      sb.AppendLine("    legend_leaf_fail [shape=point, label=\"\"];");
+
+      var legendBody = legendText ??
+        $"Shapes:\n  • doublecircle = Composite parent\n  • ellipse = Leaf state\n\n" +
+        $"Edge colors:\n  • Ok = {colors[Result.Ok]}\n  • Error = {colors[Result.Error]}\n  • Failure = {colors[Result.Failure]}\n  • Parent→Child = {parentToChildColor}";
+
+      sb.AppendLine($"    legend_note [shape=note, label=\"{Escape(legendBody)}\"];");
+      sb.AppendLine("  }");
+    }
 
     sb.AppendLine("}");
     return sb.ToString();
   }
 
-  /// <summary>Escape backslash.</summary>
-  /// <param name="s">Input string.</param>
-  /// <returns>Sanitized string.</returns>
-  private static string Escape(string s) => s.Replace("\"", "\\\"");
-
-  private void AppendCompositeCluster(
-    StringBuilder sb,
-    TStateId compositeId,
-    StateRegistration<TStateId> reg,
-    bool includeNested,
-    int defaultTimeoutMs)
+  private static string Escape(string s)
   {
-    var label = Escape(compositeId.ToString());
+    if (s is null)
+      return string.Empty;
 
-    // Build an ephemeral instance with an ephemeral submachine
-    var instance = GetEphemeralInstance(reg);
-    var comp = (ICompositeState<TStateId>)instance;
-    var sub = comp.Submachine;
-
-    sb.AppendLine($"  subgraph cluster_{label} {{");
-    sb.AppendLine($"    label=\"{label}\"; style=rounded; color=lightgray; fontcolor=gray;");
-    sb.AppendLine($"    rankdir=LR;");
-    sb.AppendLine($"    \"start_{label}\" [shape=point];");
-
-    // Submachine initial (if set)
-    var subInitialKnown = sub._states.ContainsKey(sub._initialState);
-    if (subInitialKnown)
-      sb.AppendLine($"    \"start_{label}\" -> \"{Escape(sub._initialState.ToString())}\";");
-
-    // Nodes
-    foreach (var kv in sub._states)
-    {
-      var subInstance = sub.GetEphemeralInstance(kv.Value);
-      AppendSubNode(sb, subInstance, defaultTimeoutMs);
-    }
-
-    // Edges
-    foreach (var kv in sub._states)
-    {
-      var subInstance = sub.GetEphemeralInstance(kv.Value);
-      AppendSubEdges(sb, subInstance);
-    }
-
-    // Nested composites
-    if (includeNested)
-    {
-      foreach (var kv in sub._states)
-      {
-        var nestedInstance = sub.GetEphemeralInstance(kv.Value);
-        if (nestedInstance is ICompositeState<TStateId> nestedComp)
-          sub.AppendCompositeCluster(sb, kv.Key, kv.Value, includeNested, defaultTimeoutMs);
-      }
-    }
-
-    sb.AppendLine("  }");
-  }
-
-  private void AppendEdges(StringBuilder sb, IState<TStateId> state)
-  {
-    var from = Escape(state.StateId.ToString());
-    foreach (var tr in state.Transitions)
-    {
-      var to = Escape(tr.Value.ToString());
-      var label = tr.Key.ToString();
-      sb.AppendLine($"  \"{from}\" -> \"{to}\" [label=\"{label}\"];");
-    }
-  }
-
-  private void AppendLegend(StringBuilder sb)
-  {
-    sb.AppendLine("  subgraph cluster_legend {");
-    sb.AppendLine("    label=\"Legend\"; style=rounded; color=gray; fontcolor=gray;");
-    sb.AppendLine("    rankdir=LR;");
-
-    sb.AppendLine("    legend_start [label=\"Start (initial marker)\", shape=plaintext];");
-    sb.AppendLine("    legend_start_sym [shape=point, label=\"\"];");
-    sb.AppendLine("    legend_start_sym -> legend_start [style=invis];");
-
-    sb.AppendLine("    legend_regular [label=\"Regular state\", shape=plaintext];");
-    sb.AppendLine("    legend_regular_sym [shape=box, label=\"\"];");
-    sb.AppendLine("    legend_regular_sym -> legend_regular [style=invis];");
-
-    sb.AppendLine("    legend_composite [label=\"Composite (has submachine)\", shape=plaintext];");
-    sb.AppendLine("    legend_composite_sym [shape=box3d, style=rounded, label=\"\"];");
-    sb.AppendLine("    legend_composite_sym -> legend_composite [style=invis];");
-
-    sb.AppendLine("    legend_command [label=\"Command state (message-driven, timeout)\", shape=plaintext];");
-    sb.AppendLine("    legend_command_sym [shape=hexagon, label=\"\"];");
-    sb.AppendLine("    legend_command_sym -> legend_command [style=invis];");
-
-    sb.AppendLine("    legend_terminal [label=\"Terminal state (no outgoing transitions)\", shape=plaintext];");
-    sb.AppendLine("    legend_terminal_sym [shape=doublecircle, label=\"\"];");
-    sb.AppendLine("    legend_terminal_sym -> legend_terminal [style=invis];");
-
-    sb.AppendLine("    legend_edge [label=\"Edges labeled by outcome: Ok, Error, Failure\", shape=plaintext];");
-    sb.AppendLine("    legend_edge_a [shape=box, label=\"State A\"];");
-    sb.AppendLine("    legend_edge_b [shape=box, label=\"State B\"];");
-    sb.AppendLine("    legend_edge_a -> legend_edge_b [label=\"Ok\"];");
-
-    sb.AppendLine("  }");
-  }
-
-  private void AppendNode(StringBuilder sb, IState<TStateId> state, int defaultTimeoutMs)
-  {
-    var name = Escape(state.StateId.ToString());
-
-    var shape = "box";
-    if (state is ICommandState<TStateId>)
-      shape = "hexagon";
-    else if (state.IsComposite)
-      shape = "box3d";
-
-    var isTerminal = state.Transitions.Count == 0 && !state.IsComposite;
-    if (isTerminal)
-      shape = "doublecircle";
-
-    var attrs = new List<string> { $"shape={shape}" };
-    if (state is ICommandState<TStateId> cmd)
-    {
-      var timeout = cmd.TimeoutMs ?? defaultTimeoutMs;
-      attrs.Add($"tooltip=\"Command state (timeout={timeout}ms)\"");
-    }
-
-    if (state.IsComposite)
-      attrs.Add("style=rounded");
-
-    sb.AppendLine($"  \"{name}\" [{string.Join(", ", attrs)}];");
-  }
-
-  private void AppendSubEdges(StringBuilder sb, IState<TStateId> state)
-  {
-    var from = Escape(state.StateId.ToString());
-    foreach (var tr in state.Transitions)
-    {
-      var to = Escape(tr.Value.ToString());
-      var label = tr.Key.ToString();
-      sb.AppendLine($"    \"{from}\" -> \"{to}\" [label=\"{label}\"];");
-    }
-  }
-
-  private void AppendSubNode(StringBuilder sb, IState<TStateId> state, int defaultTimeoutMs)
-  {
-    var name = Escape(state.StateId.ToString());
-
-    var shape = "box";
-    if (state is ICommandState<TStateId>)
-      shape = "hexagon";
-    else if (state.IsComposite)
-      shape = "box3d";
-
-    var isTerminal = state.Transitions.Count == 0 && !state.IsComposite;
-    if (isTerminal)
-      shape = "doublecircle";
-
-    var attrs = new List<string> { $"shape={shape}" };
-    if (state is ICommandState<TStateId> cmd)
-    {
-      var timeout = cmd.TimeoutMs ?? defaultTimeoutMs;
-      attrs.Add($"tooltip=\"Command state (timeout={timeout}ms)\"");
-    }
-
-    if (state.IsComposite)
-      attrs.Add("style=rounded");
-
-    sb.AppendLine($"    \"{name}\" [{string.Join(", ", attrs)}];");
-  }
-
-  /// <summary>Create a very short instance of the state to extract the transitions.</summary>
-  /// <param name="reg">State registration.</param>
-  /// <returns>State instance.</returns>
-  private IState<TStateId> GetEphemeralInstance(StateRegistration<TStateId> reg)
-  {
-    if (reg is null || reg.Factory is null)
-      throw new NullReferenceException("Invalid or missing state factory.");
-
-    var state = reg.Factory();
-
-    var x = reg.Factory.GetType();
-
-    // Because we're not starting the machine, we need to manually add set the StateId.
-    state.SetStateId(reg.StateId);
-
-    if (reg.OnSuccess is not null)
-      (state as BaseState<TStateId>)?.AddTransition(Result.Ok, reg.OnSuccess.Value);
-
-    if (reg.OnError is not null)
-      (state as BaseState<TStateId>)?.AddTransition(Result.Error, reg.OnError.Value);
-
-    if (reg.OnFailure is not null)
-      (state as BaseState<TStateId>)?.AddTransition(Result.Failure, reg.OnFailure.Value);
-
-    // For composites: build an ephemeral submachine for topology inspection (no Start).
-    if (state is ICompositeState<TStateId> comp && reg.ConfigureSubmachine != null)
-    {
-      // TOOD (2025-12-25): May be able to just pass: (NULL, NULL)
-      var sub = new StateMachine<TStateId>(_containerFactory, _eventAggregator);
-      comp.Submachine = sub;
-      reg.ConfigureSubmachine(sub);
-    }
-
-    return state;
+    return s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n");
   }
 }
-*/
