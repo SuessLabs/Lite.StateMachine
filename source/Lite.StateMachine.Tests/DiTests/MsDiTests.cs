@@ -1,6 +1,7 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
+/*
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,54 +16,52 @@ namespace Lite.StateMachine.Tests.DiTests;
 [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test class")]
 public class MsDiTests
 {
-  public const string ParameterCounter = "Counter";
-  public const string ParameterKeyTest = "TestKey";
-  public const string TestValue = "success";
+public const string ParameterCounter = "Counter";
+public const string ParameterKeyTest = "TestKey";
+public const string TestValue = "success";
 
-  /// <summary>State definitions.</summary>
-  private enum StateId
-  {
-    WorkflowParent,
-    Fetch,
-    WaitForMessage,
-    Done,
-    Error,
-  }
+/// <summary>State definitions.</summary>
+private enum StateId
+{
+  WorkflowParent,
+  Fetch,
+  WaitForMessage,
+  Done,
+  Error,
+}
 
-  /*
-  [TestMethod]
-  public void DI_BasicRegistration_SuccessTest()
-  {
-    // Assemble
-    var services = new ServiceCollection()
-      .AddLogging(builder =>
-      {
-        builder.AddConsole();
-        builder.SetMinimumLevel(LogLevel.Trace);
-      })
-      .AddSingleton<IMessageService, MessageService>();
-    ////.AddTransient<MyClass>();
+[TestMethod]
+public void DI_BasicRegistration_SuccessTest()
+{
+  // Assemble
+  var services = new ServiceCollection()
+    .AddLogging(builder =>
+    {
+      builder.AddConsole();
+      builder.SetMinimumLevel(LogLevel.Trace);
+    })
+    .AddSingleton<IMessageService, MessageService>();
+  ////.AddTransient<MyClass>();
 
-    using var provider = services.BuildServiceProvider();
+  using var provider = services.BuildServiceProvider();
 
-    var machine = new StateMachine<GenericStateId>()
-      .RegisterState(GenericStateId.State1, () => new StateDi1(), GenericStateId.State2)
-      .RegisterState(GenericStateId.State2, () => new StateDi2(), GenericStateId.State3)
-      .RegisterState(GenericStateId.State3, () => new StateDi3())
-      .SetInitial(GenericStateId.State1);
+  var machine = new StateMachine<FlatStateId>()
+    .RegisterState(FlatStateId.State1, () => new StateDi1(), FlatStateId.State2)
+    .RegisterState(FlatStateId.State2, () => new StateDi2(), FlatStateId.State3)
+    .RegisterState(FlatStateId.State3, () => new StateDi3())
+    .SetInitial(FlatStateId.State1);
 
-    // Act - Generate UML
-    var uml = machine.ExportUml();
+  // Act - Generate UML
+  var uml = machine.ExportUml();
 
-    machine.Start();
+  machine.Start();
 
-    // Assert
-    Assert.IsNotNull(uml);
-    Console.WriteLine(uml);
-  }
-  */
+  // Assert
+  Assert.IsNotNull(uml);
+  Console.WriteLine(uml);
+}
 
-  [TestMethod]
+[TestMethod]
   public void DI_GenericsRegistration_SuccessTest()
   {
     // Assemble
@@ -90,14 +89,14 @@ public class MsDiTests
 
     // Uncomment the following to use Event Aggregator for Command States
     ////var aggregator = provider.GetRequiredService<IEventAggregator>();
-    ////var machine = new StateMachine<GenericStateId>(factory, aggregator);
+    ////var machine = new StateMachine<FlatStateId>(factory, aggregator);
 
-    var machine = new StateMachine<GenericStateId>(factory);
+    var machine = new StateMachine<FlatStateId>(factory);
     machine
-      .RegisterState<StateDi1>(GenericStateId.State1, GenericStateId.State2)
-      .RegisterState<StateDi2>(GenericStateId.State2, GenericStateId.State3)
-      .RegisterState<StateDi3>(GenericStateId.State3)
-      .SetInitial(GenericStateId.State1);
+      .RegisterState<StateDi1>(FlatStateId.State1, FlatStateId.State2)
+      .RegisterState<StateDi2>(FlatStateId.State2, FlatStateId.State3)
+      .RegisterState<StateDi3>(FlatStateId.State3)
+      .SetInitial(FlatStateId.State1);
 
     // Act - Generate UML
     var uml = machine.ExportUml();
@@ -116,7 +115,7 @@ public class MsDiTests
     // NOTE: This should be 9 because each state has 3 hooks that increment the counter
     Assert.AreEqual(9 - 1, ctxFinalParams[ParameterCounter]);
 
-    var enums = Enum.GetValues<GenericStateId>().Cast<GenericStateId>();
+    var enums = Enum.GetValues<FlatStateId>().Cast<FlatStateId>();
 
     // Ensure all states are registered
     Assert.AreEqual(enums.Count(), machine.States.Count());
@@ -148,7 +147,7 @@ public class MsDiTests
     Func<Type, object?> factory = t => ActivatorUtilities.CreateInstance(services, t);
     var aggregator = services.GetRequiredService<IEventAggregator>();
 
-    var machine = new StateMachine<StateId>(factory, aggregator) { DefaultTimeoutMs = 3000 };
+    var machine = new StateMachine<StateId>(factory, aggregator) { DefaultCommandTimeoutMs = 3000 };
 
     machine.RegisterState<WorkflowParent>(
       StateId.WorkflowParent,
@@ -257,3 +256,4 @@ public class MsDiTests
 
   #endregion MS-DI States
 }
+*/

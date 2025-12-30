@@ -86,6 +86,7 @@ var uml = machine.ExportUml(includeSubmachines: true);
 
 ## Features
 
+* AOT Friendly - _No Reflection, no Linq, etc._
 * Passing parameters between state transitions via `Context`
 * Types of States
   * **Basic Linear State** (`BaseState`)

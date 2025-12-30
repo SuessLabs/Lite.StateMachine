@@ -3,11 +3,23 @@
 
 namespace Lite.StateMachine.Tests.TestData;
 
+#pragma warning disable SA1649 // File name should match first type name
+
 /// <summary>State definitions.</summary>
-[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1649:File name should match first type name", Justification = "For tests only")]
-public enum GenericStateId
+public enum BasicStateId
 {
   State1,
   State2,
   State3,
 }
+
+public enum CompositeL1StateId
+{
+  State1,
+  State2,
+  State2_Sub1,
+  State2_Sub2,
+  State3,
+}
+
+#pragma warning restore SA1649 // File name should match first type name

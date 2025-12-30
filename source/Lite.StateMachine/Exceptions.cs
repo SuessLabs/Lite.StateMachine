@@ -6,29 +6,30 @@ using System;
 
 namespace Lite.StateMachine;
 
+////[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1649:File name should match first type name", Justification = "Allowed, a lot of one-liners here.")]
+#pragma warning disable SA1649 // File name should match first type name
+#pragma warning disable SA1402 // File may only contain a single type
+
+/// <summary>State identifier is already registered exception.</summary>
+public class DuplicateStateException : Exception;
+
+public class InvalidMissingStartupStateException : Exception;
+
 /// <summary>State transition not allowed by pre-defined rule.</summary>
 /// <remarks>Happens when a custom-override provided is not in the allowed list.</remarks>
-public class InvalidStateTransitionException : Exception
-{
-  public InvalidStateTransitionException()
-  {
-  }
+public class InvalidStateTransitionException : Exception;
 
-  public InvalidStateTransitionException(string message)
-    : base(message)
-  {
-  }
-}
+//// <summary>Missing state transition exception.</summary>
+//// public class MissingStateTransitionException : Exception;
 
-public class MissingStateTransitionException : Exception
-{
-  public MissingStateTransitionException()
-  {
-  }
+public class OrphanSubStateException : Exception;
 
-  public MissingStateTransitionException(string message)
-    : base(message)
-  {
-  }
-}
+public class ParentStateMustBeCompositeException : Exception;
+
+public class UnregisteredNextStateException : Exception;
+
+public class DisjointedNextStateException : Exception; //// DisjointedNextSubStateException
+
+#pragma warning restore SA1402 // File may only contain a single type
+#pragma warning restore SA1649 // File name should match first type name
 */

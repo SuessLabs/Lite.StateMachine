@@ -2,8 +2,6 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Lite.StateMachine;
 
@@ -12,5 +10,7 @@ public interface IEventAggregator
 {
   void Publish(object message);
 
-  IDisposable Subscribe(Func<object, bool> handler);
+  IDisposable Subscribe(Action<object> handler);
+
+  ////IDisposable Subscribe(Func<object, bool> handler);
 }

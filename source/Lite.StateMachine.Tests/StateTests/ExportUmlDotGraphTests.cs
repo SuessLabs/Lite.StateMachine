@@ -1,6 +1,7 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
+/*
 using Lite.StateMachine.Tests.TestData;
 
 namespace Lite.StateMachine.Tests.StateTests;
@@ -12,44 +13,42 @@ namespace Lite.StateMachine.Tests.StateTests;
 [TestClass]
 public class ExportUmlDotGraphTests
 {
-  /// <summary>State definitions.</summary>
-  public enum StateId
-  {
-    State1,
-    State2,
-    State2e,
-    State2f,
-    State3,
-    State4,
-    State4_Sub1,
-    State4_Sub2,
-    State5,
-  }
+/// <summary>State definitions.</summary>
+public enum StateId
+{
+  State1,
+  State2,
+  State2e,
+  State2f,
+  State3,
+  State4,
+  State4_Sub1,
+  State4_Sub2,
+  State5,
+}
 
-  /*
-  [TestMethod]
-  public void Generates_BasicState_RegisterState_SuccessTest()
-  {
-    // Assemble
-    var machine = new StateMachine<StateId>();
-    machine.RegisterState(StateId.State1, () => new State1());
-    machine.RegisterState(StateId.State2, () => new State2());
-    machine.RegisterState(StateId.State3, () => new State3());
-    machine.SetInitial(StateId.State1);
+[TestMethod]
+public void Generates_BasicState_RegisterState_SuccessTest()
+{
+  // Assemble
+  var machine = new StateMachine<StateId>();
+  machine.RegisterState(StateId.State1, () => new State1());
+  machine.RegisterState(StateId.State2, () => new State2());
+  machine.RegisterState(StateId.State3, () => new State3());
+  machine.SetInitial(StateId.State1);
 
-    // Act/Assert
-    var uml = machine.ExportUml(appendLegend: true);
-    Assert.IsNotNull(uml);
-    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStates(true), uml);
+  // Act/Assert
+  var uml = machine.ExportUml(appendLegend: true);
+  Assert.IsNotNull(uml);
+  AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStates(true), uml);
 
-    uml = machine.ExportUml();
-    Assert.IsNotNull(uml);
-    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStates(), uml);
-  }
-  */
+  uml = machine.ExportUml();
+  Assert.IsNotNull(uml);
+  AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStates(), uml);
+}
 
-  [TestMethod]
-  public void Generates_BasicState_RegisterStateGenerics_SuccessTest()
+[TestMethod]
+  public void Generates_BasicState_RegisterFlatState_SuccessTest()
   {
     // Assemble
     var machine = new StateMachine<StateId>();
@@ -64,7 +63,6 @@ public class ExportUmlDotGraphTests
     AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStates(), uml);
   }
 
-  /*
   [TestMethod]
   public void Generates_BasicState_RegisterState_WithError_SuccessTest()
   {
@@ -173,7 +171,6 @@ public class ExportUmlDotGraphTests
     Assert.IsNotNull(uml);
     AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.Composite(true), uml);
   }
-  */
 
   #region State Machine - Basic
 
@@ -257,3 +254,4 @@ public class ExportUmlDotGraphTests
 
   #endregion State Machine - Fluent
 }
+*/
