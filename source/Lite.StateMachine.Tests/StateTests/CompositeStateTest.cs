@@ -14,12 +14,13 @@ public class CompositeStateTest
   public const string ParameterSubStateEntered = "SubEntered";
   public const string SUCCESS = "success";
 
+  public TestContext TestContext { get; set; }
+
   [TestMethod]
-  public async Task Basic_Level1_Transitions_SuccessTestAsync()
+  public async Task Level1_Basic_RegisterHelpers_SuccessTestAsync()
   {
     // Assemble
     var machine = new StateMachine<CompositeL1StateId>();
-    machine.DefaultStateTimeoutMs = 5000;
 
     machine.RegisterState<CompositeL1_State1>(CompositeL1StateId.State1, CompositeL1StateId.State2);
 
@@ -40,14 +41,13 @@ public class CompositeStateTest
     machine.RegisterState<CompositeL1_State3>(CompositeL1StateId.State3);
 
     // Act
-    var task = machine.RunAsync(CompositeL1StateId.State1);
-    await task;   //// .GetAwaiter().GetResult();
+    await machine.RunAsync(CompositeL1StateId.State1);
 
     // Assert
     Assert.IsNotNull(machine);
     Assert.IsNull(machine.Context);
 
-    // Ensure all states are hit (-2 because of subs)
+    // Ensure all states are hit
     var enums = Enum.GetValues<CompositeL1StateId>().Cast<CompositeL1StateId>();
     Assert.AreEqual(enums.Count(), machine.States.Count());
     Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
@@ -61,41 +61,83 @@ public class CompositeStateTest
     ////Assert.AreEqual(SUCCESS, ctxFinal[ParameterSubStateEntered]);
   }
 
-  /*
-    [TestMethod]
-    public void RegisterStateEx_Fluent_SuccessTest()
-    {
-      // Assemble
-      var machine = new StateMachine<StateId>()
-        .RegisterState<StateEx1>(StateId.State1, StateId.State2)
-        .RegisterState<StateEx2>(
-          StateId.State2,
-          onSuccess: StateId.State3,
-          subStates: (sub) =>
-        {
-          sub
-            .RegisterState<StateEx2_Sub1>(StateId.State2_Sub1, StateId.State2_Sub2)
-            .RegisterState<StateEx2_Sub2>(StateId.State2_Sub2)
-            .SetInitial(StateId.State2_Sub1);
-        })
-        .RegisterState<StateEx3>(StateId.State3)
-        .SetInitial(StateId.State1);
+  /// <summary>Same as <see cref="Level1_Basic_RegisterHelpers_SuccessTestAsync"/> but using only RegisterState.</summary>
+  /// <returns>Async Task.</returns>
+  [TestMethod]
+  public async Task Level1_Basic_RegisterState_SuccessTestAsync()
+  {
+    // Assemble
+    // RegisterState<TState>(TStateId stateId, TStateId? onSuccess, TStateId? onError, TStateId? onFailure, TStateId? parentStateId, bool isCompositeParent, TStateId? initialChildStateId)
+    var machine = new StateMachine<CompositeL1StateId>();
+    machine.RegisterState<CompositeL1_State1>(CompositeL1StateId.State1, CompositeL1StateId.State2);
+    machine.RegisterState<CompositeL1_State2>(CompositeL1StateId.State2, CompositeL1StateId.State3, null, null, null, false, CompositeL1StateId.State2_Sub1);
+    machine.RegisterState<CompositeL1_State2_Sub1>(CompositeL1StateId.State2_Sub1, CompositeL1StateId.State2_Sub2, null, null, CompositeL1StateId.State2, false, null);
+    machine.RegisterState<CompositeL1_State2_Sub2>(CompositeL1StateId.State2_Sub2, null, null, null, CompositeL1StateId.State2);
+    machine.RegisterState<CompositeL1_State3>(CompositeL1StateId.State3);
+    await machine.RunAsync(CompositeL1StateId.State1);
 
-      // Act
-      machine.Start();
+    // Assert
+    Assert.IsNotNull(machine);
+    Assert.IsNull(machine.Context);
 
-      // Assert
-      var ctxFinal = machine.Context.Parameters;
-      Assert.IsNotNull(ctxFinal);
-      Assert.AreEqual(SUCCESS, ctxFinal[ParameterSubStateEntered]);
+    // Ensure all states are hit
+    var enums = Enum.GetValues<CompositeL1StateId>().Cast<CompositeL1StateId>();
+    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
 
-      // Ensure all states are hit (-2 because of subs)
-      ////var enums = Enum.GetValues<StateId>().Cast<StateId>();
-      ////Assert.AreEqual(enums.Count(), machine.States.Count());
-      ////Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
-      ////
-      ////// Ensure they're in order
-      ////Assert.IsTrue(enums.SequenceEqual(machine.States));
-    }
-  */
+    // Ensure they're in order
+    Assert.IsTrue(enums.SequenceEqual(machine.States));
+  }
+
+  [TestMethod]
+  public async Task Level1_Fluent_RegisterHelpers_SuccessTestAsync()
+  {
+    // Assemble/Act
+    var machine = await new StateMachine<CompositeL1StateId>()
+      .RegisterState<CompositeL1_State1>(CompositeL1StateId.State1, CompositeL1StateId.State2)
+      .RegisterComposite<CompositeL1_State2>(CompositeL1StateId.State2, CompositeL1StateId.State2_Sub1, CompositeL1StateId.State3)
+      .RegisterSubState<CompositeL1_State2_Sub1>(CompositeL1StateId.State2_Sub1, CompositeL1StateId.State2, CompositeL1StateId.State2_Sub2)
+      .RegisterSubState<CompositeL1_State2_Sub2>(CompositeL1StateId.State2_Sub2, CompositeL1StateId.State2)
+      .RegisterState<CompositeL1_State3>(CompositeL1StateId.State3)
+      .RunAsync(CompositeL1StateId.State1, cancellationToken: TestContext.CancellationToken);
+
+    // Assert
+    Assert.IsNotNull(machine);
+    Assert.IsNull(machine.Context);
+
+    // Ensure all states are hit
+    var enums = Enum.GetValues<CompositeL1StateId>().Cast<CompositeL1StateId>();
+    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
+
+    // Ensure they're in order
+    Assert.IsTrue(enums.SequenceEqual(machine.States));
+  }
+
+  [TestMethod]
+  public void Level1_Fluent_RegisterState_SuccessTest()
+  {
+    // Assemble
+    var machine = new StateMachine<CompositeL1StateId>()
+      .RegisterState<CompositeL1_State1>(CompositeL1StateId.State1, CompositeL1StateId.State2)
+      .RegisterState<CompositeL1_State2>(CompositeL1StateId.State2, CompositeL1StateId.State3, null, null, null, false, CompositeL1StateId.State2_Sub1)
+      .RegisterState<CompositeL1_State2_Sub1>(CompositeL1StateId.State2_Sub1, CompositeL1StateId.State2_Sub2, null, null, CompositeL1StateId.State2, false, null)
+      .RegisterState<CompositeL1_State2_Sub2>(CompositeL1StateId.State2_Sub2, null, null, null, CompositeL1StateId.State2)
+      .RegisterState<CompositeL1_State3>(CompositeL1StateId.State3)
+      .RunAsync(CompositeL1StateId.State1, cancellationToken: TestContext.CancellationToken)
+      .GetAwaiter()
+      .GetResult();
+
+    // Assert
+    Assert.IsNotNull(machine);
+    Assert.IsNull(machine.Context);
+
+    // Ensure all states are hit
+    var enums = Enum.GetValues<CompositeL1StateId>().Cast<CompositeL1StateId>();
+    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
+
+    // Ensure they're in order
+    Assert.IsTrue(enums.SequenceEqual(machine.States));
+  }
 }
