@@ -26,10 +26,14 @@ else
   New-Item -Path '.\publish' -ItemType Directory
 }
 
-$version = (Get-Item -Path "output/Lite.StateMachine/Release/net10.0/Lite.StateMachine.dll").VersionInfo.FileVersion
+$file = Get-Item -Path "output/Lite.StateMachine/Release/net10.0/Lite.StateMachine.dll";
+Write-Output "-[ Version: v$($file.VersionInfo.FileVersion)..."
+Write-Output "-[ VersionRaw: v$($file.VersionInfo.FileVersionRaw)..."
+Write-Output "-[ ProductVersion: v$($file.VersionInfo.ProductVersion)..."
+Write-Output "-[ ProductVersionRaw: v$($file.VersionInfo.ProductVersionRaw)..."
 
-Write-Output "Copying package v${version}..."
-Copy-Item -Path "output/Lite.StateMachine/Release/Lite.StateMachine.${version}.nupkg" -Destination "publish/"
+Write-Output "Copying package..."
+Copy-Item -Path "output/Lite.StateMachine/Release/*.nupkg" -Destination "publish/"
 
 ## Publish build artifacts
 ##dotnet publish src/Lite.EventIpc/Lite.EventIpc.csproj /p:PublishProfile=src/Lite.EventIpc/Properties/PublishProfiles/win-x64.pubxml /p:DebugType=None /p:DebugSymbols=false

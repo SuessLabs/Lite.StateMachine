@@ -16,66 +16,149 @@ Create a _state machine_ by defining the states, transitions, and shared context
 
 You can define the state machine using either the fluent design pattern or standard line-by-line. Each state is represented by a enum `StateId` in the following example.
 
+### Basic State
+
+```cs
+// That's it! Just create the state machine, register states, and run it.
+var machine = await new StateMachine<StateId>()
+  .RegisterState<BasicState1>(StateId.State1, StateId.State2)
+  .RegisterState<BasicState2>(StateId.State2, StateId.State3)
+  .RegisterState<BasicState3>(StateId.State3)
+  .RunAsync(StateId.State1);
+
+// To avoid hung states, you can pass in a timeout value (in milliseconds)
+// Useful for robotic systems; fail fast and recover!
+var machine = new StateMachine<BasicStateId>();
+machine.DefaultStateTimeoutMs = 3000;
+```
+
+Define States:
+
+```cs
+// Optional Wrapper
+public class BaseState : IState<StateId>
+{
+  public virtual Task OnEntering(Context<StateId> context) => Task.CompletedTask;
+  public virtual Task OnEnter(Context<StateId> context) => Task.CompletedTask;
+  public virtual Task OnExit(Context<StateId> context) => Task.CompletedTask;
+}
+
+public class BasicState1() : IState<StateId>
+{
+  public async Task OnEnter(Context<BasicStateId> context)
+  {
+    await Task.Yield(); // Some async work here...
+    context.NextState(Result.Ok);
+  }
+}
+
+public class BasicState2() : IState<StateId>
+{
+  public Task OnEnter(Context<StateId> context)
+  {
+    context.NextState(Result.Ok);
+    return Task.CompletedTask; // Notice, we did not async/await this method
+  }
+}
+
+public class BasicState3() : IState<StateId>
+{
+  public Task OnEnter(Context<StateId> context)
+  {
+    context.NextState(Result.Ok);
+    return Task.CompletedTask;
+  }
+}
+```
+
+### Composite States
+
 ```cs
 using Lite.StateMachine;
 
+var ctxProperties = new PropertyBag() { { "CounterKey", 0 } };
+
 // Note the use of generics '<TStateClass>' to strongly-type the state machine
-var machine = new StateMachine<StateId>()
-  .RegisterState<StartState>(StateId.Start);
-  .RegisterState<ProcessingState>(
-    StateId.Processing,
-    onSuccess: StateId.Finalize,
-    subStates: (sub) =>
-  {
-    sub
-      .RegisterState<LoadState>(StateId.Load,);
-      .RegisterState<ValidateState>(StateId.Validate);
-      .SetInitial(StateId.Load);
-  })
-  .RegisterState<FinalizeState>(StateId.Finalize,)
-  .SetInitial(StateId.Start);
+var machine = new StateMachine<CompositeL1StateId>()
+  .RegisterState<Composite_State1>(CompositeL1StateId.State1, CompositeL1StateId.State2)
 
-machine.Start();
+  .RegisterComposite<Composite_State2>(
+    stateId: CompositeL1StateId.State2,
+    initialChildStateId: CompositeL1StateId.State2_Sub1,
+    onSuccess: CompositeL1StateId.State3)
 
-// Optional: Start with initial context
-// var ctx = new PropertyBag { { ParameterKeyTest, TestValueBegin } };
-// machine.Start(ctx);
+  .RegisterSubState<Composite_State2_Sub1>(
+    stateId: CompositeL1StateId.State2_Sub1,
+    parentStateId: CompositeL1StateId.State2,
+    onSuccess: CompositeL1StateId.State2_Sub2)
 
-// Extract final context
-var ctxFinal = machine.Context.Parameters;
+  .RegisterSubState<Composite_State2_Sub2>(
+    stateId: CompositeL1StateId.State2_Sub2,
+    parentStateId: CompositeL1StateId.State2,
+    onSuccess: null) // NULL denotes returning to parent state on success
+
+  .RegisterState<Composite_State3>(CompositeL1StateId.State3);
+
+// Optional, pass in starting Context Property
+await machine.RunAsync(CompositeL1StateId.State1, ctxProperties);
 ```
 
 States are represented by classes that implement the `IState` interface.
 
 ```cs
-  private class ProcessingState() : CompositeState<StateId>()
+public class Composite_State1() : BaseState
+{
+  public override Task OnEnter(Context<CompositeL1StateId> context)
   {
-    public override void OnEnter(Context<StateId> context) =>
-      context.NextState(Result.Ok);
+    context.NextState(Result.Ok);
+    return Task.CompletedTask;
+  }
+}
+
+public class Composite_State2() : BaseState
+{
+  public override Task OnEnter(Context<CompositeL1StateId> context)
+  {
+    // Signify we're ready to go to sub-states
+    context.NextState(Result.Ok);
+    return Task.CompletedTask;
   }
 
-  private class LoadState() : BaseState<StateId>()
+  public override Task OnExit(Context<CompositeL1StateId> context)
   {
-    public override void OnEntering(Context<StateId> context)
-    {
-      // About to enter our state...
-    }
-
-    public override void OnEnter(Context<StateId> context)
-    {
-      // State is now active...
-      context.Parameters.Add("SomeParameterId", "SUCCESS");
-      context.NextState(Result.Ok);
-    }
-
-    public override void OnExit(Context<StateId> context)
-    {
-      // State is leaving...
-    }
+    // Signify we're ready to go to next state after composite
+    context.NextState(Result.Ok);
+    return Task.CompletedTask;
   }
+}
 
-  private class FinalizeState()
-    : BaseState<StateId>();
+public class Composite_State2_Sub1() : BaseState
+{
+  public override Task OnEnter(Context<CompositeL1StateId> context)
+  {
+    context.Parameters.Add("ParameterSubStateEntered", SUCCESS);
+    context.NextState(Result.Ok);
+    return Task.CompletedTask;
+  }
+}
+
+public class Composite_State2_Sub2() : BaseState
+{
+  public override Task OnEnter(Context<CompositeL1StateId> context)
+  {
+    context.NextState(Result.Ok);
+    return Task.CompletedTask;
+  }
+}
+
+public class Composite_State3() : BaseState
+{
+  public override Task OnEnter(Context<CompositeL1StateId> context)
+  {
+    context.NextState(Result.Ok);
+    return Task.CompletedTask;
+  }
+}
 ```
 
 ### Generate DOT Graph (GraphViz)
@@ -109,19 +192,5 @@ var uml = machine.ExportUml(includeSubmachines: true);
     * Must ensure that code has exited `OnMessage` before going to the next state.
   * `OnTimeout` - (Optional) Thrown when the state is auto-transitioning due to timeout exceeded
 * Transition has knowledge of the `PreviousState` and `NextState`
-
-## vNext Proposals
-
-### Generics for State Definitions
-
-```cs
-machine.RegisterState<StartState>(WorkflowState.Start);
-machine.RegisterState<ProcessingState>(WorkflowState.Processing, sub =>
-{
-  sub.RegisterState<LoadState>(WorkflowState.Load)
-     .RegisterState<ValidateState>(WorkflowState.Validate)
-    .SetInitial(WorkflowState.Load);
-});
-```
 
 ## References
