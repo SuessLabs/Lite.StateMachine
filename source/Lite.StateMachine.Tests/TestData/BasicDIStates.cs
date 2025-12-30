@@ -3,80 +3,56 @@
 
 using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Lite.StateMachine.Tests.TestData;
 
 #pragma warning disable SA1649 // File name should match first type name
 #pragma warning disable SA1402 // File may only contain a single type
 
-public class StateDi1(IMessageService msg) : IState<BasicStateId>
+public class BaseStateDI<T>(IMessageService msg, ILogger<T> logger) : IState<BasicStateId>
 {
-  private readonly IMessageService _msg = msg;
+  private readonly ILogger<T> _logger = logger;
+  private readonly IMessageService _msgService = msg;
 
-  public Task OnEnter(Context<BasicStateId> context)
+  public virtual Task OnEnter(Context<BasicStateId> context)
   {
-    context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
+    _msgService.Number++;
+    _msgService.AddMessage(GetType().Name + " OnEnter");
+    _logger.LogInformation("[{StateName}] [OnEnter] => OK", GetType().Name);
+
     context.NextState(Result.Ok);
     return Task.CompletedTask;
   }
 
-  public Task OnEntering(Context<BasicStateId> context)
+  public virtual Task OnEntering(Context<BasicStateId> context)
   {
-    context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
+    _msgService.Number++;
+    _msgService.AddMessage(GetType().Name + " OnEntering");
+    _logger.LogInformation("[{StateName}] [OnEntering]", GetType().Name);
+
     return Task.CompletedTask;
   }
 
-  public Task OnExit(Context<BasicStateId> context)
+  public virtual Task OnExit(Context<BasicStateId> context)
   {
-    context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
-    return Task.CompletedTask;
-  }
-}
+    _msgService.Number++;
+    _msgService.AddMessage(GetType().Name + " OnExit");
+    _logger.LogInformation("[{StateName}] [OnExit]", GetType().Name);
 
-public class StateDi2() : IState<BasicStateId>
-{
-  public Task OnEnter(Context<BasicStateId> context)
-  {
-    context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
     context.NextState(Result.Ok);
     return Task.CompletedTask;
   }
-
-  public Task OnEntering(Context<BasicStateId> context)
-  {
-    context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
-    return Task.CompletedTask;
-  }
-
-  public Task OnExit(Context<BasicStateId> context)
-  {
-    context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
-    return Task.CompletedTask;
-  }
 }
 
-public class StateDi3() : IState<BasicStateId>
-{
-  public Task OnEnter(Context<BasicStateId> context)
-  {
-    context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
-    context.Parameters[ParameterType.KeyTest] = ExpectedData.StringSuccess;
-    context.NextState(Result.Ok);
-    return Task.CompletedTask;
-  }
+public class BasicDiState1(IMessageService msg, ILogger<BasicDiState1> log)
+  : BaseStateDI<BasicDiState1>(msg, log);
 
-  public Task OnEntering(Context<BasicStateId> context)
-  {
-    context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
-    return Task.CompletedTask;
-  }
+public class BasicDiState2(IMessageService msg, ILogger<BasicDiState2> log)
+  : BaseStateDI<BasicDiState2>(msg, log);
 
-  public Task OnExit(Context<BasicStateId> context)
-  {
-    context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
-    return Task.CompletedTask;
-  }
-}
+public class BasicDiState3(IMessageService msg, ILogger<BasicDiState3> log)
+  : BaseStateDI<BasicDiState3>(msg, log);
 
 #pragma warning restore SA1649 // File name should match first type name
 #pragma warning restore SA1402 // File may only contain a single type

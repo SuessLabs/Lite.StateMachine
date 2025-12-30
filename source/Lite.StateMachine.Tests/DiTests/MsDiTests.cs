@@ -1,7 +1,6 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
-/*
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,116 +15,137 @@ namespace Lite.StateMachine.Tests.DiTests;
 [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test class")]
 public class MsDiTests
 {
-public const string ParameterCounter = "Counter";
-public const string ParameterKeyTest = "TestKey";
-public const string TestValue = "success";
+  public const string ParameterCounter = "Counter";
+  public const string ParameterKeyTest = "TestKey";
+  public const string TestValue = "success";
 
-/// <summary>State definitions.</summary>
-private enum StateId
-{
-  WorkflowParent,
-  Fetch,
-  WaitForMessage,
-  Done,
-  Error,
-}
-
-[TestMethod]
-public void DI_BasicRegistration_SuccessTest()
-{
-  // Assemble
-  var services = new ServiceCollection()
-    .AddLogging(builder =>
-    {
-      builder.AddConsole();
-      builder.SetMinimumLevel(LogLevel.Trace);
-    })
-    .AddSingleton<IMessageService, MessageService>();
-  ////.AddTransient<MyClass>();
-
-  using var provider = services.BuildServiceProvider();
-
-  var machine = new StateMachine<FlatStateId>()
-    .RegisterState(FlatStateId.State1, () => new StateDi1(), FlatStateId.State2)
-    .RegisterState(FlatStateId.State2, () => new StateDi2(), FlatStateId.State3)
-    .RegisterState(FlatStateId.State3, () => new StateDi3())
-    .SetInitial(FlatStateId.State1);
-
-  // Act - Generate UML
-  var uml = machine.ExportUml();
-
-  machine.Start();
-
-  // Assert
-  Assert.IsNotNull(uml);
-  Console.WriteLine(uml);
-}
-
-[TestMethod]
-  public void DI_GenericsRegistration_SuccessTest()
+  /// <summary>Composite with failure state definitions.</summary>
+  private enum StateId
   {
-    // Assemble
-    var services = new ServiceCollection();
-
-    // Register DI Services
-    services.AddLogging(builder =>
-    {
-      builder.AddConsole();
-      builder.SetMinimumLevel(LogLevel.Trace);
-    })
-    .AddSingleton<IMessageService, MessageService>();
-
-    // Register States for DI friendly
-    services.AddTransient<StateDi1>();
-    services.AddTransient<StateDi2>();
-    services.AddTransient<StateDi3>();
-    var provider = services.BuildServiceProvider();
-
-    // TODO (2025-12-25 DS): vNext - PoC builder
-    ////using var provider = services.BuildServiceProvider();
-
-    // DI Factory Resolver:
-    Func<Type, object?> factory = t => ActivatorUtilities.CreateInstance(provider, t);
-
-    // Uncomment the following to use Event Aggregator for Command States
-    ////var aggregator = provider.GetRequiredService<IEventAggregator>();
-    ////var machine = new StateMachine<FlatStateId>(factory, aggregator);
-
-    var machine = new StateMachine<FlatStateId>(factory);
-    machine
-      .RegisterState<StateDi1>(FlatStateId.State1, FlatStateId.State2)
-      .RegisterState<StateDi2>(FlatStateId.State2, FlatStateId.State3)
-      .RegisterState<StateDi3>(FlatStateId.State3)
-      .SetInitial(FlatStateId.State1);
-
-    // Act - Generate UML
-    var uml = machine.ExportUml();
-
-    machine.Start();
-
-    // Assert
-    Assert.IsNotNull(uml);
-    Console.WriteLine(uml);
-
-    // Assert Results
-    var ctxFinalParams = machine.Context.Parameters;
-    Assert.IsNotNull(ctxFinalParams);
-
-    // Ensure all transitions are called
-    // NOTE: This should be 9 because each state has 3 hooks that increment the counter
-    Assert.AreEqual(9 - 1, ctxFinalParams[ParameterCounter]);
-
-    var enums = Enum.GetValues<FlatStateId>().Cast<FlatStateId>();
-
-    // Ensure all states are registered
-    Assert.AreEqual(enums.Count(), machine.States.Count());
-
-    // Ensure all states are registered (order doesn't matter)
-    ////Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
-    // Ensure all states are in order
-    ////Assert.IsTrue(enums.SequenceEqual(machine.States));
+    WorkflowParent,
+    Fetch,
+    WaitForMessage,
+    Done,
+    Error,
   }
 
+  [TestMethod]
+  public async Task Basic_FlatStates_SuccessTestAsync()
+  {
+    // Assemble with Dependency Injection
+    var services = new ServiceCollection()
+      //// Register Services
+      .AddLogging(b => b.AddSimpleConsole())
+      .AddSingleton<IMessageService, MessageService>()
+      //// Register States
+      .AddTransient<BasicDiState1>()
+      .AddTransient<BasicDiState2>()
+      .AddTransient<BasicDiState3>()
+      .BuildServiceProvider();
+
+    Func<Type, object?> factory = t => ActivatorUtilities.CreateInstance(services, t);
+
+    var machine = new StateMachine<BasicStateId>(factory)
+      .RegisterState<BasicDiState1>(BasicStateId.State1, BasicStateId.State2)
+      .RegisterState<BasicDiState2>(BasicStateId.State2, BasicStateId.State3)
+      .RegisterState<BasicDiState3>(BasicStateId.State3);
+
+    var result = await machine.RunAsync(BasicStateId.State1);
+
+    Assert.IsNotNull(result);
+    Assert.IsNotNull(machine);
+    Assert.IsNull(machine.Context);
+
+    var msgService = services.GetRequiredService<IMessageService>();
+    Assert.AreEqual(9, msgService.Number, "Message service should have 9 from the 3 states.");
+    Assert.HasCount(9, msgService.Messages, "Message service should have 9 messages from the 3 states.");
+
+    // Ensure all states are registered
+    var enums = Enum.GetValues<BasicStateId>().Cast<BasicStateId>();
+    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
+
+    // Ensure they're registered in order
+    Assert.IsTrue(enums.SequenceEqual(machine.States), "States should be registered for execution in the same order as the defined enums, StateId 1 => 2 => 3.");
+  }
+
+  [TestMethod]
+  [Ignore]
+  public async Task Basic_GeneratesExportUml_SuccessTestAsync()
+  {
+    // Assemble with Dependency Injection
+    var services = new ServiceCollection()
+      //// Register Services
+      .AddSingleton<IMessageService, MessageService>()
+      //// Register States
+      .AddTransient<BasicDiState1>()
+      .AddTransient<BasicDiState2>()
+      .AddTransient<BasicDiState3>()
+      .BuildServiceProvider();
+
+    Func<Type, object?> factory = t => ActivatorUtilities.CreateInstance(services, t);
+
+    var machine = new StateMachine<BasicStateId>(factory)
+      .RegisterState<BasicDiState1>(BasicStateId.State1, BasicStateId.State2)
+      .RegisterState<BasicDiState2>(BasicStateId.State2, BasicStateId.State3)
+      .RegisterState<BasicDiState3>(BasicStateId.State3);
+
+    var result = await machine.RunAsync(BasicStateId.State1);
+
+    ////// Act - Generate UML
+    ////var uml = machine.ExportUml();
+
+    Assert.IsNotNull(result);
+    Assert.IsNotNull(machine);
+    Assert.IsNull(machine.Context);
+  }
+
+  [TestMethod]
+  public async Task Basic_LogLevel_SuccessTestAsync()
+  {
+    // Assemble with Dependency Injection
+    var services = new ServiceCollection()
+
+      // Register Services
+      .AddLogging(builder =>
+      {
+        builder.AddConsole();
+        builder.SetMinimumLevel(LogLevel.Error);
+      })
+      .AddSingleton<IEventAggregator, EventAggregator>()
+      .AddSingleton<IMessageService, MessageService>()
+
+      // Register States
+      .AddTransient<BasicDiState1>()
+      .AddTransient<BasicDiState2>()
+      .AddTransient<BasicDiState3>();
+
+    using var provider = services.BuildServiceProvider();
+    var aggregator = provider.GetRequiredService<IEventAggregator>();
+
+    object? Factory(Type t) => ActivatorUtilities.CreateInstance(provider, t);
+
+    var machine = new StateMachine<BasicStateId>(Factory)
+      .RegisterState<BasicDiState1>(BasicStateId.State1, BasicStateId.State2)
+      .RegisterState<BasicDiState2>(BasicStateId.State2, BasicStateId.State3)
+      .RegisterState<BasicDiState3>(BasicStateId.State3);
+
+    var result = await machine.RunAsync(BasicStateId.State1);
+
+    Assert.IsNotNull(result);
+    Assert.IsNotNull(machine);
+    Assert.IsNull(machine.Context);
+
+    // Ensure all states are registered
+    var enums = Enum.GetValues<BasicStateId>().Cast<BasicStateId>();
+    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
+
+    // Ensure they're registered in order
+    Assert.IsTrue(enums.SequenceEqual(machine.States), "States should be registered for execution in the same order as the defined enums, StateId 1 => 2 => 3.");
+  }
+
+  /*
   [TestMethod]
   [Ignore("This test fails; infinite loop ahead.")]
   public void RegisterState_MsDi_EventAggregatorOnly_SuccessTest()
@@ -173,6 +193,8 @@ public void DI_BasicRegistration_SuccessTest()
 
     Console.WriteLine("MS.DI workflow finished.");
   }
+
+  /*
 
   #region MS-DI States
 
@@ -255,5 +277,6 @@ public void DI_BasicRegistration_SuccessTest()
   }
 
   #endregion MS-DI States
+
+  */
 }
-*/
