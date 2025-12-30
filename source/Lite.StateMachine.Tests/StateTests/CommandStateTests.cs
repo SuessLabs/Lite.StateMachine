@@ -15,7 +15,7 @@ public class CommandStateTests
   public const string TestValueBegin = "Initial-Value";
   public const string TestValueEnd = "Expected-Value";
 
-  public enum WorkflowState
+  public enum ParentState
   {
     Start,
     Processing,     // Composite state
@@ -33,28 +33,28 @@ public class CommandStateTests
     // Assemble
     var aggregator = new EventAggregator();
 
-    var machine = new StateMachine<WorkflowState>(eventAggregator: aggregator)
+    var machine = new StateMachine<ParentState>(eventAggregator: aggregator)
     {
       // Set default timeout to 3 seconds (can override per-command state)
       DefaultCommandTimeoutMs = 3000,
     };
 
     // Register top-level states
-    machine.RegisterState<StartState>(WorkflowState.Start);
-    machine.RegisterState<ProcessingState>(WorkflowState.Processing, subStates: (sub) =>
+    machine.RegisterState<StartState>(ParentState.Start);
+    machine.RegisterState<ProcessingState>(ParentState.Processing, subStates: (sub) =>
     {
       // Register sub-states inside Processing's submachine
-      sub.RegisterState<LoadState>(WorkflowState.Load);
-      sub.RegisterState<ValidateState>(WorkflowState.Validate);
-      sub.SetInitial(WorkflowState.Load);
+      sub.RegisterState<LoadState>(ParentState.Load);
+      sub.RegisterState<ValidateState>(ParentState.Validate);
+      sub.SetInitial(ParentState.Load);
     });
-    machine.RegisterState<AwaitMessageState>(WorkflowState.AwaitMessage);
-    machine.RegisterState<DoneState>(WorkflowState.Done);
-    machine.RegisterState<ErrorState>(WorkflowState.Error);
-    machine.RegisterState<FailedState>(WorkflowState.Failed);
+    machine.RegisterState<AwaitMessageState>(ParentState.AwaitMessage);
+    machine.RegisterState<Workflow_DoneState>(ParentState.Done);
+    machine.RegisterState<ErrorState>(ParentState.Error);
+    machine.RegisterState<FailedState>(ParentState.Failed);
 
     // Set initial state
-    machine.SetInitial(WorkflowState.Start);
+    machine.SetInitial(ParentState.Start);
 
     // ====================
     // Act - Start workflow
@@ -77,14 +77,14 @@ public class CommandStateTests
   }
 
   // Command state: AwaitMessage (listens to event aggregator; timeout defaults to 3000ms)
-  public sealed class AwaitMessageState : CommandState<WorkflowState>
+  public sealed class AwaitMessageState : CommandState<ParentState>
   {
     public AwaitMessageState()
-     : base(WorkflowState.AwaitMessage)
+     : base(ParentState.AwaitMessage)
     {
-      AddTransition(Result.Ok, WorkflowState.Done);
-      AddTransition(Result.Error, WorkflowState.Error);
-      AddTransition(Result.Failure, WorkflowState.Failed);
+      AddTransition(Result.Ok, ParentState.Done);
+      AddTransition(Result.Error, ParentState.Error);
+      AddTransition(Result.Failure, ParentState.Failed);
     }
 
     /// <summary>Gets the optional override of the default timeout.</summary>
@@ -94,16 +94,16 @@ public class CommandStateTests
     ////public override Func<object, bool> MessageFilter => msg =>
     ////  msg is string s && s.StartsWith("go", StringComparison.OrdinalIgnoreCase);
 
-    public override void OnEnter(Context<WorkflowState> context) =>
+    public override void OnEnter(Context<ParentState> context) =>
       Console.WriteLine("[AwaitMessage] OnEnter (subscribed; awaiting message)");
 
-    public override void OnEntering(Context<WorkflowState> context) =>
+    public override void OnEntering(Context<ParentState> context) =>
       Console.WriteLine("[AwaitMessage] OnEntering");
 
-    public override void OnExit(Context<WorkflowState> context) =>
+    public override void OnExit(Context<ParentState> context) =>
       Console.WriteLine("[AwaitMessage] OnExit (unsubscribed; timer cancelled)");
 
-    public override void OnMessage(Context<WorkflowState> context, object message)
+    public override void OnMessage(Context<ParentState> context, object message)
     {
       Console.WriteLine($"[AwaitMessage] OnMessage: '{message}' (timeout cancelled)");
 
@@ -127,7 +127,7 @@ public class CommandStateTests
       ////  context.NextState(Result.Ok);
     }
 
-    public override void OnTimeout(Context<WorkflowState> context)
+    public override void OnTimeout(Context<ParentState> context)
     {
       Console.WriteLine("[AwaitMessage] OnTimeout: no messages received in time.");
       context.NextState(Result.Failure);
@@ -135,57 +135,57 @@ public class CommandStateTests
   }
 
   // Terminal states
-  public sealed class DoneState : BaseState<WorkflowState>
+  public sealed class Workflow_DoneState : BaseState<ParentState>
   {
-    public DoneState()
-      : base(WorkflowState.Done)
+    public Workflow_DoneState()
+      : base(ParentState.Done)
     {
     }
 
-    public override void OnEnter(Context<WorkflowState> context) =>
+    public override void OnEnter(Context<ParentState> context) =>
       Console.WriteLine("[Done] OnEnter — workflow complete.");
 
-    public override void OnEntering(Context<WorkflowState> context) =>
+    public override void OnEntering(Context<ParentState> context) =>
       Console.WriteLine("[Done] OnEntering");
 
-    public override void OnExit(Context<WorkflowState> context) =>
+    public override void OnExit(Context<ParentState> context) =>
       Console.WriteLine("[Done] OnExit");
   }
 
-  public sealed class ErrorState : BaseState<WorkflowState>
+  public sealed class ErrorState : BaseState<ParentState>
   {
     public ErrorState()
-      : base(WorkflowState.Error)
+      : base(ParentState.Error)
     {
     }
 
-    public override void OnEnter(Context<WorkflowState> context) =>
+    public override void OnEnter(Context<ParentState> context) =>
       Console.WriteLine("[Error] OnEnter");
   }
 
-  public sealed class FailedState : BaseState<WorkflowState>
+  public sealed class FailedState : BaseState<ParentState>
   {
     public FailedState()
-      : base(WorkflowState.Failed)
+      : base(ParentState.Failed)
     {
     }
 
-    public override void OnEnter(Context<WorkflowState> context) =>
+    public override void OnEnter(Context<ParentState> context) =>
       Console.WriteLine("[Failed] OnEnter");
   }
 
   // Sub-state: Load (belongs to Processing submachine)
-  public sealed class LoadState : BaseState<WorkflowState>
+  public sealed class LoadState : BaseState<ParentState>
   {
     public LoadState()
-      : base(WorkflowState.Load)
+      : base(ParentState.Load)
     {
-      AddTransition(Result.Ok, WorkflowState.Validate);
-      AddTransition(Result.Error, WorkflowState.Validate);   // Example: still go validate to confirm
-      AddTransition(Result.Failure, WorkflowState.Validate); // Example: still go validate
+      AddTransition(Result.Ok, ParentState.Validate);
+      AddTransition(Result.Error, ParentState.Validate);   // Example: still go validate to confirm
+      AddTransition(Result.Failure, ParentState.Validate); // Example: still go validate
     }
 
-    public override void OnEnter(Context<WorkflowState> context)
+    public override void OnEnter(Context<ParentState> context)
     {
       Console.WriteLine("[Load] OnEnter (loading resources)");
 
@@ -193,49 +193,49 @@ public class CommandStateTests
       context.NextState(Result.Ok);
     }
 
-    public override void OnEntering(Context<WorkflowState> context) =>
+    public override void OnEntering(Context<ParentState> context) =>
       Console.WriteLine("[Load] OnEntering (sub)");
 
-    public override void OnExit(Context<WorkflowState> context) =>
+    public override void OnExit(Context<ParentState> context) =>
       Console.WriteLine("[Load] OnExit (sub)");
   }
 
   // Composite state: Processing (submachine controls Load -> Validate)
-  public sealed class ProcessingState : CompositeState<WorkflowState>
+  public sealed class ProcessingState : CompositeState<ParentState>
   {
     public ProcessingState()
-      : base(WorkflowState.Processing)
+      : base(ParentState.Processing)
     {
       // When submachine is done and bubbles Outcome:
       // This parent state's transitions will be applied.
-      AddTransition(Result.Ok, WorkflowState.AwaitMessage);
-      AddTransition(Result.Error, WorkflowState.Error);
-      AddTransition(Result.Failure, WorkflowState.Failed);
+      AddTransition(Result.Ok, ParentState.AwaitMessage);
+      AddTransition(Result.Error, ParentState.Error);
+      AddTransition(Result.Failure, ParentState.Failed);
     }
 
-    public override void OnEnter(Context<WorkflowState> context) =>
+    public override void OnEnter(Context<ParentState> context) =>
       Console.WriteLine("[Processing] OnEnter (starting submachine)");
 
-    public override void OnEntering(Context<WorkflowState> context) =>
+    public override void OnEntering(Context<ParentState> context) =>
       Console.WriteLine("[Processing] OnEntering");
 
-    public override void OnExit(Context<WorkflowState> context) =>
+    public override void OnExit(Context<ParentState> context) =>
       Console.WriteLine("[Processing] OnExit (submachine exhausted)");
   }
 
   // Regular state: Start
-  public sealed class StartState : BaseState<WorkflowState>
+  public sealed class StartState : BaseState<ParentState>
   {
     public StartState()
-      : base(WorkflowState.Start)
+      : base(ParentState.Start)
     {
       // Decide where to go based on outcome
-      AddTransition(Result.Ok, WorkflowState.Processing);
-      AddTransition(Result.Error, WorkflowState.Error);
-      AddTransition(Result.Failure, WorkflowState.Failed);
+      AddTransition(Result.Ok, ParentState.Processing);
+      AddTransition(Result.Error, ParentState.Error);
+      AddTransition(Result.Failure, ParentState.Failed);
     }
 
-    public override void OnEnter(Context<WorkflowState> context)
+    public override void OnEnter(Context<ParentState> context)
     {
       Console.WriteLine($"[Start] OnEnter, Parameter='{context.Parameters[ParameterKeyTest]}'");
 
@@ -243,25 +243,25 @@ public class CommandStateTests
       context.NextState(Result.Ok);
     }
 
-    public override void OnEntering(Context<WorkflowState> context) =>
+    public override void OnEntering(Context<ParentState> context) =>
       Console.WriteLine("[Start] OnEntering");
 
-    public override void OnExit(Context<WorkflowState> context) =>
+    public override void OnExit(Context<ParentState> context) =>
       Console.WriteLine("[Start] OnExit");
   }
 
   // Sub-state: Validate (last sub-state; no local transition on Ok -> bubbles up)
-  public sealed class ValidateState : BaseState<WorkflowState>
+  public sealed class ValidateState : BaseState<ParentState>
   {
     public ValidateState()
-      : base(WorkflowState.Validate)
+      : base(ParentState.Validate)
     {
       // Local mapping only for non-OK; OK intentionally not mapped to demonstrate bubble-up.
-      AddTransition(Result.Error, WorkflowState.Validate);   // example self-loop error check
-      AddTransition(Result.Failure, WorkflowState.Validate); // example self-loop failure check
+      AddTransition(Result.Error, ParentState.Validate);   // example self-loop error check
+      AddTransition(Result.Failure, ParentState.Validate); // example self-loop failure check
     }
 
-    public override void OnEnter(Context<WorkflowState> context)
+    public override void OnEnter(Context<ParentState> context)
     {
       Console.WriteLine("[Validate] OnEnter (checking data)");
 
@@ -269,12 +269,12 @@ public class CommandStateTests
       context.NextState(Result.Ok);
     }
 
-    public override void OnEntering(Context<WorkflowState> context)
+    public override void OnEntering(Context<ParentState> context)
     {
       Console.WriteLine("[Validate] OnEntering (sub)");
     }
 
-    public override void OnExit(Context<WorkflowState> context)
+    public override void OnExit(Context<ParentState> context)
     {
       Console.WriteLine("[Validate] OnExit (sub)");
     }

@@ -5,5 +5,6 @@ namespace Lite.StateMachine.Tests.TestData;
 
 public static class ExpectedData
 {
+  public const string StringBadData = "BadData~!";
   public const string StringSuccess = "SUCCESS";
 }

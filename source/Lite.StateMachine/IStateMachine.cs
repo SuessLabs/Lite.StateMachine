@@ -27,7 +27,7 @@ public interface IStateMachine<TStateId>
   /// <summary>Gets the collection of all registered states.</summary>
   /// <remarks>
   ///   Exposed for validations, debugging, etc.
-  ///   Previously: <![CDATA[Dictionary<TState, IState<TState>>]]>.
+  ///   Previously: <![CDATA[Dictionary<TStateId, IState<TStateId>>]]>.
   /// </remarks>
   List<TStateId> States { get; }
 

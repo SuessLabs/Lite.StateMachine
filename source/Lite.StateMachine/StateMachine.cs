@@ -211,9 +211,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       var reg = GetRegistration(current);
 
       // TODO (2025-12-28 DS): Configure context and pass it along
-      var tcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-      // vNext: Pass Context object along
+      ////var tcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
       ////var ctx = new Context<TStateId>(reg.StateId, tcs, _eventAggregator)
       ////{
       ////  Parameters = parameterStack ?? [],
@@ -260,10 +258,10 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   /// <exception cref="InvalidOperationException">Thrown if the specified state identifier has not been registered.</exception>
   private StateRegistration<TStateId> GetRegistration(TStateId stateId)
   {
-    // TODO (2025-12-18 DS): Use custom exception, UnregisteredNextStateException or MissingOrInvalidRegistrationException
+    // TODO (2025-12-18 DS): Use custom exception, UnregisteredStateTransitionException, UnregisteredNextStateException or MissingOrInvalidRegistrationException
     // Because states can override/customize the "NextState" on the fly, we need a unique exception.
     if (!_states.TryGetValue(stateId, out var reg))
-      throw new InvalidOperationException($"Next state '{stateId}' was not registered.");
+      throw new InvalidOperationException($"Next State Id '{stateId}' was not registered.");
 
     return reg;
   }

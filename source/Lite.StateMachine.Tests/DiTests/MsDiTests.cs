@@ -3,11 +3,13 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData;
 using Lite.StateMachine.Tests.TestData.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace Lite.StateMachine.Tests.DiTests;
 
@@ -15,20 +17,6 @@ namespace Lite.StateMachine.Tests.DiTests;
 [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test class")]
 public class MsDiTests
 {
-  public const string ParameterCounter = "Counter";
-  public const string ParameterKeyTest = "TestKey";
-  public const string TestValue = "success";
-
-  /// <summary>Composite with failure state definitions.</summary>
-  private enum StateId
-  {
-    WorkflowParent,
-    Fetch,
-    WaitForMessage,
-    Done,
-    Error,
-  }
-
   [TestMethod]
   public async Task Basic_FlatStates_SuccessTestAsync()
   {
@@ -101,16 +89,16 @@ public class MsDiTests
   }
 
   [TestMethod]
-  public async Task Basic_LogLevel_SuccessTestAsync()
+  public async Task Basic_LogLevelNone_SuccessTestAsync()
   {
     // Assemble with Dependency Injection
     var services = new ServiceCollection()
 
       // Register Services
       .AddLogging(builder =>
-      {
+      { // Set level to Error to reduce test output
         builder.AddConsole();
-        builder.SetMinimumLevel(LogLevel.Error);
+        builder.SetMinimumLevel(LogLevel.None);
       })
       .AddSingleton<IEventAggregator, EventAggregator>()
       .AddSingleton<IMessageService, MessageService>()
@@ -145,138 +133,82 @@ public class MsDiTests
     Assert.IsTrue(enums.SequenceEqual(machine.States), "States should be registered for execution in the same order as the defined enums, StateId 1 => 2 => 3.");
   }
 
-  /*
+  /// <summary>Following demonstrates Composite + Command States with Dependency Injection.</summary>
+  /// <remarks>
+  ///   Test StateMachine Flow:
+  ///   1. EntryState => ParentState => ParentSub_FetchState => ParentSub_WaitMessageState (waits for messages from the EventAggregator).
+  ///   2. ParentState => FailureState => ParentState => ParentSub_FetchState => ParentSub_WaitMessageState
+  ///   3. ParentState => ErrorState => ParentState => ParentSub_FetchState
+  ///   Workflow_FailureState => ErrorState => Workflow_DoneState based on the received counter.</remarks>
+  /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
   [TestMethod]
-  [Ignore("This test fails; infinite loop ahead.")]
-  public void RegisterState_MsDi_EventAggregatorOnly_SuccessTest()
+  public async Task RegisterState_MsDi_EventAggregatorOnly_SuccessTestAsync()
   {
     // Build DI
     var services = new ServiceCollection()
       //// Register Services
-      .AddLogging(b => b.AddSimpleConsole())
+      ////.AddLogging(b => b.AddSimpleConsole())
+      .AddLogging(config =>
+      {
+        // Creates in-line log format
+        config.AddSimpleConsole(options =>
+        {
+          options.TimestampFormat = "HH:mm:ss.fff ";
+          options.UseUtcTimestamp = false;
+          options.IncludeScopes = true;
+          options.SingleLine = true;
+          options.ColorBehavior = LoggerColorBehavior.Enabled;
+        });
+        config.SetMinimumLevel(LogLevel.Trace);
+      })
       .AddSingleton<IEventAggregator, EventAggregator>()
+      .AddSingleton<IMessageService, MessageService>()
       //// Register States
-      .AddTransient<FetchState>()
-      .AddTransient<WaitForMessageState>()
-      .AddTransient<WorkflowParent>()
-      .AddTransient<DoneState>()
-      .AddTransient<ErrorState>()
+      .AddTransient<EntryState>()
+      .AddTransient<ParentState>()
+      .AddTransient<ParentSub_FetchState>()
+      .AddTransient<ParentSub_WaitMessageState>()
+      .AddTransient<Workflow_DoneState>()
+      .AddTransient<Workflow_ErrorState>()
+      .AddTransient<Workflow_FailureState>()
       .BuildServiceProvider();
+
+    var aggregator = services.GetRequiredService<IEventAggregator>();
+    var messages = services.GetRequiredService<IMessageService>();
 
     // Factory uses DI to construct states
     Func<Type, object?> factory = t => ActivatorUtilities.CreateInstance(services, t);
-    var aggregator = services.GetRequiredService<IEventAggregator>();
-
-    var machine = new StateMachine<StateId>(factory, aggregator) { DefaultCommandTimeoutMs = 3000 };
-
-    machine.RegisterState<WorkflowParent>(
-      StateId.WorkflowParent,
-      onSuccess: StateId.Done,
-      onError: StateId.Error,
-      subStates: (sub) =>
+    var machine = new StateMachine<CompositeMsgStateId>(factory, aggregator)
     {
-      sub.RegisterState<FetchState>(StateId.Fetch, onSuccess: StateId.WaitForMessage);
-      sub.RegisterState<WaitForMessageState>(StateId.WaitForMessage);
-      sub.SetInitial(StateId.Fetch);
-    });
+      DefaultCommandTimeoutMs = 200,
+      DefaultStateTimeoutMs = 8000,
+    };
 
-    machine.RegisterState<DoneState>(StateId.Done);
-    machine.RegisterState<ErrorState>(StateId.Error);
-    machine.SetInitial(StateId.WorkflowParent);
+    machine.RegisterState<EntryState>(CompositeMsgStateId.Entry, CompositeMsgStateId.Parent);
+    machine.RegisterComposite<ParentState>(
+      stateId: CompositeMsgStateId.Parent,
+      initialChildStateId: CompositeMsgStateId.Parent_Fetch,
+      onSuccess: CompositeMsgStateId.Done,
+      onError: CompositeMsgStateId.Error,
+      onFailure: CompositeMsgStateId.Failure);
+    machine.RegisterSubState<ParentSub_FetchState>(CompositeMsgStateId.Parent_Fetch, CompositeMsgStateId.Parent, CompositeMsgStateId.Parent_WaitMessage);
+    machine.RegisterSubState<ParentSub_WaitMessageState>(CompositeMsgStateId.Parent_WaitMessage, CompositeMsgStateId.Parent);
+    machine.RegisterState<Workflow_DoneState>(CompositeMsgStateId.Done);
+    machine.RegisterState<Workflow_ErrorState>(CompositeMsgStateId.Error);
+    machine.RegisterState<Workflow_FailureState>(CompositeMsgStateId.Failure, null);
 
-    ////var run = machine.Start(StateId.Fetch, parameter: "msdi", CancellationToken.None);
-    machine.Start();
+    // Act - Run the state machine and send messages
+    await machine.RunAsync(CompositeMsgStateId.Entry, null, null, CancellationToken.None);
 
     // Drive command state
-    Task.Delay(500);
-    aggregator.Publish("go");
+    ////await Task.Delay(500);
+    ////aggregator.Publish(ExpectedData.StringBadData);
+
+    await Task.Delay(500);
+    aggregator.Publish(ExpectedData.StringSuccess);
 
     Console.WriteLine("MS.DI workflow finished.");
+    Assert.HasCount(16, messages.Messages);
+    Assert.AreEqual(16, messages.Number);
   }
-
-  /*
-
-  #region MS-DI States
-
-  private sealed class DoneState : BaseState<StateId>
-  {
-    public override void OnEnter(Context<StateId> ctx)
-    {
-      Console.WriteLine("[Done] OnEnter");
-      ctx.NextState(Result.Ok);
-    }
-  }
-
-  private sealed class ErrorState : BaseState<StateId>
-  {
-    public override void OnEnter(Context<StateId> ctx)
-    {
-      Console.WriteLine("[Error] OnEnter");
-      ctx.NextState(Result.Ok);
-    }
-  }
-
-  // States with parameterless constructors
-  private sealed class FetchState : BaseState<StateId>
-  {
-    public override void OnEnter(Context<StateId> ctx)
-    {
-      Console.WriteLine("[Fetch] OnEnter");
-      ctx.NextState(Result.Ok);
-    }
-
-    public override void OnEntering(Context<StateId> ctx) =>
-      Console.WriteLine("[Fetch] OnEntering");
-
-    public override void OnExit(Context<StateId> ctx) =>
-      Console.WriteLine("[Fetch] OnExit");
-  }
-
-  private sealed class WaitForMessageState : CommandState<StateId>
-  {
-    ////public int? TimeoutMs => null; // use default 3000ms
-
-    public override void OnEnter(Context<StateId> ctx) =>
-      Console.WriteLine("[Wait] OnEnter");
-
-    public override void OnEntering(Context<StateId> ctx) =>
-      Console.WriteLine("[Wait] OnEntering");
-
-    public override void OnExit(Context<StateId> ctx) =>
-      Console.WriteLine("[Wait] OnExit");
-
-    public override void OnMessage(Context<StateId> ctx, object message)
-    {
-      Console.WriteLine($"[Wait] OnMessage: {message}");
-      if (message is string s && s.Equals("go", StringComparison.OrdinalIgnoreCase))
-        ctx.NextState(Result.Ok);
-      else
-        ctx.NextState(Result.Error);
-    }
-
-    public override void OnTimeout(Context<StateId> ctx)
-    {
-      Console.WriteLine("[Wait] OnTimeout");
-      ctx.NextState(Result.Failure);
-    }
-  }
-
-  private sealed class WorkflowParent : CompositeState<StateId>
-  {
-    public override void OnEnter(Context<StateId> ctx) =>
-      Console.WriteLine("[Parent] OnEnter");
-
-    public override void OnEntering(Context<StateId> ctx) =>
-      Console.WriteLine("[Parent] OnEntering");
-
-    public override void OnExit(Context<StateId> ctx)
-    {
-      Console.WriteLine("[Parent] OnExit -> Ok");
-      ctx.NextState(Result.Ok);
-    }
-  }
-
-  #endregion MS-DI States
-
-  */
 }
