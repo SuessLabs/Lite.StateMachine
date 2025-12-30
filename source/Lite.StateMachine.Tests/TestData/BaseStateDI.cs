@@ -21,11 +21,9 @@ public class BaseStateDI<TStateClass, TStateId>(IMessageService msg, ILogger<TSt
 
   public virtual Task OnEnter(Context<TStateId> context)
   {
-    _msgService.Number++;
+    _msgService.Counter1++;
     _msgService.AddMessage(GetType().Name + " OnEnter");
-    _logger.LogInformation("[{StateName}] [OnEnter] => OK", GetType().Name);
-
-    Console.WriteLine($"[{GetType().Name}] [OnEnter] => OK");
+    _logger.LogInformation("[OnEnter] => OK");
     Debug.WriteLine($"[{GetType().Name}] [OnEnter] => OK");
 
     context.NextState(Result.Ok);
@@ -34,10 +32,9 @@ public class BaseStateDI<TStateClass, TStateId>(IMessageService msg, ILogger<TSt
 
   public virtual Task OnEntering(Context<TStateId> context)
   {
-    _msgService.Number++;
+    _msgService.Counter1++;
     _msgService.AddMessage(GetType().Name + " OnEntering");
-    _logger.LogInformation("[{StateName}] [OnEntering]", GetType().Name);
-    Console.WriteLine($"[{GetType().Name}] [OnEntering]");
+    _logger.LogInformation("[OnEntering]");
     Debug.WriteLine($"[{GetType().Name}] [OnEntering]");
 
     return Task.CompletedTask;
@@ -45,9 +42,9 @@ public class BaseStateDI<TStateClass, TStateId>(IMessageService msg, ILogger<TSt
 
   public virtual Task OnExit(Context<TStateId> context)
   {
-    _msgService.Number++;
+    _msgService.Counter1++;
     _msgService.AddMessage(GetType().Name + " OnExit");
-    _logger.LogInformation("[{StateName}] [OnExit]", GetType().Name);
+    _logger.LogInformation("[OnExit]");
     Debug.WriteLine($"[{GetType().Name}] [OnExit]");
 
     context.NextState(Result.Ok);

@@ -18,6 +18,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   /// <summary>Optional dependency injection container factory.</summary>
   private readonly Func<Type, object?> _containerFactory;
 
+  /// <summary>Optional local event aggregator.</summary>
   private readonly IEventAggregator? _eventAggregator;
 
   ////private readonly ILogger<StateMachine<TStateId>>? _logger;
@@ -28,9 +29,6 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   /// <summary>States registered with system.</summary>
   private readonly Dictionary<TStateId, StateRegistration<TStateId>> _states = [];
 
-  ////private IState<TStateId>? _currentState;
-  ////private TStateId _initialState;
-  ////private bool _isStarted;
   ////private IDisposable? _subscription;
   ////private CancellationTokenSource? _timeoutCts;
 
@@ -363,9 +361,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
     // vNext:
     ////if (parentDecision is null)
-    ////{
-    ////  Log null decision, possible DefaultStateTimeoutMs encountered.
-    ////}
+    ////  // Log null decision, possible DefaultStateTimeoutMs encountered.
 
     return parentDecision;
   }
@@ -431,7 +427,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
       var result = await WaitForNextOrCancelAsync(tcs.Task, cancellationToken).ConfigureAwait(false);
 
-      // TODO (2025-12-28 DS): Even leaving OnEnter without NextState(Result.OK), we should always call `OnExit` to allow states to cleanup.
+      // TODO (2025-12-28 DS): Potential DefaultStateTimeoutMs. Even leaving OnEnter without NextState(Result.OK), should consider calling `OnExit` to allow states to cleanup.
       if (result is null)
         return null;
 

@@ -1,7 +1,6 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
-using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData.Services;
@@ -25,14 +24,16 @@ public class ParentState(IMessageService msg, ILogger<ParentState> log)
   /// <returns>Async task.</returns>
   public override Task OnExit(Context<CompositeMsgStateId> context)
   {
-    MessageService.Number++;
+    MessageService.Counter1++;
     MessageService.AddMessage(GetType().Name + " OnExit");
-    Log.LogInformation("[{StateName}] [OnExit]", GetType().Name);
+    Log.LogInformation("[OnExit] => {result}", context.LastChildResult);
 
-    if (context.LastChildResult == Result.Failure)
-      context.NextState(Result.Failure);
-    else
-      context.NextState(Result.Ok);
+    context.NextState(context.LastChildResult switch
+    {
+      Result.Failure => Result.Failure,
+      Result.Error => Result.Error,
+      _ => Result.Ok,
+    });
 
     return Task.CompletedTask;
   }
@@ -49,16 +50,32 @@ public class ParentSub_WaitMessageState(IMessageService msg, ILogger<ParentSub_W
 {
   public override Task OnEnter(Context<CompositeMsgStateId> context)
   {
-    MessageService.Number++;
+    MessageService.Counter1++;
     MessageService.AddMessage(GetType().Name + " OnEnter");
 
-    Log.LogInformation("[OnEnter]");
-    Debug.WriteLine($"[{GetType().Name}] [OnEnter] (counter={MessageService.Number}");
-
-    if (MessageService.Number > 12)
+    Log.LogInformation("[OnEnter] (Counter2: {cnt})", MessageService.Counter2);
+    switch (MessageService.Counter2)
     {
-      Debug.WriteLine($"[{GetType().Name}] [OnEnter] (Sending: {ExpectedData.ReceivedBadData}");
-      context.EventAggregator?.Publish(ExpectedData.ReceivedBadData);
+      case 0:
+        // Do nothing, wait for message or timeout
+        Log.LogInformation("[OnEnter] Forcibly timeout for Failure State");
+        break;
+
+      case 1:
+        // Send "ErrorRequest" to go to error state
+        Log.LogInformation("[OnEnter] [Publish '{msg}'] for Error State", MessageType.ErrorRequest);
+        context.EventAggregator?.Publish(MessageType.ErrorRequest);
+        break;
+
+      case 2:
+        // Send "SuccessRequest" to go to done state
+        Log.LogInformation("[OnEnter] [Publish '{msg}'] for Done State", MessageType.SuccessRequest);
+        context.EventAggregator?.Publish(MessageType.SuccessRequest);
+        break;
+
+      default:
+        Log.LogError("[OnEnter] We REALLY shouldn't be here!!");
+        break;
     }
 
     return Task.CompletedTask;
@@ -66,20 +83,37 @@ public class ParentSub_WaitMessageState(IMessageService msg, ILogger<ParentSub_W
 
   public Task OnMessage(Context<CompositeMsgStateId> context, object message)
   {
-    MessageService.Number++;
+    MessageService.Counter1++;
     MessageService.AddMessage(GetType().Name + " OnEnter");
 
-    if (message is string s && s.Equals(ExpectedData.MessageSuccess, StringComparison.OrdinalIgnoreCase))
+    if (message is not string response)
     {
-      context.NextState(Result.Ok);
-      Log.LogInformation("[OnMessage] => OK");
-      Debug.WriteLine($"[{GetType().Name}] [OnMessage] => OK");
+      Log.LogInformation("[OnMessage] Invalid message response");
+      Debug.WriteLine($"[{GetType().Name}] [OnMessage] Invalid message response");
+      return Task.CompletedTask;
     }
-    else
+
+    Log.LogInformation("[OnMessage] Received: {response}", response);
+
+    switch (response)
     {
-      context.NextState(Result.Error);
-      Log.LogInformation("[OnMessage] => Error");
-      Debug.WriteLine($"[{GetType().Name}] [OnMessage] => OK");
+      case MessageType.BadResponse:
+        // Do nothing, wait for timeout
+        Log.LogError("[OnMessage] SHOULD BE HERE!");
+        break;
+
+      case MessageType.ErrorResponse:
+        context.NextState(Result.Error);
+        break;
+
+      case MessageType.SuccessResponse:
+        context.NextState(Result.Ok);
+        break;
+
+      default:
+        Debug.WriteLine($"[{GetType().Name}] [OnMessage] Unexpected response => Failure (shouldn't be here)");
+        context.NextState(Result.Failure);
+        break;
     }
 
     return Task.CompletedTask;
@@ -87,14 +121,14 @@ public class ParentSub_WaitMessageState(IMessageService msg, ILogger<ParentSub_W
 
   public Task OnTimeout(Context<CompositeMsgStateId> context)
   {
-    MessageService.Number++;
+    MessageService.Counter1++;
     MessageService.AddMessage(GetType().Name + " OnEnter");
     context.NextState(Result.Failure);
+
     Log.LogInformation("[OnTimeout] => Failure; (Publishing: ReceivedTimeout)");
-    Debug.WriteLine($"[{GetType().Name}] [OnTimeout] => Failure; (Publishing: ReceivedTimeout)");
 
     // Publish timeout event
-    context.EventAggregator?.Publish(ExpectedData.ReceivedTimeout);
+    context.EventAggregator?.Publish(NotificationType.Timeout);
     return Task.CompletedTask;
   }
 }
@@ -107,6 +141,20 @@ public class Workflow_DoneState(IMessageService msg, ILogger<Workflow_DoneState>
 public class Workflow_ErrorState(IMessageService msg, ILogger<Workflow_ErrorState> log)
   : BaseStateDI<Workflow_ErrorState, CompositeMsgStateId>(msg, log)
 {
+  public override Task OnEnter(Context<CompositeMsgStateId> context)
+  {
+    MessageService.Counter1++;
+    MessageService.Counter2++;
+    MessageService.AddMessage(GetType().Name + " OnEnter");
+
+    Log.LogInformation("[{StateName}] [OnEnter] => OK; Counter2++", GetType().Name);
+    Debug.WriteLine($"[{GetType().Name}] [OnEnter] => OK; Counter2++");
+
+    context.EventAggregator?.Publish(NotificationType.Error);
+
+    context.NextState(Result.Ok);
+    return Task.CompletedTask;
+  }
 }
 
 public class Workflow_FailureState(IMessageService msg, ILogger<Workflow_FailureState> log)
@@ -114,11 +162,14 @@ public class Workflow_FailureState(IMessageService msg, ILogger<Workflow_Failure
 {
   public override Task OnEnter(Context<CompositeMsgStateId> context)
   {
-    MessageService.Number++;
+    MessageService.Counter1++;
+    MessageService.Counter2++;
     MessageService.AddMessage(GetType().Name + " OnEnter");
 
-    Log.LogInformation("[{StateName}] [OnEnter] => OK", GetType().Name);
-    Debug.WriteLine($"[{GetType().Name}] [OnEnter] => OK");
+    Log.LogInformation("[{StateName}] [OnEnter] => OK; (Counter2++)", GetType().Name);
+    Debug.WriteLine($"[{GetType().Name}] [OnEnter] => OK; (Counter2++)");
+
+    context.EventAggregator?.Publish(NotificationType.Failure);
 
     context.NextState(Result.Ok);
     return Task.CompletedTask;

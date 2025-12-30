@@ -46,7 +46,7 @@ public class MsDiTests
     Assert.IsNull(machine.Context);
 
     var msgService = services.GetRequiredService<IMessageService>();
-    Assert.AreEqual(9, msgService.Number, "Message service should have 9 from the 3 states.");
+    Assert.AreEqual(9, msgService.Counter1, "Message service should have 9 from the 3 states.");
     Assert.HasCount(9, msgService.Messages, "Message service should have 9 messages from the 3 states.");
 
     // Ensure all states are registered
@@ -136,14 +136,13 @@ public class MsDiTests
 
   /// <summary>Following demonstrates Composite + Command States with Dependency Injection.</summary>
   /// <remarks>
-  ///   You MUST publish while in the ParentSub_WaitMessageState
-  ///   otherwise the message is never received (rightfully so).
-  ///
-  ///   Test StateMachine Flow:
-  ///   1. EntryState => ParentState => ParentSub_FetchState => ParentSub_WaitMessageState (waits for messages from the EventAggregator).
-  ///   2. ParentState => FailureState => ParentState => ParentSub_FetchState => ParentSub_WaitMessageState
-  ///   3. ParentState => ErrorState => ParentState => ParentSub_FetchState
-  ///   Workflow_FailureState => ErrorState => Workflow_DoneState based on the received counter.</remarks>
+  ///   NOTE:
+  ///   * The test worked off MessageService.Counter2 to determine the flow.
+  ///     Cntr2 = 0 => OnTimeout => FailureState
+  ///     Cntr2 = 1 => OnEnter   => ErrorState
+  ///     Cntr2 = 2 => OnEnter   => DoneState
+  ///   * You MUST publish while in the ParentSub_WaitMessageState
+  ///     otherwise the message is never received (rightfully so).
   /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
   [TestMethod]
   public async Task RegisterState_MsDi_EventAggregatorOnly_SuccessTestAsync()
@@ -178,7 +177,11 @@ public class MsDiTests
       .BuildServiceProvider();
 
     var aggregator = services.GetRequiredService<IEventAggregator>();
-    var messages = services.GetRequiredService<IMessageService>();
+    var msgService = services.GetRequiredService<IMessageService>();
+    var logService = services.GetRequiredService<ILogger<MsDiTests>>();
+
+    msgService.Counter1 = 0;
+    msgService.Counter2 = 0;
 
     // Factory uses DI to construct states
     Func<Type, object?> factory = t => ActivatorUtilities.CreateInstance(services, t);
@@ -202,28 +205,50 @@ public class MsDiTests
     machine.RegisterState<Workflow_FailureState>(CompositeMsgStateId.Failure, CompositeMsgStateId.Parent);
 
     // vNext:  (for now, we send a message during WaitFor's OnEnter and send back.
-    // 1. Start the state machine (CommandTimeout set to 200ms)
-    // 2. ParentSub_WaitMessageState will Timeout, not receiving a message at all
-    // 3. The OnTimeout publishes, "TimeoutReceived" message, which is caught by the aggregator subscription below.
-    // 4. Next we reply with, "BadData" to trigger an error
-    // 5. Next we publish, "SUCCESS" to complete the workflow.
-    aggregator.Subscribe(msg =>
+    // 1. Start the state machine
+    //    - (CommandTimeout set to 200ms)
+    //    - Subscribe to EventAggregator to respond to messages
+    // 2. ParentSub_WaitMessageState will Timeout, not receiving a message at all (Counter2++)
+    // 3. OnTimeout() publishes, "NotificationType.Timeout", which is caught by the aggregator subscription below.
+    // 4. Subscriber replies with, "BadResponse" which goes nowhere since we're not in OnMessage yet.
+    // 5. OnEnter() Counter==1, publishes "ErrorRequest"
+    // 6. Subscriber replies with, "ErrorResponse"
+    // 7. OnMessage() receives 'ErrorResponse', setting Response.Error and goes to ErrorState (Counter2++)
+    // 8. OnEnter() notes Counter2==2", publishing 'SuccessRequest'. Aggregator responds with 'SuccessResponse'.
+    // 9. OnMessage() sets Response.Ok and goes to Done
+    aggregator.Subscribe(message =>
     {
-      if (msg is not string)
+      if (message is not string msg)
         return;
 
       // NOTE:
       //  You MUST publish while in the ParentSub_WaitMessageState
       //  otherwise the message is never received (rightfully so).
-      if ((string)msg == ExpectedData.ReceivedTimeout)
+      switch (msg)
       {
-        Debug.WriteLine("> RCV 'Timeout' > SEND: " + ExpectedData.MessageBadData);
-        aggregator.Publish(ExpectedData.MessageBadData);
-      }
-      else if ((string)msg == ExpectedData.ReceivedBadData)
-      {
-        Debug.WriteLine("> RCV 'BadData' > SEND: " + ExpectedData.MessageSuccess);
-        aggregator.Publish(ExpectedData.MessageSuccess);
+        case NotificationType.Timeout:
+          // This will never get picked up
+          Debug.WriteLine($"> RCV 'Timeout' > SEND: {MessageType.BadResponse}");
+          logService.LogInformation("Publish >> {msg} (NO ONE SHOULD RECEIVE/RESPOND)", MessageType.BadResponse);
+          aggregator.Publish(MessageType.BadResponse);
+          break;
+
+        case MessageType.ErrorRequest:
+          Debug.WriteLine($"> RCV '{msg}' > SEND: {MessageType.ErrorResponse}");
+          logService.LogInformation("Publish >> {msg}", MessageType.ErrorResponse);
+          aggregator.Publish(MessageType.ErrorResponse);
+          break;
+
+        case MessageType.SuccessRequest:
+          Debug.WriteLine($"> RCV '{msg}' > SEND: {MessageType.SuccessResponse}");
+          logService.LogInformation("Publish >> {msg}", MessageType.SuccessResponse);
+          aggregator.Publish(MessageType.SuccessResponse);
+          break;
+
+        case MessageType.BadRequest:
+        default:
+          Assert.Fail("Unexpected message");
+          break;
       }
     });
 
@@ -231,7 +256,9 @@ public class MsDiTests
     await machine.RunAsync(CompositeMsgStateId.Entry, null, null, CancellationToken.None);
 
     Console.WriteLine("MS.DI workflow finished.");
-    Assert.HasCount(29, messages.Messages);
-    Assert.AreEqual(29, messages.Number);
+
+    Assert.AreEqual(2, msgService.Counter2);
+    Assert.HasCount(42, msgService.Messages);
+    Assert.AreEqual(42, msgService.Counter1);
   }
 }

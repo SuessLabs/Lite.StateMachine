@@ -8,20 +8,22 @@ namespace Lite.StateMachine.Tests.TestData.Services;
 [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1649:File name should match first type name", Justification = "Allowed for testing.")]
 public interface IMessageService
 {
-  List<string> Messages { get; }
+  int Counter1 { get; set; }
 
-  int Number { get; set; }
+  int Counter2 { get; set; }
+
+  List<string> Messages { get; }
 
   void AddMessage(string message);
 }
 
 public class MessageService : IMessageService
 {
-  private int _number;
+  public int Counter1 { get; set; }
+
+  public int Counter2 { get; set; }
 
   public List<string> Messages { get; } = [];
-
-  public int Number { get => _number; set => _number = value; }
 
   public void AddMessage(string message) =>
     Messages.Add(message);
