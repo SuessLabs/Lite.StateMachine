@@ -194,7 +194,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   }
 
   /// <inheritdoc/>
-  public async Task RunAsync(
+  public async Task<StateMachine<TStateId>> RunAsync(
     TStateId initialState,
     PropertyBag? parameterStack = null,
     PropertyBag? errorStack = null,
@@ -212,11 +212,13 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
       // TODO (2025-12-28 DS): Configure context and pass it along
       var tcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
-      var ctx = new Context<TStateId>(reg.StateId, tcs, _eventAggregator)
-      {
-        Parameters = parameterStack ?? [],
-        ErrorStack = errorStack ?? [],
-      };
+
+      // vNext: Pass Context object along
+      ////var ctx = new Context<TStateId>(reg.StateId, tcs, _eventAggregator)
+      ////{
+      ////  Parameters = parameterStack ?? [],
+      ////  ErrorStack = errorStack ?? [],
+      ////};
 
       // Run any state (composite or leaf) recursively.
       var result = await RunAnyStateRecursiveAsync(reg, parameterStack, errorStack, cancellationToken).ConfigureAwait(false);
@@ -229,6 +231,8 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
       current = nextId.Value;
     }
+
+    return this;
   }
 
   /// <summary>
@@ -324,7 +328,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       else
         childResult = await RunLeafAsync(childReg, parameterStack, errorStack, ct).ConfigureAwait(false);
 
-      // Cancelled
+      // Cancelled or timed out inside child state
       if (childResult is null)
         return null;
 
@@ -356,14 +360,14 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
     await instance.OnExit(parentExitCtx).ConfigureAwait(false);
 
-    // Getting stuck coming out of composite state's OnExit
+    // To avoid composite state's OnExit, use the DefaultStateTimeoutMs to auto-cancel wait.
     var parentDecision = await WaitForNextOrCancelAsync(parentExitTcs.Task, ct).ConfigureAwait(false);
 
     // vNext:
     ////if (parentDecision is null)
     ////{
-    ////  log null decision, possible timeout. }
-    ////
+    ////  Log null decision, possible DefaultStateTimeoutMs encountered.
+    ////}
 
     return parentDecision;
   }

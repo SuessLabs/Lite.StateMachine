@@ -1,6 +1,8 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData;
 
@@ -13,7 +15,7 @@ public class CompositeStateTest
   public const string SUCCESS = "success";
 
   [TestMethod]
-  public async Task BasicTransitions_SuccessTestAsync()
+  public async Task Basic_Level1_Transitions_SuccessTestAsync()
   {
     // Assemble
     var machine = new StateMachine<CompositeL1StateId>();
@@ -45,7 +47,15 @@ public class CompositeStateTest
     Assert.IsNotNull(machine);
     Assert.IsNull(machine.Context);
 
-    // vNext:
+    // Ensure all states are hit (-2 because of subs)
+    var enums = Enum.GetValues<CompositeL1StateId>().Cast<CompositeL1StateId>();
+    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
+
+    // Ensure they're in order
+    Assert.IsTrue(enums.SequenceEqual(machine.States));
+
+    // vNext: Certify context after exiting
     ////var ctxFinal = machine.Context.Parameters;
     ////Assert.IsNotNull(ctxFinal);
     ////Assert.AreEqual(SUCCESS, ctxFinal[ParameterSubStateEntered]);
