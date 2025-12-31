@@ -1,14 +1,20 @@
 # Lite State Machine for .NET
 
+<image align="right" width="200" height="200" src="https://github.com/SuessLabs/Lite.StateMachine/blob/develop/docs/icon-128x128.png" />
+
 Flexible lightweight finite state machine (FSM) for .NET, supporting shared context for passing parameters, composite (sub) states, command states, lazy-loading and thread safe. The library is AOT friendly, cross-platform and optimized for speed for use in enterprise, robotic/industrial systems, and even tiny (mobile) applications.
 
 The Lite State Machine is designed for vertical scaling. Meaning, it can be used for the most basic (tiny) system and beyond medical-grade robotics systems.
 
-Download [Lite.StateMachine @ NuGet.org](https://www.nuget.org/packages/Lite.StateMachine) today!
+> Copyright 2021-2025 Xeno Innovations, Inc. (_dba, Suess Labs_)<br/>
+> Created by: Damian Suess<br/>
+> Date: 2021-06-07<br/>
 
-Copyright 2022-2025 Xeno Innovations, Inc. (dba, Suess Labs)<br />
-Created by: Damian Suess<br />
-Date: 2022-06-07<br />
+## Package Releases
+
+| Package | Stable | Preview
+|-|-|-|
+| Lite.StateMachine | [![Lite.StateMachine NuGet Badge](https://img.shields.io/nuget/v/Lite.StateMachine)](https://www.nuget.org/packages/Lite.StateMachine/) | [![Lite.StateMachine NuGet Badge](https://img.shields.io/nuget/vpre/Lite.StateMachine)](https://www.nuget.org/packages/Lite.StateMachine/)
 
 ## Usage
 
@@ -72,6 +78,8 @@ public class BasicState3() : BaseState
 ```
 
 ### Composite States
+
+![Sample Composite State Image](https://github.com/SuessLabs/Lite.StateMachine/blob/develop/docs/SampleGraphviz-1080.png)
 
 ```cs
 using Lite.StateMachine;

@@ -193,16 +193,16 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
   /// <inheritdoc/>
   public async Task<StateMachine<TStateId>> RunAsync(
-    TStateId initialState,
+    TStateId initialStateId,
     PropertyBag? parameterStack = null,
     PropertyBag? errorStack = null,
     CancellationToken cancellationToken = default)
   {
     // TODO (2025-12-28 DS): Use custom exception, InvalidMissingStartupStateException
-    if (!_states.ContainsKey(initialState))
-      throw new InvalidOperationException($"Initial state '{initialState}' was not registered.");
+    if (!_states.ContainsKey(initialStateId))
+      throw new InvalidOperationException($"Initial state '{initialStateId}' was not registered.");
 
-    var current = initialState;
+    var current = initialStateId;
 
     while (!cancellationToken.IsCancellationRequested)
     {

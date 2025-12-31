@@ -1,0 +1,253 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1117pt" height="655pt" viewBox="0.00 0.00 1117.00 655.00">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 651)">
+<title>StateMachine</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-651 1112.95,-651 1112.95,4 -4,4"/>
+<g id="clust1" class="cluster">
+<title>cluster_Parent</title>
+<path fill="none" stroke="#888888" d="M585.96,-172C585.96,-172 1088.95,-172 1088.95,-172 1094.95,-172 1100.95,-178 1100.95,-184 1100.95,-184 1100.95,-273 1100.95,-273 1100.95,-279 1094.95,-285 1088.95,-285 1088.95,-285 585.96,-285 585.96,-285 579.96,-285 573.96,-279 573.96,-273 573.96,-273 573.96,-184 573.96,-184 573.96,-178 579.96,-172 585.96,-172"/>
+<text xml:space="preserve" text-anchor="middle" x="837.46" y="-270.2" font-family="Times,serif" font-size="12.00">Parent</text>
+</g>
+<g id="clust2" class="cluster">
+<title>cluster_legend</title>
+<polygon fill="none" stroke="#bbbbbb" stroke-dasharray="5,2" points="8,-293 8,-639 618.76,-639 618.76,-293 8,-293"/>
+<text xml:space="preserve" text-anchor="middle" x="313.38" y="-624.2" font-family="Times,serif" font-size="12.00">Legend</text>
+</g>
+<!-- Parent -->
+<g id="node1" class="node">
+<title>Parent</title>
+<path fill="none" stroke="black" d="M623.96,-216C623.96,-216 593.96,-216 593.96,-216 587.96,-216 581.96,-210 581.96,-204 581.96,-204 581.96,-192 581.96,-192 581.96,-186 587.96,-180 593.96,-180 593.96,-180 623.96,-180 623.96,-180 629.96,-180 635.96,-186 635.96,-192 635.96,-192 635.96,-204 635.96,-204 635.96,-210 629.96,-216 623.96,-216"/>
+<text xml:space="preserve" text-anchor="middle" x="608.96" y="-193.8" font-family="Times,serif" font-size="14.00">Parent</text>
+</g>
+<!-- Parent_Fetch -->
+<g id="node2" class="node">
+<title>Parent_Fetch</title>
+<path fill="none" stroke="black" d="M789.48,-236C789.48,-236 723.61,-236 723.61,-236 717.61,-236 711.61,-230 711.61,-224 711.61,-224 711.61,-212 711.61,-212 711.61,-206 717.61,-200 723.61,-200 723.61,-200 789.48,-200 789.48,-200 795.48,-200 801.48,-206 801.48,-212 801.48,-212 801.48,-224 801.48,-224 801.48,-230 795.48,-236 789.48,-236"/>
+<text xml:space="preserve" text-anchor="middle" x="756.55" y="-213.8" font-family="Times,serif" font-size="14.00">Parent_Fetch</text>
+</g>
+<!-- Parent&#45;&gt;Parent_Fetch -->
+<g id="edge2" class="edge">
+<title>Parent-&gt;Parent_Fetch</title>
+<path fill="none" stroke="Green" d="M636.12,-196.51C652.69,-196.02 674.53,-196.23 693.61,-199.2 695.78,-199.54 697.97,-199.93 700.18,-200.37"/>
+<polygon fill="Green" stroke="Green" points="699.24,-203.75 709.77,-202.59 700.81,-196.93 699.24,-203.75"/>
+<text xml:space="preserve" text-anchor="middle" x="673.79" y="-203.4" font-family="Times,serif" font-size="14.00">initial</text>
+</g>
+<!-- Done -->
+<g id="node7" class="node">
+<title>Done</title>
+<path fill="none" stroke="black" d="M771.55,-164C771.55,-164 741.55,-164 741.55,-164 735.55,-164 729.55,-158 729.55,-152 729.55,-152 729.55,-140 729.55,-140 729.55,-134 735.55,-128 741.55,-128 741.55,-128 771.55,-128 771.55,-128 777.55,-128 783.55,-134 783.55,-140 783.55,-140 783.55,-152 783.55,-152 783.55,-158 777.55,-164 771.55,-164"/>
+<text xml:space="preserve" text-anchor="middle" x="756.55" y="-141.8" font-family="Times,serif" font-size="14.00">Done</text>
+</g>
+<!-- Parent&#45;&gt;Done -->
+<g id="edge4" class="edge">
+<title>Parent-&gt;Done</title>
+<path fill="none" stroke="Blue" d="M636.09,-183.39C641.87,-180.45 648.04,-177.56 653.96,-175.2 674.67,-166.95 698.6,-159.96 718.03,-154.88"/>
+<polygon fill="Blue" stroke="Blue" points="718.89,-158.28 727.72,-152.42 717.16,-151.49 718.89,-158.28"/>
+<text xml:space="preserve" text-anchor="middle" x="673.79" y="-179.4" font-family="Times,serif" font-size="14.00">Ok</text>
+</g>
+<!-- Error -->
+<g id="node8" class="node">
+<title>Error</title>
+<path fill="none" stroke="black" d="M771.55,-103C771.55,-103 741.55,-103 741.55,-103 735.55,-103 729.55,-97 729.55,-91 729.55,-91 729.55,-79 729.55,-79 729.55,-73 735.55,-67 741.55,-67 741.55,-67 771.55,-67 771.55,-67 777.55,-67 783.55,-73 783.55,-79 783.55,-79 783.55,-91 783.55,-91 783.55,-97 777.55,-103 771.55,-103"/>
+<text xml:space="preserve" text-anchor="middle" x="756.55" y="-80.8" font-family="Times,serif" font-size="14.00">Error</text>
+</g>
+<!-- Parent&#45;&gt;Error -->
+<g id="edge5" class="edge">
+<title>Parent-&gt;Error</title>
+<path fill="none" stroke="Yellow" d="M621.41,-179.54C629.46,-167.58 641.08,-152.24 653.96,-141.2 673.38,-124.56 698.5,-110.61 718.91,-100.77"/>
+<polygon fill="Yellow" stroke="Yellow" points="720.15,-104.05 727.72,-96.65 717.18,-97.71 720.15,-104.05"/>
+<text xml:space="preserve" text-anchor="middle" x="673.79" y="-145.4" font-family="Times,serif" font-size="14.00">Error</text>
+</g>
+<!-- Failure -->
+<g id="node9" class="node">
+<title>Failure</title>
+<path fill="none" stroke="black" d="M772.38,-36C772.38,-36 740.72,-36 740.72,-36 734.72,-36 728.72,-30 728.72,-24 728.72,-24 728.72,-12 728.72,-12 728.72,-6 734.72,0 740.72,0 740.72,0 772.38,0 772.38,0 778.38,0 784.38,-6 784.38,-12 784.38,-12 784.38,-24 784.38,-24 784.38,-30 778.38,-36 772.38,-36"/>
+<text xml:space="preserve" text-anchor="middle" x="756.55" y="-13.8" font-family="Times,serif" font-size="14.00">Failure</text>
+</g>
+<!-- Parent&#45;&gt;Failure -->
+<g id="edge6" class="edge">
+<title>Parent-&gt;Failure</title>
+<path fill="none" stroke="Red" d="M610.91,-179.82C613.37,-150.73 622.21,-93.54 653.96,-59.2 670.61,-41.19 696.23,-30.88 717.58,-25.07"/>
+<polygon fill="Red" stroke="Red" points="718.25,-28.51 727.13,-22.72 716.58,-21.71 718.25,-28.51"/>
+<text xml:space="preserve" text-anchor="middle" x="673.79" y="-63.4" font-family="Times,serif" font-size="14.00">Failure</text>
+</g>
+<!-- Parent_WaitMessage -->
+<g id="node3" class="node">
+<title>Parent_WaitMessage</title>
+<path fill="none" stroke="black" d="M986.1,-236C986.1,-236 875.14,-236 875.14,-236 869.14,-236 863.14,-230 863.14,-224 863.14,-224 863.14,-212 863.14,-212 863.14,-206 869.14,-200 875.14,-200 875.14,-200 986.1,-200 986.1,-200 992.1,-200 998.1,-206 998.1,-212 998.1,-212 998.1,-224 998.1,-224 998.1,-230 992.1,-236 986.1,-236"/>
+<text xml:space="preserve" text-anchor="middle" x="930.62" y="-213.8" font-family="Times,serif" font-size="14.00">Parent_WaitMessage</text>
+</g>
+<!-- Parent_Fetch&#45;&gt;Parent_WaitMessage -->
+<g id="edge7" class="edge">
+<title>Parent_Fetch-&gt;Parent_WaitMessage</title>
+<path fill="none" stroke="Blue" d="M801.86,-218C817.05,-218 834.54,-218 851.6,-218"/>
+<polygon fill="Blue" stroke="Blue" points="851.2,-221.5 861.2,-218 851.2,-214.5 851.2,-221.5"/>
+<text xml:space="preserve" text-anchor="middle" x="832.31" y="-222.2" font-family="Times,serif" font-size="14.00">Ok</text>
+</g>
+<!-- final_Parent -->
+<g id="node5" class="node">
+<title>final_Parent</title>
+<ellipse fill="black" stroke="black" cx="1076.35" cy="-218" rx="12.6" ry="12.6"/>
+<ellipse fill="none" stroke="black" cx="1076.35" cy="-218" rx="16.6" ry="16.6"/>
+</g>
+<!-- Parent_WaitMessage&#45;&gt;final_Parent -->
+<g id="edge10" class="edge">
+<title>Parent_WaitMessage-&gt;final_Parent</title>
+<path fill="none" stroke="black" d="M998.44,-218C1016.01,-218 1034,-218 1048.15,-218"/>
+<polygon fill="black" stroke="black" points="1047.98,-221.5 1057.98,-218 1047.98,-214.5 1047.98,-221.5"/>
+<text xml:space="preserve" text-anchor="middle" x="1028.93" y="-222.2" font-family="Times,serif" font-size="14.00">final</text>
+</g>
+<!-- start_Parent -->
+<g id="node4" class="node">
+<title>start_Parent</title>
+<ellipse fill="black" stroke="black" cx="608.96" cy="-243" rx="9" ry="9"/>
+</g>
+<!-- start_Parent&#45;&gt;Parent_Fetch -->
+<g id="edge1" class="edge">
+<title>start_Parent-&gt;Parent_Fetch</title>
+<path fill="none" stroke="black" d="M618.2,-241.58C633.9,-238.89 669.28,-232.81 700.19,-227.51"/>
+<polygon fill="black" stroke="black" points="700.58,-230.99 709.84,-225.85 699.39,-224.09 700.58,-230.99"/>
+<text xml:space="preserve" text-anchor="middle" x="673.79" y="-239.11" font-family="Times,serif" font-size="14.00">start</text>
+</g>
+<!-- Entry -->
+<g id="node6" class="node">
+<title>Entry</title>
+<path fill="none" stroke="black" d="M365.58,-216C365.58,-216 335.58,-216 335.58,-216 329.58,-216 323.58,-210 323.58,-204 323.58,-204 323.58,-192 323.58,-192 323.58,-186 329.58,-180 335.58,-180 335.58,-180 365.58,-180 365.58,-180 371.58,-180 377.58,-186 377.58,-192 377.58,-192 377.58,-204 377.58,-204 377.58,-210 371.58,-216 365.58,-216"/>
+<text xml:space="preserve" text-anchor="middle" x="350.58" y="-193.8" font-family="Times,serif" font-size="14.00">Entry</text>
+</g>
+<!-- Entry&#45;&gt;Parent -->
+<g id="edge3" class="edge">
+<title>Entry-&gt;Parent</title>
+<path fill="none" stroke="Blue" d="M378.05,-198C423.75,-198 517.57,-198 570.14,-198"/>
+<polygon fill="Blue" stroke="Blue" points="570.12,-201.5 580.12,-198 570.12,-194.5 570.12,-201.5"/>
+<text xml:space="preserve" text-anchor="middle" x="505.64" y="-202.2" font-family="Times,serif" font-size="14.00">Ok</text>
+</g>
+<!-- final_global -->
+<g id="node11" class="node">
+<title>final_global</title>
+<ellipse fill="black" stroke="black" cx="930.62" cy="-146" rx="12.6" ry="12.6"/>
+<ellipse fill="none" stroke="black" cx="930.62" cy="-146" rx="16.6" ry="16.6"/>
+</g>
+<!-- Done&#45;&gt;final_global -->
+<g id="edge12" class="edge">
+<title>Done-&gt;final_global</title>
+<path fill="none" stroke="black" d="M783.68,-146C815.69,-146 869.67,-146 902.24,-146"/>
+<polygon fill="black" stroke="black" points="902.07,-149.5 912.07,-146 902.07,-142.5 902.07,-149.5"/>
+<text xml:space="preserve" text-anchor="middle" x="832.31" y="-150.2" font-family="Times,serif" font-size="14.00">final</text>
+</g>
+<!-- Error&#45;&gt;Parent -->
+<g id="edge8" class="edge">
+<title>Error-&gt;Parent</title>
+<path fill="none" stroke="Blue" d="M729.22,-80.1C707.05,-77.49 675.6,-77.53 653.96,-93.2 629.79,-110.71 618.82,-144.11 613.89,-168.51"/>
+<polygon fill="Blue" stroke="Blue" points="610.48,-167.72 612.19,-178.17 617.37,-168.93 610.48,-167.72"/>
+<text xml:space="preserve" text-anchor="middle" x="673.79" y="-97.4" font-family="Times,serif" font-size="14.00">Ok</text>
+</g>
+<!-- Failure&#45;&gt;Parent -->
+<g id="edge9" class="edge">
+<title>Failure-&gt;Parent</title>
+<path fill="none" stroke="Blue" d="M728.41,-7.39C706.05,-0.58 674.74,4.24 653.96,-12.2 629.74,-31.35 617.47,-121.01 612.58,-168.43"/>
+<polygon fill="Blue" stroke="Blue" points="609.11,-167.98 611.62,-178.27 616.08,-168.66 609.11,-167.98"/>
+<text xml:space="preserve" text-anchor="middle" x="673.79" y="-16.4" font-family="Times,serif" font-size="14.00">Ok</text>
+</g>
+<!-- start_global -->
+<g id="node10" class="node">
+<title>start_global</title>
+<ellipse fill="black" stroke="black" cx="113.87" cy="-198" rx="9" ry="9"/>
+</g>
+<!-- start_global&#45;&gt;Entry -->
+<g id="edge11" class="edge">
+<title>start_global-&gt;Entry</title>
+<path fill="none" stroke="black" d="M123.22,-198C153.11,-198 255.92,-198 312.13,-198"/>
+<polygon fill="black" stroke="black" points="311.87,-201.5 321.87,-198 311.87,-194.5 311.87,-201.5"/>
+<text xml:space="preserve" text-anchor="middle" x="241.78" y="-202.2" font-family="Times,serif" font-size="14.00">start</text>
+</g>
+<!-- legend_state -->
+<g id="node12" class="node">
+<title>legend_state</title>
+<path fill="none" stroke="black" d="M417.32,-377C417.32,-377 283.83,-377 283.83,-377 277.83,-377 271.83,-371 271.83,-365 271.83,-365 271.83,-353 271.83,-353 271.83,-347 277.83,-341 283.83,-341 283.83,-341 417.32,-341 417.32,-341 423.32,-341 429.32,-347 429.32,-353 429.32,-353 429.32,-365 429.32,-365 429.32,-371 423.32,-377 417.32,-377"/>
+<text xml:space="preserve" text-anchor="middle" x="350.58" y="-354.8" font-family="Times,serif" font-size="14.00">State (rounded rectangle)</text>
+</g>
+<!-- legend_state_ok -->
+<g id="node15" class="node">
+<title>legend_state_ok</title>
+<ellipse fill="black" stroke="black" cx="608.96" cy="-319" rx="1.8" ry="1.8"/>
+</g>
+<!-- legend_state&#45;&gt;legend_state_ok -->
+<g id="edge14" class="edge">
+<title>legend_state-&gt;legend_state_ok</title>
+<path fill="none" stroke="Blue" d="M429.58,-341.42C435.57,-340.26 441.54,-339.17 447.32,-338.2 502.17,-328.99 568.28,-322.54 595.41,-320.09"/>
+<polygon fill="Blue" stroke="Blue" points="595.5,-323.6 605.16,-319.24 594.89,-316.62 595.5,-323.6"/>
+<text xml:space="preserve" text-anchor="middle" x="505.64" y="-342.4" font-family="Times,serif" font-size="14.00">Ok</text>
+</g>
+<!-- legend_state_err -->
+<g id="node16" class="node">
+<title>legend_state_err</title>
+<ellipse fill="black" stroke="black" cx="608.96" cy="-359" rx="1.8" ry="1.8"/>
+</g>
+<!-- legend_state&#45;&gt;legend_state_err -->
+<g id="edge15" class="edge">
+<title>legend_state-&gt;legend_state_err</title>
+<path fill="none" stroke="Yellow" d="M429.55,-359C489.21,-359 566.12,-359 595.66,-359"/>
+<polygon fill="Yellow" stroke="Yellow" points="595.27,-362.5 605.27,-359 595.27,-355.5 595.27,-362.5"/>
+<text xml:space="preserve" text-anchor="middle" x="505.64" y="-363.2" font-family="Times,serif" font-size="14.00">Error</text>
+</g>
+<!-- legend_state_fail -->
+<g id="node17" class="node">
+<title>legend_state_fail</title>
+<ellipse fill="black" stroke="black" cx="608.96" cy="-399" rx="1.8" ry="1.8"/>
+</g>
+<!-- legend_state&#45;&gt;legend_state_fail -->
+<g id="edge16" class="edge">
+<title>legend_state-&gt;legend_state_fail</title>
+<path fill="none" stroke="Red" d="M429.64,-374.01C435.62,-375.05 441.56,-376.06 447.32,-377 502.34,-385.93 568.36,-394.21 595.44,-397.5"/>
+<polygon fill="Red" stroke="Red" points="594.82,-400.95 605.17,-398.67 595.65,-394 594.82,-400.95"/>
+<text xml:space="preserve" text-anchor="middle" x="505.64" y="-397.48" font-family="Times,serif" font-size="14.00">Failure</text>
+</g>
+<!-- legend_state_init -->
+<g id="node18" class="node">
+<title>legend_state_init</title>
+<ellipse fill="black" stroke="black" cx="608.96" cy="-439" rx="1.8" ry="1.8"/>
+</g>
+<!-- legend_state&#45;&gt;legend_state_init -->
+<g id="edge17" class="edge">
+<title>legend_state-&gt;legend_state_init</title>
+<path fill="none" stroke="Green" d="M377.54,-377.43C396.12,-389.71 422.19,-405.17 447.32,-414 500.5,-432.68 568.45,-437.43 595.78,-438.62"/>
+<polygon fill="Green" stroke="Green" points="595.28,-442.1 605.39,-438.93 595.51,-435.1 595.28,-442.1"/>
+<text xml:space="preserve" text-anchor="middle" x="505.64" y="-440.41" font-family="Times,serif" font-size="14.00">parent → initial child</text>
+</g>
+<!-- legend_start -->
+<g id="node13" class="node">
+<title>legend_start</title>
+<ellipse fill="black" stroke="black" cx="113.87" cy="-319" rx="18" ry="18"/>
+</g>
+<!-- legend_start&#45;&gt;legend_state -->
+<g id="edge13" class="edge">
+<title>legend_start-&gt;legend_state</title>
+<path fill="none" stroke="black" d="M132.12,-321.94C159.03,-326.53 212.8,-335.69 260.13,-343.76"/>
+<polygon fill="black" stroke="black" points="259.44,-347.19 269.88,-345.42 260.61,-340.29 259.44,-347.19"/>
+<text xml:space="preserve" text-anchor="middle" x="241.78" y="-346.78" font-family="Times,serif" font-size="14.00">start</text>
+</g>
+<!-- legend_final -->
+<g id="node14" class="node">
+<title>legend_final</title>
+<ellipse fill="black" stroke="black" cx="113.87" cy="-377" rx="18" ry="18"/>
+<ellipse fill="none" stroke="black" cx="113.87" cy="-377" rx="22" ry="22"/>
+</g>
+<!-- legend_note -->
+<g id="node19" class="node">
+<title>legend_note</title>
+<polygon fill="none" stroke="black" points="205.73,-609 16,-609 16,-417 211.73,-417 211.73,-603 205.73,-609"/>
+<polyline fill="none" stroke="black" points="205.73,-609 205.73,-603"/>
+<polyline fill="none" stroke="black" points="211.73,-603 205.73,-603"/>
+<text xml:space="preserve" text-anchor="middle" x="113.87" y="-592.4" font-family="Times,serif" font-size="14.00">Shapes:</text>
+<text xml:space="preserve" text-anchor="middle" x="113.87" y="-575.6" font-family="Times,serif" font-size="14.00">  • rounded rectangle = State</text>
+<text xml:space="preserve" text-anchor="middle" x="113.87" y="-558.8" font-family="Times,serif" font-size="14.00">  • filled circle = Start</text>
+<text xml:space="preserve" text-anchor="middle" x="113.87" y="-542" font-family="Times,serif" font-size="14.00">  • double circle (filled) = Final</text>
+<text xml:space="preserve" text-anchor="middle" x="113.87" y="-509.2" font-family="Times,serif" font-size="14.00">Edge colors:</text>
+<text xml:space="preserve" text-anchor="middle" x="113.87" y="-492.4" font-family="Times,serif" font-size="14.00">  • Ok = Blue</text>
+<text xml:space="preserve" text-anchor="middle" x="113.87" y="-475.6" font-family="Times,serif" font-size="14.00">  • Error = Yellow</text>
+<text xml:space="preserve" text-anchor="middle" x="113.87" y="-458.8" font-family="Times,serif" font-size="14.00">  • Failure = Red</text>
+<text xml:space="preserve" text-anchor="middle" x="113.87" y="-442" font-family="Times,serif" font-size="14.00">  • Parent→Child = Green</text>
+<text xml:space="preserve" text-anchor="middle" x="113.87" y="-425.2" font-family="Times,serif" font-size="14.00">  • Start/Final edges = black</text>
+</g>
+</g>
+</svg>
