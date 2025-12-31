@@ -25,7 +25,6 @@ public sealed partial class StateMachine<TStateId>
   where TStateId : struct, Enum
 {
   /// <summary>Export the state machine's topology as DOT (Graphviz).</summary>
-  /// <param name="includeLegend">Include a legend subgraph that explains shapes and colors.</param>
   /// <param name="initialStateIds">
   ///   Optional entry-point initial state(s) at the top-level. When NULL or empty, no global start marker is emitted.
   ///   Initial states denoted by a filled circle (start marker) → state.
@@ -36,6 +35,7 @@ public sealed partial class StateMachine<TStateId>
   ///     if (appLicense == License.Demo) await machine.RunAsync(StateId.EntryDemoState);
   ///   ]]>.
   /// </param>
+  /// <param name="includeLegend">Include a legend subgraph that explains shapes and colors.</param>
   /// <param name="transitionColors">
   ///   Optional color overrides for Result-based transitions. Keys not present fall back to defaults:
   ///   Ok=Blue, Error=Yellow, Failure=Red.
