@@ -50,10 +50,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     // NOTE-1 (2025-12-25):
     //  * Create Precheck Sanitization:
     //    * Verify initial states are set for core and all sub-states.
-    //    * Throw clear exceptions to inform user what to fix.
-    // NOTE-2 (2025-12-25):
-    //  When not using DI (null containerFactory), generate instance with parameterless instance
-    //  This means all states CANNOT have parameters in their constructors.
+    //    * Verify any transition exceptions (i.e. DisjointedNextSubStateException)
     //
     //// OLD-4d3, 4bx:
     ////  public StateMachine(IServiceResolver? services = null, IEventAggregator? eventAggregator = null, ILogger<StateMachine<TStateId>>? logs = null)
@@ -82,9 +79,9 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     TStateId? onFailure = null)
     where TCompositeParent : class, IState<TStateId>
   {
-    // TODO (2025-12-28 DS): Use exception, DuplicateStateException
+    // NOTE (2025-12-28 DS): This is already caught by the base method, just provides a different message
     if (_states.ContainsKey(stateId))
-      throw new InvalidOperationException($"Composite parent '{stateId}' already registered.");
+      throw new DuplicateStateException($"Composite parent '{stateId}' already registered.");
 
     return RegisterState<TCompositeParent>(
       stateId: stateId,
@@ -106,13 +103,12 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     TStateId? onFailure = null)
     where TCompositeParent : class, IState<TStateId>
   {
-    // TODO (2025-12-28 DS): Use exception, ParentStateMustBeCompositeException
     if (!_states.TryGetValue(parentStateId, out var pr) || !pr.IsCompositeParent)
-      throw new InvalidOperationException($"Parent state '{parentStateId}' must be a composite.");
+      throw new ParentStateMustBeCompositeException($"Parent state '{parentStateId}' must be registered as a composite state.");
 
-    // TODO (2025-12-28 DS): Use exception, DuplicateStateException
+    // NOTE (2025-12-28 DS): This is already caught by the base method
     if (_states.ContainsKey(stateId))
-      throw new InvalidOperationException($"Composite child state '{stateId}' already registered.");
+      throw new DuplicateStateException($"Composite child state '{stateId}' already registered.");
 
     return RegisterState<TCompositeParent>(
       stateId: stateId,
@@ -125,14 +121,14 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   }
 
   /// <inheritdoc/>
-  public StateMachine<TStateId> RegisterState<TState>(TStateId stateId, TStateId? onSuccess = null)
-    where TState : class, IState<TStateId>
+  public StateMachine<TStateId> RegisterState<TStateClass>(TStateId stateId, TStateId? onSuccess = null)
+    where TStateClass : class, IState<TStateId>
   {
-    return RegisterState<TState>(stateId, onSuccess, onError: null, onFailure: null, parentStateId: null, isCompositeParent: false, initialChildStateId: null);
+    return RegisterState<TStateClass>(stateId, onSuccess, onError: null, onFailure: null, parentStateId: null, isCompositeParent: false, initialChildStateId: null);
   }
 
   /// <inheritdoc/>
-  public StateMachine<TStateId> RegisterState<TState>(
+  public StateMachine<TStateId> RegisterState<TStateClass>(
     TStateId stateId,
     TStateId? onSuccess,
     TStateId? onError,
@@ -140,17 +136,17 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     TStateId? parentStateId = null,
     bool isCompositeParent = false,
     TStateId? initialChildStateId = null)
-    where TState : class, IState<TStateId>
+    where TStateClass : class, IState<TStateId>
   {
-    // TODO (2025-12-28 DS): Use custom exception, DuplicateStateException
     if (_states.ContainsKey(stateId))
-      throw new InvalidOperationException($"State '{stateId}' already registered.");
+      throw new DuplicateStateException($"State '{stateId}' already registered.");
 
+    // TODO (2025-12-28 DS): Use custom exception, StateClassNotRegistered(WithContainer)Exception
     var reg = new StateRegistration<TStateId>
     {
       StateId = stateId,
-      Factory = () => (IState<TStateId>)(_containerFactory(typeof(TState))
-        ?? throw new InvalidOperationException($"Factory returned null for {typeof(TState).Name}")),
+      Factory = () => (IState<TStateId>)(_containerFactory(typeof(TStateClass))
+        ?? throw new InvalidOperationException($"Factory returned null for {typeof(TStateClass).Name}")),
       ParentId = parentStateId,
       IsCompositeParent = isCompositeParent,
       InitialChildId = initialChildStateId,
@@ -173,13 +169,12 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     TStateId? onFailure = null)
     where TChildClass : class, IState<TStateId>
   {
-    // TODO (2025-12-28 DS): Use exception, ParentStateMustBeCompositeException
     if (!_states.TryGetValue(parentStateId, out var pr) || !pr.IsCompositeParent)
-      throw new InvalidOperationException($"Parent '{parentStateId}' must be registered as a composite parent.");
+      throw new ParentStateMustBeCompositeException($"Parent state '{parentStateId}' must be registered as a composite state.");
 
-    // TODO (2025-12-28 DS): Use exception, DuplicateStateException
+    // NOTE (2025-12-28 DS): This is already caught by the base method
     if (_states.ContainsKey(stateId))
-      throw new InvalidOperationException($"Child state '{stateId}' already registered.");
+      throw new DuplicateStateException($"Child state '{stateId}' already registered.");
 
     return RegisterState<TChildClass>(
       stateId,
@@ -198,9 +193,8 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     PropertyBag? errorStack = null,
     CancellationToken cancellationToken = default)
   {
-    // TODO (2025-12-28 DS): Use custom exception, InvalidMissingStartupStateException
     if (!_states.ContainsKey(initialStateId))
-      throw new InvalidOperationException($"Initial state '{initialStateId}' was not registered.");
+      throw new MissingInitialStateException($"Initial state '{initialStateId}' was not registered.");
 
     var current = initialStateId;
 
@@ -253,13 +247,12 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   /// <summary>Retrieves the registration information for the specified state identifier.</summary>
   /// <param name="stateId">The identifier of the state whose registration information is to be retrieved.</param>
   /// <returns>The registration associated with the specified state identifier.</returns>
-  /// <exception cref="InvalidOperationException">Thrown if the specified state identifier has not been registered.</exception>
+  /// <exception cref="UnregisteredStateTransitionException">Thrown if the specified state identifier has not been registered.</exception>
   private StateRegistration<TStateId> GetRegistration(TStateId stateId)
   {
-    // TODO (2025-12-18 DS): Use custom exception, UnregisteredStateTransitionException, UnregisteredNextStateException or MissingOrInvalidRegistrationException
-    // Because states can override/customize the "NextState" on the fly, we need a unique exception.
+    // In the future, states can override/customize the "NextState" on the fly, we need a unique exception.
     if (!_states.TryGetValue(stateId, out var reg))
-      throw new InvalidOperationException($"Next State Id '{stateId}' was not registered.");
+      throw new UnregisteredStateTransitionException($"Next State Id '{stateId}' was not registered.");
 
     return reg;
   }
@@ -302,9 +295,8 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     await instance.OnEnter(parentEnterCtx).ConfigureAwait(false);
 
     // TODO (2025-12-28 DS): Consider StateMachine config param to just move along or throw exception
-    // TODO (2025-12-28 DS): Use custom exception, InvalidMissingInitialSubStateException
     if (reg.InitialChildId is null)
-      throw new InvalidOperationException($"Composite '{reg.StateId}' must have an initial child (InitialChildId).");
+      throw new MissingInitialSubStateException($"Composite '{reg.StateId}' must have an initial child (InitialChildId).");
 
     var childId = reg.InitialChildId.Value;
     Result? lastChildResult = null;
@@ -313,9 +305,9 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     {
       var childReg = GetRegistration(childId);
 
-      // TODO (2025-12-28 DS): Use custom exception, OrphanSubStateException
+      // The child state was not registered the specified composite parent state
       if (!Equals(childReg.ParentId, reg.StateId))
-        throw new InvalidOperationException($"Child '{childId}' must belong to composite '{reg.StateId}'.");
+        throw new OrphanSubStateException($"Child state '{childId}' must belong to composite '{reg.StateId}'.");
 
       // Could just call "RunAnyStateRecursiveAsync" but lets not waste cycles
       Result? childResult;
@@ -335,11 +327,10 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       if (nextChildId is null)
         break;
 
-      // Ensure next state is apart of the same composite parent (DisjointedNextSubStateException)
-      // TODO (2025-12-28 DS): Use custom exception, DisjointedNextStateException
+      // Ensure next state is apart of the same composite parent (i.e. unlinked sub-states)
       var mappedReg = GetRegistration(nextChildId.Value);
       if (!Equals(mappedReg.ParentId, reg.StateId))
-        throw new InvalidOperationException($"Child '{childId}' maps to '{nextChildId}', which is not a sibling under '{reg.StateId}'.");
+        throw new DisjointedNextSubStateException($"Child '{childId}' maps to '{nextChildId}', which is not a sibling under '{reg.StateId}'.");
 
       // Proceed to the next substate
       childId = nextChildId.Value;
