@@ -60,6 +60,7 @@ public sealed partial class StateMachine<TStateId>
 
     // allow edges into subgraphs
     sb.AppendLine("  compound=true;");
+
     if (rankLeftToRight)
       sb.AppendLine("  rankdir=LR;");
 
@@ -69,7 +70,7 @@ public sealed partial class StateMachine<TStateId>
     // Group registrations by ParentId (null = root-level nodes).
     var regs = _states.Values.ToList();
 
-    // Emit clusters for composite parents
+    // Composite parents + their children
     foreach (var parent in regs.Where(r => r.IsCompositeParent))
     {
       var parentId = parent.StateId;
@@ -79,10 +80,10 @@ public sealed partial class StateMachine<TStateId>
       sb.AppendLine($"    style=rounded;");
       sb.AppendLine($"    color=\"#888888\";");
 
-      // Emit parent node inside the cluster (doublecircle)
+      // Parent node inside the cluster (doublecircle)
       sb.AppendLine($"    \"{Escape(parentId.ToString())}\" [shape=doublecircle, label=\"{Escape(nodeLabelSelector(parentId))}\"];");
 
-      // Emit children under this parent (ellipse)
+      // Child nodes under this parent (ellipse)
       var children = regs.Where(r => Equals(r.ParentId, parentId)).ToList();
       foreach (var child in children)
       {
@@ -90,11 +91,14 @@ public sealed partial class StateMachine<TStateId>
         sb.AppendLine($"    \"{Escape(childId.ToString())}\" [shape=ellipse, label=\"{Escape(nodeLabelSelector(childId))}\"];");
       }
 
-      // End of cluster
+      // Internal final node for the composite cluster
+      var finalClusterId = $"final_{Escape(parentId.ToString())}";
+      sb.AppendLine($"    \"{finalClusterId}\" [shape=circle, style=filled, fillcolor=\"black\", color=\"black\", label=\"\", width=0.25, height=0.25, fixedsize=true];");
+
       sb.AppendLine("  }");
     }
 
-    // Emit nodes that are NOT part of any composite parent cluster
+    // NON-COMPOSITE root-level nodes
     foreach (var reg in regs.Where(r => !r.IsCompositeParent && r.ParentId is null))
     {
       var id = reg.StateId;
@@ -129,6 +133,31 @@ public sealed partial class StateMachine<TStateId>
       Emit(Result.Failure, reg.OnFailure);
     }
 
+    // --- LAST SUBSTATES: point to cluster's internal final node
+    foreach (var parent in regs.Where(r => r.IsCompositeParent))
+    {
+      var parentId = parent.StateId;
+      var finalClusterId = $"final_{Escape(parentId.ToString())}";
+
+      var children = regs.Where(r => Equals(r.ParentId, parentId)).ToList();
+      foreach (var child in children)
+      {
+        // "last" child = no outgoing transitions
+        if (IsTerminal(child))
+          sb.AppendLine($"  \"{Escape(child.StateId.ToString())}\" -> \"{finalClusterId}\" [color=\"black\", label=\"final\"];");
+      }
+    }
+
+    // --- LAST TOP-LEVEL STATES: point to global final node
+    var globalFinalId = "final_global";
+    sb.AppendLine($"  \"{globalFinalId}\" [shape=circle, style=filled, fillcolor=\"black\", color=\"black\", label=\"\", width=0.25, height=0.25, fixedsize=true];");
+
+    foreach (var reg in regs.Where(r => r.ParentId is null))
+    {
+      if (IsTerminal(reg))
+        sb.AppendLine($"  \"{Escape(reg.StateId.ToString())}\" -> \"{globalFinalId}\" [color=\"black\", label=\"final\"];");
+    }
+
     // Optional legend
     if (includeLegend)
     {
@@ -154,9 +183,15 @@ public sealed partial class StateMachine<TStateId>
       sb.AppendLine("    legend_leaf_err  [shape=point, label=\"\"];");
       sb.AppendLine("    legend_leaf_fail [shape=point, label=\"\"];");
 
+      // Final nodes (black circles)
+      sb.AppendLine("    legend_final_cluster [shape=circle, style=filled, fillcolor=\"black\", label=\"\", width=0.25, height=0.25, fixedsize=true];");
+      sb.AppendLine("    legend_final_global  [shape=circle, style=filled, fillcolor=\"black\", label=\"\", width=0.25, height=0.25, fixedsize=true];");
+      sb.AppendLine("    legend_leaf -> legend_final_cluster [color=\"black\", label=\"cluster final\"];");
+      sb.AppendLine("    legend_leaf -> legend_final_global  [color=\"black\", label=\"top-level final\"];");
+
       var legendBody = legendText ??
-        $"Shapes:\n  • doublecircle = Composite parent\n  • ellipse = Leaf state\n\n" +
-        $"Edge colors:\n  • Ok = {colors[Result.Ok]}\n  • Error = {colors[Result.Error]}\n  • Failure = {colors[Result.Failure]}\n  • Parent→Child = {parentToChildColor}";
+        $"Shapes:\n  • doublecircle = Composite parent\n  • ellipse = Leaf state\n  • black circle = Final\n\n" +
+        $"Edge colors:\n  • Ok = {colors[Result.Ok]}\n  • Error = {colors[Result.Error]}\n  • Failure = {colors[Result.Failure]}\n  • Parent→Child = {parentToChildColor}\n  • Final edges = black";
 
       sb.AppendLine($"    legend_note [shape=note, label=\"{Escape(legendBody)}\"];");
       sb.AppendLine("  }");
@@ -166,6 +201,9 @@ public sealed partial class StateMachine<TStateId>
     return sb.ToString();
   }
 
+  private static bool IsTerminal(StateRegistration<TStateId> reg) =>
+    reg.OnSuccess is null && reg.OnError is null && reg.OnFailure is null;
+
   private static string Escape(string s)
   {
     if (s is null)
@@ -174,3 +212,4 @@ public sealed partial class StateMachine<TStateId>
     return s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n");
   }
 }
+
