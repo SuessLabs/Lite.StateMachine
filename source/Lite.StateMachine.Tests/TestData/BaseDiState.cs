@@ -24,6 +24,7 @@ public class BaseDiState<TStateClass, TStateId>(IMessageService msg, ILogger<TSt
     _msgService.Counter1++;
     ////_msgService.AddMessage(GetType().Name + " OnEnter");
     _logger.LogInformation("[OnEnter] => OK");
+    Console.WriteLine($"[{GetType().Name}] [OnEnter] => OK");
     Debug.WriteLine($"[{GetType().Name}] [OnEnter] => OK");
 
     context.NextState(Result.Ok);

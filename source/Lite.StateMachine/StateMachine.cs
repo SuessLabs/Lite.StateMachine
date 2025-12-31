@@ -46,6 +46,9 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     IEventAggregator? eventAggregator = null,
     bool isContextPersistent = true)
   {
+    // TODO (2025-12-31 DS): Throw "Missing DI Container" exception because there are parameters in a state class's constructor.
+    //// Current Exception:
+    ////  System.MissingMethodException: 'Cannot dynamically create an instance of type 'Lite.StateMachine.Tests.TestData.CompositeL3DiStates.State1'. Reason: No parameterless constructor defined.'
     _containerFactory = containerFactory ?? (t => Activator.CreateInstance(t));
     _eventAggregator = eventAggregator;
     IsContextPersistent = isContextPersistent;
@@ -100,6 +103,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   }
 
   /// <inheritdoc/>
+  /// <remarks>Renaming to, "RegisterSubComposite" to match "RegisterSubState".</remarks>
   public StateMachine<TStateId> RegisterCompositeChild<TCompositeParent>(
     TStateId stateId,
     TStateId parentStateId,

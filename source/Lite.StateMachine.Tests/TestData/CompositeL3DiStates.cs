@@ -45,6 +45,7 @@ public class State3(IMessageService msg, ILogger<State3> log)
   {
     MessageService.Counter1++;
     Log.LogInformation("[OnEnter] => OK");
+    Debug.WriteLine($"[{GetType().Name}] [OnEnter] => OK");
 
     context.NextState(Result.Ok);
     return Task.CompletedTask;

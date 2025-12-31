@@ -6,6 +6,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData;
 using Lite.StateMachine.Tests.TestData.CompositeL3DiStates;
+using Lite.StateMachine.Tests.TestData.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace Lite.StateMachine.Tests.StateTests;
 
@@ -167,16 +171,29 @@ public class CompositeStateTest
   public async Task Level3_IsContextPersistent_False_SuccessTestAsync()
   {
     // Assemble
-    var machine = new StateMachine<CompositeL3>
+    var services = new ServiceCollection()
+      //// Register Services
+      .AddLogging(InlineTraceLogger())
+      .AddSingleton<IMessageService, MessageService>()
+      //// Register States
+      .AddTransient<State1>()
+      .AddTransient<State2>()
+      .AddTransient<State3>()
+      .BuildServiceProvider();
+
+    var msgService = services.GetRequiredService<IMessageService>();
+    Func<Type, object?> factory = t => ActivatorUtilities.CreateInstance(services, t);
+
+    var machine = new StateMachine<CompositeL3>(factory, null, isContextPersistent: false)
     {
-      IsContextPersistent = false,
+      DefaultStateTimeoutMs = 1000,
     };
 
     machine
       .RegisterState<State1>(CompositeL3.State1, CompositeL3.State2)
       .RegisterComposite<State2>(CompositeL3.State2, initialChildStateId: CompositeL3.State2_Sub1, onSuccess: CompositeL3.State3)
       .RegisterSubState<State2_Sub1>(CompositeL3.State2_Sub1, parentStateId: CompositeL3.State2, onSuccess: CompositeL3.State2_Sub2)
-      .RegisterCompositeChild<State2_Sub2>(CompositeL3.State2_Sub2, parentStateId: CompositeL3.State2, initialChildStateId: CompositeL3.State2_Sub2_Sub1, onSuccess: CompositeL3.State2_Sub2)
+      .RegisterCompositeChild<State2_Sub2>(CompositeL3.State2_Sub2, parentStateId: CompositeL3.State2, initialChildStateId: CompositeL3.State2_Sub2_Sub1, onSuccess: CompositeL3.State2_Sub3)
       .RegisterSubState<State2_Sub2_Sub1>(CompositeL3.State2_Sub2_Sub1, parentStateId: CompositeL3.State2_Sub2, onSuccess: CompositeL3.State2_Sub2_Sub2)
       .RegisterSubState<State2_Sub2_Sub2>(CompositeL3.State2_Sub2_Sub2, parentStateId: CompositeL3.State2_Sub2, onSuccess: CompositeL3.State2_Sub2_Sub3)
       .RegisterSubState<State2_Sub2_Sub3>(CompositeL3.State2_Sub2_Sub3, parentStateId: CompositeL3.State2_Sub2, onSuccess: null)
@@ -191,5 +208,30 @@ public class CompositeStateTest
     // Assert
     Assert.IsNotNull(machine);
     Assert.IsNull(machine.Context);
+
+    // Ensure all states are registered
+    var enums = Enum.GetValues<CompositeL3>().Cast<CompositeL3>();
+    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.IsTrue(enums.All(stateId => machine.States.Contains(stateId)));
+
+    // State Transition counter (9 states, 3 transitions)
+    Assert.AreEqual(27, msgService.Counter1);
+  }
+
+  private Action<ILoggingBuilder> InlineTraceLogger()
+  {
+    // Creates in-line log format
+    return config =>
+    {
+      config.AddSimpleConsole(options =>
+      {
+        options.TimestampFormat = "HH:mm:ss.fff ";
+        options.UseUtcTimestamp = false;
+        options.IncludeScopes = true;
+        options.SingleLine = true;
+        options.ColorBehavior = LoggerColorBehavior.Enabled;
+      });
+      config.SetMinimumLevel(LogLevel.Trace);
+    };
   }
 }
