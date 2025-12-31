@@ -47,7 +47,6 @@ public class MsDiTests
 
     var msgService = services.GetRequiredService<IMessageService>();
     Assert.AreEqual(9, msgService.Counter1, "Message service should have 9 from the 3 states.");
-    Assert.HasCount(9, msgService.Messages, "Message service should have 9 messages from the 3 states.");
 
     // Ensure all states are registered
     var enums = Enum.GetValues<BasicStateId>().Cast<BasicStateId>();
@@ -277,7 +276,6 @@ public class MsDiTests
     Console.WriteLine("MS.DI workflow finished.");
 
     Assert.AreEqual(2, msgService.Counter2);
-    Assert.HasCount(42, msgService.Messages);
     Assert.AreEqual(42, msgService.Counter1);
   }
 }

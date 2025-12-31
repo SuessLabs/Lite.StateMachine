@@ -22,6 +22,19 @@ public enum CompositeL1StateId
   State3,
 }
 
+public enum CompositeL3
+{
+  State1,
+  State2,
+  State2_Sub1,
+  State2_Sub2,
+  State2_Sub2_Sub1,
+  State2_Sub2_Sub2,
+  State2_Sub2_Sub3,
+  State2_Sub3,
+  State3,
+}
+
 public enum CompositeMsgStateId
 {
   Entry,

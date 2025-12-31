@@ -12,12 +12,12 @@ namespace Lite.StateMachine.Tests.TestData;
 #pragma warning disable SA1402 // File may only contain a single type
 
 public class EntryState(IMessageService msg, ILogger<EntryState> log)
-  : BaseStateDI<EntryState, CompositeMsgStateId>(msg, log)
+  : BaseDiState<EntryState, CompositeMsgStateId>(msg, log)
 {
 }
 
 public class ParentState(IMessageService msg, ILogger<ParentState> log)
-  : BaseStateDI<ParentState, CompositeMsgStateId>(msg, log)
+  : BaseDiState<ParentState, CompositeMsgStateId>(msg, log)
 {
   /// <summary>Handle the result from our last child state.</summary>
   /// <param name="context">Context data.</param>
@@ -40,12 +40,12 @@ public class ParentState(IMessageService msg, ILogger<ParentState> log)
 }
 
 public class ParentSub_FetchState(IMessageService msg, ILogger<ParentSub_FetchState> log)
-  : BaseStateDI<ParentSub_FetchState, CompositeMsgStateId>(msg, log)
+  : BaseDiState<ParentSub_FetchState, CompositeMsgStateId>(msg, log)
 {
 }
 
 public class ParentSub_WaitMessageState(IMessageService msg, ILogger<ParentSub_WaitMessageState> log)
-  : BaseStateDI<ParentSub_WaitMessageState, CompositeMsgStateId>(msg, log),
+  : BaseDiState<ParentSub_WaitMessageState, CompositeMsgStateId>(msg, log),
     ICommandState<CompositeMsgStateId>
 {
   public override Task OnEnter(Context<CompositeMsgStateId> context)
@@ -134,12 +134,12 @@ public class ParentSub_WaitMessageState(IMessageService msg, ILogger<ParentSub_W
 }
 
 public class Workflow_DoneState(IMessageService msg, ILogger<Workflow_DoneState> log)
-  : BaseStateDI<Workflow_DoneState, CompositeMsgStateId>(msg, log)
+  : BaseDiState<Workflow_DoneState, CompositeMsgStateId>(msg, log)
 {
 }
 
 public class Workflow_ErrorState(IMessageService msg, ILogger<Workflow_ErrorState> log)
-  : BaseStateDI<Workflow_ErrorState, CompositeMsgStateId>(msg, log)
+  : BaseDiState<Workflow_ErrorState, CompositeMsgStateId>(msg, log)
 {
   public override Task OnEnter(Context<CompositeMsgStateId> context)
   {
@@ -158,7 +158,7 @@ public class Workflow_ErrorState(IMessageService msg, ILogger<Workflow_ErrorStat
 }
 
 public class Workflow_FailureState(IMessageService msg, ILogger<Workflow_FailureState> log)
-  : BaseStateDI<Workflow_FailureState, CompositeMsgStateId>(msg, log)
+  : BaseDiState<Workflow_FailureState, CompositeMsgStateId>(msg, log)
 {
   public override Task OnEnter(Context<CompositeMsgStateId> context)
   {

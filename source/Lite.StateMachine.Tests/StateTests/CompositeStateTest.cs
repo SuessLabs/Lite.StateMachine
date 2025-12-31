@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData;
+using Lite.StateMachine.Tests.TestData.CompositeL3DiStates;
 
 namespace Lite.StateMachine.Tests.StateTests;
 
@@ -160,5 +161,35 @@ public class CompositeStateTest
 
     // Ensure they're in order
     Assert.IsTrue(enums.SequenceEqual(machine.States));
+  }
+
+  [TestMethod]
+  public async Task Level3_IsContextPersistent_False_SuccessTestAsync()
+  {
+    // Assemble
+    var machine = new StateMachine<CompositeL3>
+    {
+      IsContextPersistent = false,
+    };
+
+    machine
+      .RegisterState<State1>(CompositeL3.State1, CompositeL3.State2)
+      .RegisterComposite<State2>(CompositeL3.State2, initialChildStateId: CompositeL3.State2_Sub1, onSuccess: CompositeL3.State3)
+      .RegisterSubState<State2_Sub1>(CompositeL3.State2_Sub1, parentStateId: CompositeL3.State2, onSuccess: CompositeL3.State2_Sub2)
+      .RegisterCompositeChild<State2_Sub2>(CompositeL3.State2_Sub2, parentStateId: CompositeL3.State2, initialChildStateId: CompositeL3.State2_Sub2_Sub1, onSuccess: CompositeL3.State2_Sub2)
+      .RegisterSubState<State2_Sub2_Sub1>(CompositeL3.State2_Sub2_Sub1, parentStateId: CompositeL3.State2_Sub2, onSuccess: CompositeL3.State2_Sub2_Sub2)
+      .RegisterSubState<State2_Sub2_Sub2>(CompositeL3.State2_Sub2_Sub2, parentStateId: CompositeL3.State2_Sub2, onSuccess: CompositeL3.State2_Sub2_Sub3)
+      .RegisterSubState<State2_Sub2_Sub3>(CompositeL3.State2_Sub2_Sub3, parentStateId: CompositeL3.State2_Sub2, onSuccess: null)
+      .RegisterSubState<State2_Sub3>(CompositeL3.State2_Sub3, parentStateId: CompositeL3.State2, onSuccess: null)
+      .RegisterState<State3>(CompositeL3.State3, onSuccess: null);
+
+    machine
+      .RunAsync(CompositeL3.State1, cancellationToken: TestContext.CancellationToken)
+      .GetAwaiter()
+      .GetResult();
+
+    // Assert
+    Assert.IsNotNull(machine);
+    Assert.IsNull(machine.Context);
   }
 }

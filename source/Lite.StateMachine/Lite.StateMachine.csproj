@@ -8,10 +8,10 @@
     <Title>Lite State Machine</Title>
     <Description>Flexible lightweight finite state machine (FSM) for .NET supporting shared context for passing parameters, composite (sub) states, command states, lazy-loading and thread safe. Cross-platform and optimized for speed for use in enterprise, robotic and even tiny applications.</Description>
 
-    <AssemblyVersion>2.0.1</AssemblyVersion>
+    <AssemblyVersion>2.1.0</AssemblyVersion>
     <FileVersion>$(AssemblyVersion)</FileVersion>
     <VersionPrefix>$(AssemblyVersion)</VersionPrefix>
-    <VersionSuffix></VersionSuffix>
+    <VersionSuffix>beta1</VersionSuffix>
     <Version>$(VersionPrefix)$(VersionSuffix)</Version>
 
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
