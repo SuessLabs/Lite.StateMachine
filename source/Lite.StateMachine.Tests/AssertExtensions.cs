@@ -17,6 +17,6 @@ public static class AssertExtensions
     Assert.AreEqual(
       expected.TrimEnd('\r', '\n'),
       actual.TrimEnd('\r', '\n'),
-      message: $"Incorrect string comparison.\nReceived:\n{actual}\n\nExpected:\n{expected}");
+      message: $"Incorrect string comparison.\n\nExpected:\n{expected}\n\nActual:\n{actual}");
   }
 }

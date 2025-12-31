@@ -97,15 +97,15 @@ public class MsDiTests
     machine.RegisterState<Workflow_FailureState>(CompositeMsgStateId.Failure, CompositeMsgStateId.Parent);
 
     // Act - Generate UML
-    var uml = machine.ExportUml(includeLegend: false);
-    Assert.IsNotNull(uml);
-    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.CompositeWithErrorFailure(false), uml);
+    var umlBasic = machine.ExportUml([CompositeMsgStateId.Entry], includeLegend: false);
+    var umlLegend = machine.ExportUml([CompositeMsgStateId.Entry], includeLegend: true);
 
-    uml = machine.ExportUml(includeLegend: true);
-    Assert.IsNotNull(uml);
-    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.CompositeWithErrorFailure(true), uml);
+    // Assert
+    Assert.IsNotNull(umlBasic);
+    Assert.IsNotNull(umlLegend);
 
-    Console.WriteLine(uml);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.CompositeWithErrorFailure(false), umlBasic);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.CompositeWithErrorFailure(true), umlLegend);
   }
 
   [TestMethod]

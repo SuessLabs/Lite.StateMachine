@@ -141,20 +141,20 @@ public class BasicStateTests
       .RegisterState<BasicState3>(BasicStateId.State3);
 
     // Act
-    var uml = machine.ExportUml(includeLegend: false, graphName: "BasicStateMachine");
-    Console.WriteLine(uml);
+    var umlBasic = machine.ExportUml([BasicStateId.State1], includeLegend: false, graphName: "BasicStateMachine");
+    var umlLegend = machine.ExportUml([BasicStateId.State1], includeLegend: true, graphName: "BasicStateMachine");
 
     // Assert Results
-    Assert.IsNotNull(uml);
-    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStates123(), uml);
-    Assert.Contains("digraph \"BasicStateMachine\"", uml);
-    Assert.Contains("State1", uml);
-    Assert.Contains("State2", uml);
-    Assert.Contains("State3", uml);
+    Assert.IsNotNull(umlBasic);
+    Assert.IsNotNull(umlLegend);
 
-    uml = machine.ExportUml(includeLegend: true, graphName: "BasicStateMachine");
-    Console.WriteLine(uml);
-    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStates123(true), uml);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStates123(false), umlBasic);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.BasicStates123(true), umlLegend);
+
+    Assert.Contains("digraph \"BasicStateMachine\"", umlBasic);
+    Assert.Contains("State1", umlBasic);
+    Assert.Contains("State2", umlBasic);
+    Assert.Contains("State3", umlBasic);
   }
 
   [TestMethod]

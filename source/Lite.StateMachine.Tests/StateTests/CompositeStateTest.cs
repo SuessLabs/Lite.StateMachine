@@ -99,13 +99,15 @@ public class CompositeStateTest
       .RegisterState<CompositeL1_State3>(CompositeL1StateId.State3);
 
     // Act - Generate UML
-    var uml = machine.ExportUml(includeLegend: false);
-    Assert.IsNotNull(uml);
-    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.Composite(false), uml);
+    var umlBasic = machine.ExportUml([CompositeL1StateId.State1], includeLegend: false);
+    var umlLegend = machine.ExportUml([CompositeL1StateId.State1], includeLegend: true);
 
-    uml = machine.ExportUml(includeLegend: true);
-    Assert.IsNotNull(uml);
-    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.Composite(true), uml);
+    // Assert
+    Assert.IsNotNull(umlBasic);
+    Assert.IsNotNull(umlLegend);
+
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.Composite(false), umlBasic);
+    AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.Composite(true), umlLegend);
   }
 
   [TestMethod]
