@@ -153,6 +153,7 @@ public class MsDiTests
     Assert.IsTrue(enums.SequenceEqual(machine.States), "States should be registered for execution in the same order as the defined enums, StateId 1 => 2 => 3.");
   }
 
+  [TestMethod]
   /// <summary>Following demonstrates Composite + Command States with Dependency Injection.</summary>
   /// <remarks>
   ///   NOTE:
@@ -163,7 +164,6 @@ public class MsDiTests
   ///   * You MUST publish while in the ParentSub_WaitMessageState
   ///     otherwise the message is never received (rightfully so).
   /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-  [TestMethod]
   public async Task RegisterState_MsDi_EventAggregatorOnly_SuccessTestAsync()
   {
     // Build DI

@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging.Console;
 namespace Lite.StateMachine.Tests.StateTests;
 
 [TestClass]
-public class CompositeStateTest
+public class CompositeStateTest : TestBase
 {
   public const string ParameterSubStateEntered = "SubEntered";
   public const string SUCCESS = "success";
@@ -174,7 +174,7 @@ public class CompositeStateTest
     // Assemble - Using DI for MessageService's counters
     var services = new ServiceCollection()
       //// Register Services
-      .AddLogging(InlineTraceLogger())
+      .AddLogging(InlineTraceLogger(LogLevel.None))
       .AddSingleton<IMessageService, MessageService>()
       //// Register States
       .AddTransient<State1>()
@@ -217,22 +217,12 @@ public class CompositeStateTest
 
     // State Transition counter (9 states, 3 transitions)
     Assert.AreEqual(27, msgService.Counter1);
-  }
 
-  private Action<ILoggingBuilder> InlineTraceLogger()
-  {
-    // Creates in-line log format
-    return config =>
+    // Validate MessageService's data
+    Assert.IsGreaterThan(0, msgService.Messages.Count);
+    foreach (var x in msgService.Messages)
     {
-      config.AddSimpleConsole(options =>
-      {
-        options.TimestampFormat = "HH:mm:ss.fff ";
-        options.UseUtcTimestamp = false;
-        options.IncludeScopes = true;
-        options.SingleLine = true;
-        options.ColorBehavior = LoggerColorBehavior.Enabled;
-      });
-      config.SetMinimumLevel(LogLevel.Trace);
-    };
+      Console.WriteLine(x);
+    }
   }
 }
