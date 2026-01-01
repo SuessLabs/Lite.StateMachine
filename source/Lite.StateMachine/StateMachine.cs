@@ -151,7 +151,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     if (_states.ContainsKey(stateId))
       throw new DuplicateStateException($"State '{stateId}' already registered.");
 
-    // TODO (2025-12-28 DS): Use custom exception, StateClassNotRegistered(WithContainer)Exception
+    // TODO (2025-12-28 DS): Shouldn't happen. Use custom exception, StateClassNotRegisteredInContainerException
     var reg = new StateRegistration<TStateId>
     {
       StateId = stateId,
@@ -219,6 +219,9 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       ////  Parameters = parameterStack ?? [],
       ////  ErrorStack = errorStack ?? [],
       ////};
+
+      parameterStack ??= [];
+      errorStack ??= [];
 
       // Run any state (composite or leaf) recursively.
       var result = await RunAnyStateRecursiveAsync(reg, parameterStack, errorStack, cancellationToken).ConfigureAwait(false);
@@ -288,16 +291,16 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     PropertyBag? errorStack,
     CancellationToken ct)
   {
-    // Run Normal or Command State
-    if (!reg.IsCompositeParent)
-      return await RunLeafAsync(reg, parameterStack, errorStack, ct).ConfigureAwait(false);
-
-    // Composite States
-    var instance = GetOrCreateInstance(reg);
-
     // Ensure we always operate on non-null, shared bags
     PropertyBag parameters = parameterStack ?? [];
     PropertyBag errors = errorStack ?? [];
+
+    // Run Normal or Command State
+    if (!reg.IsCompositeParent)
+      return await RunLeafAsync(reg, parameters, errors, ct).ConfigureAwait(false);
+
+    // Composite States
+    var instance = GetOrCreateInstance(reg);
 
     // [IsContextPersistent] Snapshot of original keys so we can remove child-added keys later
     // Allow the parent to create new Context keys in its OnEntering/OnEnter for the

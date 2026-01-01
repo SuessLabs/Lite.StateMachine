@@ -10,7 +10,6 @@ using Lite.StateMachine.Tests.TestData.States;
 using Lite.StateMachine.Tests.TestData.States.CompositeL3DiStates;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 
 namespace Lite.StateMachine.Tests.StateTests;
 
@@ -169,26 +168,31 @@ public class CompositeStateTest : TestBase
   }
 
   [TestMethod]
-  public async Task Level3_IsContextPersistent_False_SuccessTestAsync()
+  [DataRow(true, DisplayName = "Is Context Persisted")]
+  [DataRow(false, DisplayName = "Is NOT Context Persisted")]
+  public async Task Level3_IsContextPersistent_False_SuccessTestAsync(bool contextIsPersistent)
   {
     // Assemble - Using DI for MessageService's counters
     var services = new ServiceCollection()
       //// Register Services
       .AddLogging(InlineTraceLogger(LogLevel.None))
       .AddSingleton<IMessageService, MessageService>()
-      //// Register States
-      .AddTransient<State1>()
-      .AddTransient<State2>()
-      .AddTransient<State3>()
+      //// Register States (DI still works with states unregistered)
+      ////.AddTransient<State1>()
+      ////.AddTransient<State2>()
+      ////.AddTransient<State2_Sub1>()
+      ////.AddTransient<State2_Sub2>()
+      ////.AddTransient<State2_Sub2_Sub1>()
+      ////.AddTransient<State2_Sub2_Sub2>()
+      ////.AddTransient<State2_Sub2_Sub3>()
+      ////.AddTransient<State2_Sub3>()
+      ////.AddTransient<State3>()
       .BuildServiceProvider();
 
     var msgService = services.GetRequiredService<IMessageService>();
     Func<Type, object?> factory = t => ActivatorUtilities.CreateInstance(services, t);
 
-    var machine = new StateMachine<CompositeL3>(factory, null, isContextPersistent: false)
-    {
-      DefaultStateTimeoutMs = 1000,
-    };
+    var machine = new StateMachine<CompositeL3>(factory, null, isContextPersistent: contextIsPersistent);
 
     machine
       .RegisterState<State1>(CompositeL3.State1, CompositeL3.State2)
@@ -201,10 +205,8 @@ public class CompositeStateTest : TestBase
       .RegisterSubState<State2_Sub3>(CompositeL3.State2_Sub3, parentStateId: CompositeL3.State2, onSuccess: null)
       .RegisterState<State3>(CompositeL3.State3, onSuccess: null);
 
-    machine
-      .RunAsync(CompositeL3.State1, cancellationToken: TestContext.CancellationToken)
-      .GetAwaiter()
-      .GetResult();
+    // Act
+    await machine.RunAsync(CompositeL3.State1, cancellationToken: TestContext.CancellationToken);
 
     // Assert
     Assert.IsNotNull(machine);
@@ -219,10 +221,32 @@ public class CompositeStateTest : TestBase
     Assert.AreEqual(27, msgService.Counter1);
 
     // Validate MessageService's data
-    Assert.IsGreaterThan(0, msgService.Messages.Count);
     foreach (var x in msgService.Messages)
-    {
       Console.WriteLine(x);
+
+    Assert.HasCount(enums.Count(), msgService.Messages);
+
+    // Note that "State2" is a Composite state.
+    // When Context is NOT persisted, it will be removed on the next substate.
+    Assert.AreEqual("[Keys-State2]: State1,State2", msgService.Messages[1]);
+
+    if (contextIsPersistent)
+    {
+      // "[^1]" == "msgService.Messages.Count - 1"
+      Assert.AreEqual(
+        "[Keys-State3]: State1,State2,State2_Sub1,State2_Sub2,State2_Sub2_Sub1,State2_Sub2_Sub2,State2_Sub2_Sub3,State2_Sub3,State3",
+        msgService.Messages[^1]);
+    }
+    else
+    {
+      // The final does NOT include "State2" because it is a Composite state
+      // and Composite states tee-up parameters for the children to use. Thus they get discarded.
+      Assert.AreEqual(
+        "[Keys-State3]: State1,State3",
+        msgService.Messages[msgService.Messages.Count - 1]);
+
+      Assert.AreEqual(4, msgService.Counter2);
+      Assert.AreEqual(7, msgService.Counter3);
     }
   }
 }
