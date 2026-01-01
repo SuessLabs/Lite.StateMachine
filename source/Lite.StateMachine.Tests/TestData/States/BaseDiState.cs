@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData.Services;
 using Microsoft.Extensions.Logging;
 
-namespace Lite.StateMachine.Tests.TestData;
+namespace Lite.StateMachine.Tests.TestData.States;
 
 public class BaseDiState<TStateClass, TStateId>(IMessageService msg, ILogger<TStateClass> logger) : IState<TStateId>
   where TStateId : struct, Enum

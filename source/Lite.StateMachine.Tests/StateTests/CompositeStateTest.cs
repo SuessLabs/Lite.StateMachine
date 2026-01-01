@@ -5,8 +5,9 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData;
-using Lite.StateMachine.Tests.TestData.CompositeL3DiStates;
 using Lite.StateMachine.Tests.TestData.Services;
+using Lite.StateMachine.Tests.TestData.States;
+using Lite.StateMachine.Tests.TestData.States.CompositeL3DiStates;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
@@ -170,7 +171,7 @@ public class CompositeStateTest
   [TestMethod]
   public async Task Level3_IsContextPersistent_False_SuccessTestAsync()
   {
-    // Assemble
+    // Assemble - Using DI for MessageService's counters
     var services = new ServiceCollection()
       //// Register Services
       .AddLogging(InlineTraceLogger())

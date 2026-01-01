@@ -1,7 +1,7 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
-namespace Lite.StateMachine.Tests.TestData;
+namespace Lite.StateMachine.Tests.TestData.States;
 
 #pragma warning disable SA1649 // File name should match first type name
 

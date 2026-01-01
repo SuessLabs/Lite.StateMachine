@@ -10,11 +10,18 @@ using Microsoft.Extensions.Logging;
 #pragma warning disable SA1402 // File may only contain a single type
 #pragma warning disable IDE0130 // Namespace does not match folder structure
 
-namespace Lite.StateMachine.Tests.TestData.CompositeL3DiStates;
+// Added "CompositeL3DiStates" to namespace to reduce class naming collisions
+namespace Lite.StateMachine.Tests.TestData.States.CompositeL3DiStates;
 
 /// <summary>Do nothing.</summary>
 public class State1(IMessageService msg, ILogger<State1> log)
-  : BaseDiState<State1, CompositeL3>(msg, log);
+  : BaseDiState<State1, CompositeL3>(msg, log)
+{
+  public override Task OnEnter(Context<CompositeL3> context)
+  {
+    return base.OnEnter(context);
+  }
+}
 
 public class State2(IMessageService msg, ILogger<State2> log)
   : BaseDiState<State2, CompositeL3>(msg, log);
@@ -43,12 +50,7 @@ public class State3(IMessageService msg, ILogger<State3> log)
 {
   public override Task OnEnter(Context<CompositeL3> context)
   {
-    MessageService.Counter1++;
-    Log.LogInformation("[OnEnter] => OK");
-    Debug.WriteLine($"[{GetType().Name}] [OnEnter] => OK");
-
-    context.NextState(Result.Ok);
-    return Task.CompletedTask;
+    return base.OnEnter(context);
   }
 }
 

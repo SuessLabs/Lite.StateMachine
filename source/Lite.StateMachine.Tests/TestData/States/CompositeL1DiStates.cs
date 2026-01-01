@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData.Services;
 using Microsoft.Extensions.Logging;
 
-namespace Lite.StateMachine.Tests.TestData;
+namespace Lite.StateMachine.Tests.TestData.States;
 
 #pragma warning disable SA1649 // File name should match first type name
 #pragma warning disable SA1402 // File may only contain a single type

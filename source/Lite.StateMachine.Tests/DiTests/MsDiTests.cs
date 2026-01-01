@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData;
 using Lite.StateMachine.Tests.TestData.Services;
+using Lite.StateMachine.Tests.TestData.States;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;

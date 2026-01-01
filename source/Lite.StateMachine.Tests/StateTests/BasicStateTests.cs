@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData;
+using Lite.StateMachine.Tests.TestData.States;
 
 namespace Lite.StateMachine.Tests.StateTests;
 
