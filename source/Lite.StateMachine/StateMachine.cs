@@ -40,12 +40,18 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   /// </summary>
   /// <param name="containerFactory">Optional DI container factory (remember to register states as Transient).</param>
   /// <param name="eventAggregator">Optional event aggregator for command states.</param>
+  /// <param name="isContextPersistent">Is substate-added context persists when returning to the parent.</param>
   public StateMachine(
     Func<Type, object?>? containerFactory = null,
-    IEventAggregator? eventAggregator = null)
+    IEventAggregator? eventAggregator = null,
+    bool isContextPersistent = true)
   {
+    // TODO (2025-12-31 DS): Throw "Missing DI Container" exception because there are parameters in a state class's constructor.
+    //// Current Exception:
+    ////  System.MissingMethodException: 'Cannot dynamically create an instance of type 'Lite.StateMachine.Tests.TestData.CompositeL3DiStates.State1'. Reason: No parameterless constructor defined.'
     _containerFactory = containerFactory ?? (t => Activator.CreateInstance(t));
     _eventAggregator = eventAggregator;
+    IsContextPersistent = isContextPersistent;
 
     // NOTE-1 (2025-12-25):
     //  * Create Precheck Sanitization:
@@ -66,6 +72,9 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
   /// <inheritdoc/>
   public int DefaultStateTimeoutMs { get; set; } = Timeout.Infinite;
+
+  /// <summary>Gets or sets a value indicating whether substate-added context persists when returning to the parent (default: true).</summary>
+  public bool IsContextPersistent { get; set; } = true;
 
   /// <inheritdoc/>
   public List<TStateId> States => [.. _states.Keys];
@@ -94,6 +103,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   }
 
   /// <inheritdoc/>
+  /// <remarks>Renaming to, "RegisterSubComposite" to match "RegisterSubState".</remarks>
   public StateMachine<TStateId> RegisterCompositeChild<TCompositeParent>(
     TStateId stateId,
     TStateId parentStateId,
@@ -141,7 +151,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     if (_states.ContainsKey(stateId))
       throw new DuplicateStateException($"State '{stateId}' already registered.");
 
-    // TODO (2025-12-28 DS): Use custom exception, StateClassNotRegistered(WithContainer)Exception
+    // TODO (2025-12-28 DS): Shouldn't happen. Use custom exception, StateClassNotRegisteredInContainerException
     var reg = new StateRegistration<TStateId>
     {
       StateId = stateId,
@@ -209,6 +219,9 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       ////  Parameters = parameterStack ?? [],
       ////  ErrorStack = errorStack ?? [],
       ////};
+
+      parameterStack ??= [];
+      errorStack ??= [];
 
       // Run any state (composite or leaf) recursively.
       var result = await RunAnyStateRecursiveAsync(reg, parameterStack, errorStack, cancellationToken).ConfigureAwait(false);
@@ -278,20 +291,35 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     PropertyBag? errorStack,
     CancellationToken ct)
   {
+    // Ensure we always operate on non-null, shared bags
+    PropertyBag parameters = parameterStack ?? [];
+    PropertyBag errors = errorStack ?? [];
+
     // Run Normal or Command State
     if (!reg.IsCompositeParent)
-      return await RunLeafAsync(reg, parameterStack, errorStack, ct).ConfigureAwait(false);
+      return await RunLeafAsync(reg, parameters, errors, ct).ConfigureAwait(false);
 
     // Composite States
     var instance = GetOrCreateInstance(reg);
+
     var parentEnterTcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
     var parentEnterCtx = new Context<TStateId>(reg.StateId, parentEnterTcs, _eventAggregator)
     {
-      Parameters = parameterStack ?? [],
-      ErrorStack = errorStack ?? [],
+      Parameters = parameters,
+      ErrorStack = errors,
     };
 
     await instance.OnEntering(parentEnterCtx).ConfigureAwait(false);
+
+    // [IsContextPersistent]
+    //  Take snapshot of original Context keys AFTER OnEntering so we can give the state a chance
+    //  to purposely add new keys to and carry forward for subsequent top-level states.
+    //
+    //  Any new Context keys added via OnEnter are considered "for children consumption only".
+    //  After our OnExit, they'll be (optionally) removed.
+    var originalParamKeys = new HashSet<string>(parameters.Keys);
+    var originalErrorKeys = new HashSet<string>(errors.Keys);
+
     await instance.OnEnter(parentEnterCtx).ConfigureAwait(false);
 
     // TODO (2025-12-28 DS): Consider StateMachine config param to just move along or throw exception
@@ -301,6 +329,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     var childId = reg.InitialChildId.Value;
     Result? lastChildResult = null;
 
+    // Composite Loop
     while (!ct.IsCancellationRequested)
     {
       var childReg = GetRegistration(childId);
@@ -312,9 +341,9 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       // Could just call "RunAnyStateRecursiveAsync" but lets not waste cycles
       Result? childResult;
       if (childReg.IsCompositeParent)
-        childResult = await RunAnyStateRecursiveAsync(childReg, parameterStack, errorStack, ct).ConfigureAwait(false);
+        childResult = await RunAnyStateRecursiveAsync(childReg, parameters, errors, ct).ConfigureAwait(false);
       else
-        childResult = await RunLeafAsync(childReg, parameterStack, errorStack, ct).ConfigureAwait(false);
+        childResult = await RunLeafAsync(childReg, parameters, errors, ct).ConfigureAwait(false);
 
       // Cancelled or timed out inside child state
       if (childResult is null)
@@ -327,7 +356,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       if (nextChildId is null)
         break;
 
-      // Ensure next state is apart of the same composite parent (i.e. unlinked sub-states)
+      // Ensure next state is a sibling under the same composite parent (i.e. unlinked sub-states)
       var mappedReg = GetRegistration(nextChildId.Value);
       if (!Equals(mappedReg.ParentId, reg.StateId))
         throw new DisjointedNextSubStateException($"Child '{childId}' maps to '{nextChildId}', which is not a sibling under '{reg.StateId}'.");
@@ -341,14 +370,30 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     var parentExitTcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
     var parentExitCtx = new Context<TStateId>(reg.StateId, parentExitTcs, _eventAggregator, lastChildResult)
     {
-      Parameters = parameterStack ?? [],
-      ErrorStack = errorStack ?? [],
+      Parameters = parameters ?? [], //// parameterStack ?? [],
+      ErrorStack = errors ?? [], //// errorStack ?? [],
     };
 
     await instance.OnExit(parentExitCtx).ConfigureAwait(false);
 
     // To avoid composite state's OnExit, use the DefaultStateTimeoutMs to auto-cancel wait.
     var parentDecision = await WaitForNextOrCancelAsync(parentExitTcs.Task, ct).ConfigureAwait(false);
+
+    // Optionally cleanup context added by the children; giving the parent a peek at their mess.
+    if (!IsContextPersistent)
+    {
+      if (parameters is not null)
+      {
+        foreach (var k in parameters.Keys)
+          if (!originalParamKeys.Contains(k)) parameters.Remove(k);
+      }
+
+      if (errors is not null)
+      {
+        foreach (var k in errors.Keys)
+          if (!originalErrorKeys.Contains(k)) errors.Remove(k);
+      }
+    }
 
     // vNext:
     ////if (parentDecision is null)

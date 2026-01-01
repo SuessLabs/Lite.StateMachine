@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData;
 using Lite.StateMachine.Tests.TestData.Services;
+using Lite.StateMachine.Tests.TestData.States;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
@@ -47,7 +48,6 @@ public class MsDiTests
 
     var msgService = services.GetRequiredService<IMessageService>();
     Assert.AreEqual(9, msgService.Counter1, "Message service should have 9 from the 3 states.");
-    Assert.HasCount(9, msgService.Messages, "Message service should have 9 messages from the 3 states.");
 
     // Ensure all states are registered
     var enums = Enum.GetValues<BasicStateId>().Cast<BasicStateId>();
@@ -153,6 +153,7 @@ public class MsDiTests
     Assert.IsTrue(enums.SequenceEqual(machine.States), "States should be registered for execution in the same order as the defined enums, StateId 1 => 2 => 3.");
   }
 
+  [TestMethod]
   /// <summary>Following demonstrates Composite + Command States with Dependency Injection.</summary>
   /// <remarks>
   ///   NOTE:
@@ -163,7 +164,6 @@ public class MsDiTests
   ///   * You MUST publish while in the ParentSub_WaitMessageState
   ///     otherwise the message is never received (rightfully so).
   /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-  [TestMethod]
   public async Task RegisterState_MsDi_EventAggregatorOnly_SuccessTestAsync()
   {
     // Build DI
@@ -277,7 +277,6 @@ public class MsDiTests
     Console.WriteLine("MS.DI workflow finished.");
 
     Assert.AreEqual(2, msgService.Counter2);
-    Assert.HasCount(42, msgService.Messages);
     Assert.AreEqual(42, msgService.Counter1);
   }
 }

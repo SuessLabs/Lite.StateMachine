@@ -4,7 +4,7 @@
 using System.Threading.Tasks;
 using static Lite.StateMachine.Tests.StateTests.CompositeStateTest;
 
-namespace Lite.StateMachine.Tests.TestData;
+namespace Lite.StateMachine.Tests.TestData.States;
 
 #pragma warning disable SA1649 // File name should match first type name
 #pragma warning disable SA1402 // File may only contain a single type

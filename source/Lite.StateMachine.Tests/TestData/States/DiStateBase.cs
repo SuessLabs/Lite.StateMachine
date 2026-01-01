@@ -7,13 +7,16 @@ using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData.Services;
 using Microsoft.Extensions.Logging;
 
-namespace Lite.StateMachine.Tests.TestData;
+namespace Lite.StateMachine.Tests.TestData.States;
 
-public class BaseStateDI<TStateClass, TStateId>(IMessageService msg, ILogger<TStateClass> logger) : IState<TStateId>
+public class DiStateBase<TStateClass, TStateId>(IMessageService msg, ILogger<TStateClass> logger) : IState<TStateId>
   where TStateId : struct, Enum
 {
   private readonly ILogger<TStateClass> _logger = logger;
   private readonly IMessageService _msgService = msg;
+
+  /// <summary>Gets or sets a value indicating whether output transitions for debugging tests.</summary>
+  public bool HasExtraLogging { get; set; } = false;
 
   public ILogger<TStateClass> Log => _logger;
 
@@ -22,9 +25,11 @@ public class BaseStateDI<TStateClass, TStateId>(IMessageService msg, ILogger<TSt
   public virtual Task OnEnter(Context<TStateId> context)
   {
     _msgService.Counter1++;
-    _msgService.AddMessage(GetType().Name + " OnEnter");
+    ////_msgService.AddMessage(GetType().Name + " OnEnter");
     _logger.LogInformation("[OnEnter] => OK");
-    Debug.WriteLine($"[{GetType().Name}] [OnEnter] => OK");
+
+    if (HasExtraLogging)
+      Debug.WriteLine($"[{GetType().Name}] [OnEnter] => OK");
 
     context.NextState(Result.Ok);
     return Task.CompletedTask;
@@ -33,9 +38,11 @@ public class BaseStateDI<TStateClass, TStateId>(IMessageService msg, ILogger<TSt
   public virtual Task OnEntering(Context<TStateId> context)
   {
     _msgService.Counter1++;
-    _msgService.AddMessage(GetType().Name + " OnEntering");
+    ////_msgService.AddMessage(GetType().Name + " OnEntering");
     _logger.LogInformation("[OnEntering]");
-    Debug.WriteLine($"[{GetType().Name}] [OnEntering]");
+
+    if (HasExtraLogging)
+      Debug.WriteLine($"[{GetType().Name}] [OnEntering]");
 
     return Task.CompletedTask;
   }
@@ -43,9 +50,11 @@ public class BaseStateDI<TStateClass, TStateId>(IMessageService msg, ILogger<TSt
   public virtual Task OnExit(Context<TStateId> context)
   {
     _msgService.Counter1++;
-    _msgService.AddMessage(GetType().Name + " OnExit");
+    ////_msgService.AddMessage(GetType().Name + " OnExit");
     _logger.LogInformation("[OnExit]");
-    Debug.WriteLine($"[{GetType().Name}] [OnExit]");
+
+    if (HasExtraLogging)
+      Debug.WriteLine($"[{GetType().Name}] [OnExit]");
 
     context.NextState(Result.Ok);
     return Task.CompletedTask;

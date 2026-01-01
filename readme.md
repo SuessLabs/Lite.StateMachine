@@ -6,9 +6,11 @@ Flexible lightweight finite state machine (FSM) for .NET, supporting shared cont
 
 The Lite State Machine is designed for vertical scaling. Meaning, it can be used for the most basic (tiny) system and beyond medical-grade robotics systems.
 
-> Copyright 2021-2025 Xeno Innovations, Inc. (_dba, Suess Labs_)<br/>
-> Created by: Damian Suess<br/>
-> Date: 2021-06-07<br/>
+||
+|-|
+| Copyright 2021-2025 Xeno Innovations, Inc. (_dba, Suess Labs_) |
+| Created by: Damian Suess |
+| Date: 2021-06-07 |
 
 ## Package Releases
 
