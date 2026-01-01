@@ -302,12 +302,6 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     // Composite States
     var instance = GetOrCreateInstance(reg);
 
-    // [IsContextPersistent] Snapshot of original keys so we can remove child-added keys later
-    // Allow the parent to create new Context keys in its OnEntering/OnEnter for the
-    // children to consume. After our OnExit, they'll be optionally removed.
-    var originalParamKeys = new HashSet<string>(parameters.Keys);
-    var originalErrorKeys = new HashSet<string>(errors.Keys);
-
     var parentEnterTcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
     var parentEnterCtx = new Context<TStateId>(reg.StateId, parentEnterTcs, _eventAggregator)
     {
@@ -316,6 +310,16 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     };
 
     await instance.OnEntering(parentEnterCtx).ConfigureAwait(false);
+
+    // [IsContextPersistent]
+    //  Take snapshot of original Context keys AFTER OnEntering so we can give the state a chance
+    //  to purposely add new keys to and carry forward for subsequent top-level states.
+    //
+    //  Any new Context keys added via OnEnter are considered "for children consumption only".
+    //  After our OnExit, they'll be (optionally) removed.
+    var originalParamKeys = new HashSet<string>(parameters.Keys);
+    var originalErrorKeys = new HashSet<string>(errors.Keys);
+
     await instance.OnEnter(parentEnterCtx).ConfigureAwait(false);
 
     // TODO (2025-12-28 DS): Consider StateMachine config param to just move along or throw exception
