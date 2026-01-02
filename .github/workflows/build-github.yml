@@ -13,9 +13,9 @@ on:
 env:
   # Update to desired major.minor. This is the base version family.
   BASE_VERSION: "2.1"
-  PATH_SLNX: "source/Lite.StateMachine.slnx"
-  PATH_LIB: "source/Lite.StateMachine/Lite.StateMachine.csproj"
-  PATH_ARTIFACTS: ${{github.workspace}}/artifacts
+  PATH_SLNX: "source\\Lite.StateMachine.slnx"
+  PATH_LIB: "source\\Lite.StateMachine\\Lite.StateMachine.csproj"
+  PATH_ARTIFACTS: ${{github.workspace}}\artifacts
 
 jobs:
   build-test-pack:
@@ -96,18 +96,18 @@ jobs:
       #      --output ${{env.PATH_ARTIFACTS}}
 
 
-      # 8. Create ZIP of artifacts
-      - name: 8) Create ZIP archive
-        run: |
-          mkdir ./zip
-          powershell Compress-Archive -Path ${{env.PATH_ARTIFACTS}}\* -DestinationPath ./zip/artifacts.zip
+      ## 8. Create ZIP of artifacts
+      ##- name: 8) Create ZIP archive
+      ##  run: |
+      ##    mkdir ./zip
+      ##    powershell Compress-Archive -Path ${{env.PATH_ARTIFACTS}}\* -DestinationPath ./zip/artifacts.zip
 
-        #shell: pwsh
-        #run: |
-        #  New-Item -ItemType Directory -Force -Path ./zip | Out-Null
-        #  Compress-Archive -Path ./artifacts/* -DestinationPath ./zip/artifacts.zip
+      ##  #shell: pwsh
+      ##  #run: |
+      ##  #  New-Item -ItemType Directory -Force -Path ./zip | Out-Null
+      ##  #  Compress-Archive -Path ./artifacts/* -DestinationPath ./zip/artifacts.zip
 
-      # 9. Upload ZIP as workflow artifact
+      ## 9. Upload ZIP as workflow artifact
       ##- name: 9) Upload ZIP
       ##  uses: actions/upload-artifact@v4
       ##  with:
