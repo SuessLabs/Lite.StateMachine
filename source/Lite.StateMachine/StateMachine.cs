@@ -216,7 +216,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       ////var ctx = new Context<TStateId>(reg.StateId, tcs, _eventAggregator)
       ////{
       ////  Parameters = parameterStack ?? [],
-      ////  ErrorStack = errorStack ?? [],
+      ////  Errors = errorStack ?? [],
       ////};
 
       parameterStack ??= [];
@@ -286,13 +286,13 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
   private async Task<Result?> RunAnyStateRecursiveAsync(
     StateRegistration<TStateId> reg,
-    PropertyBag? parameterStack,
-    PropertyBag? errorStack,
+    PropertyBag? parameters,
+    PropertyBag? errors,
     CancellationToken ct)
   {
     // Ensure we always operate on non-null, shared bags
-    PropertyBag parameters = parameterStack ?? [];
-    PropertyBag errors = errorStack ?? [];
+    parameters = parameters ?? [];
+    errors = errors ?? [];
 
     // Run Normal or Command State
     if (!reg.IsCompositeParent)
@@ -305,7 +305,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     var parentEnterCtx = new Context<TStateId>(reg.StateId, parentEnterTcs, _eventAggregator)
     {
       Parameters = parameters,
-      ErrorStack = errors,
+      Errors = errors,
     };
 
     await instance.OnEntering(parentEnterCtx).ConfigureAwait(false);
@@ -369,8 +369,8 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     var parentExitTcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
     var parentExitCtx = new Context<TStateId>(reg.StateId, parentExitTcs, _eventAggregator, lastChildResult)
     {
-      Parameters = parameters ?? [], //// parameterStack ?? [],
-      ErrorStack = errors ?? [], //// errorStack ?? [],
+      Parameters = parameters ?? [],
+      Errors = errors ?? [],
     };
 
     await instance.OnExit(parentExitCtx).ConfigureAwait(false);
@@ -413,7 +413,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     var ctx = new Context<TStateId>(reg.StateId, tcs, _eventAggregator)
     {
       Parameters = parameterStack ?? [],
-      ErrorStack = errorStack ?? [],
+      Errors = errorStack ?? [],
     };
 
     IDisposable? subscription = null;
