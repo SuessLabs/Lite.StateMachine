@@ -61,10 +61,12 @@ public interface IStateMachine<TStateId>
   /// <summary>Registers a regular or command state (optionally with transitions).</summary>
   /// <param name="stateId">State Id.</param>
   /// <param name="onSuccess">State Id to transition to on success, or null to denote last state and exit <see cref="StateMachine{TStateId}"/>.</param>
+  /// <param name="onError">State Id to transition to on error, or null to denote last state and exit <see cref="StateMachine{TStateId}"/>.</param>
+  /// <param name="onFailure">State Id to transition to on failure, or null to denote last state and exit <see cref="StateMachine{TStateId}"/>.</param>
   /// <returns>Instance of this class.</returns>
   /// <typeparam name="TState">State class.</typeparam>
   /// <remarks>Example: <![CDATA[RegisterState<T>(StateId.State1, StateId.State2);]]>.</remarks>
-  StateMachine<TStateId> RegisterState<TState>(TStateId stateId, TStateId? onSuccess)
+  StateMachine<TStateId> RegisterState<TState>(TStateId stateId, TStateId? onSuccess, TStateId? onError, TStateId? onFailure)
     where TState : class, IState<TStateId>;
 
   /// <summary>

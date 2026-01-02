@@ -103,7 +103,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   }
 
   /// <inheritdoc/>
-  public StateMachine<TStateId> RegisterState<TStateClass>(TStateId stateId, TStateId? onSuccess = null)
+  public StateMachine<TStateId> RegisterState<TStateClass>(TStateId stateId, TStateId? onSuccess = null, TStateId? onError = null, TStateId? onFailure = null)
     where TStateClass : class, IState<TStateId>
   {
     return RegisterState<TStateClass>(stateId, onSuccess, onError: null, onFailure: null, parentStateId: null, isCompositeParent: false, initialChildStateId: null);

@@ -13,5 +13,8 @@ internal class Program
     Console.WriteLine("Sample state machine with LiteState!");
 
     // await DemoMachine.RunAsync();
+
+    // Basic state machine
+    await States.DemoMachine.RunAsync();
   }
 }
