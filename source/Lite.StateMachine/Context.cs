@@ -29,7 +29,7 @@ public sealed class Context<TStateId>
   public TStateId CurrentStateId { get; }
 
   /// <summary>Gets or sets an arbitrary collection of errors to pass along to the next state.</summary>
-  public PropertyBag ErrorStack { get; set; } = [];
+  public PropertyBag Errors { get; set; } = [];
 
   /// <summary>Gets the Event aggregator for Command states (optional).</summary>
   public IEventAggregator? EventAggregator { get; }

@@ -103,10 +103,10 @@ public interface IStateMachine<TStateId>
 
   /// <summary>Starts the machine at the initial state.</summary>
   /// <param name="initialState">Initial startup state.</param>
-  /// <param name="parameterStack">Initial <see cref="PropertyBag"/> parameter stack.</param>
-  /// <param name="errorStack">Error Stack <see cref="PropertyBag"/>.</param>
+  /// <param name="parameterStack">Parameter stack <see cref="PropertyBag"/>.</param>
+  /// <param name="errors">Error stack <see cref="PropertyBag"/>.</param>
   /// <param name="cancellationToken">Cancellation Token.</param>
   /// <returns>Async task of The current <see cref="StateMachine{TStateId}"/> instance, enabling method chaining.</returns>
   /// <exception cref="InvalidOperationException">Thrown if the specified state identifier has not been registered.</exception>
-  Task<StateMachine<TStateId>> RunAsync(TStateId initialState, PropertyBag? parameterStack = null, PropertyBag? errorStack = null, CancellationToken cancellationToken = default);
+  Task<StateMachine<TStateId>> RunAsync(TStateId initialState, PropertyBag? parameterStack = null, PropertyBag? errors = null, CancellationToken cancellationToken = default);
 }
