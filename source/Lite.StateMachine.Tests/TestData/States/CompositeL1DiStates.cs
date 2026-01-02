@@ -32,7 +32,7 @@ public class ParentState(IMessageService msg, ILogger<ParentState> log)
     {
       Result.Failure => Result.Failure,
       Result.Error => Result.Error,
-      _ => Result.Ok,
+      _ => Result.Success,
     });
 
     return Task.CompletedTask;
@@ -107,7 +107,7 @@ public class ParentSub_WaitMessageState(IMessageService msg, ILogger<ParentSub_W
         break;
 
       case MessageType.SuccessResponse:
-        context.NextState(Result.Ok);
+        context.NextState(Result.Success);
         break;
 
       default:
@@ -152,7 +152,7 @@ public class Workflow_ErrorState(IMessageService msg, ILogger<Workflow_ErrorStat
 
     context.EventAggregator?.Publish(NotificationType.Error);
 
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     return Task.CompletedTask;
   }
 }
@@ -171,7 +171,7 @@ public class Workflow_FailureState(IMessageService msg, ILogger<Workflow_Failure
 
     context.EventAggregator?.Publish(NotificationType.Failure);
 
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     return Task.CompletedTask;
   }
 }

@@ -17,7 +17,7 @@ public class BasicState1() : IState<BasicStateId>
     await Task.Yield();
 
     context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     Console.WriteLine($"[BasicState1][OnEnter] {context.Parameters[ParameterType.Counter]} => OK");
   }
 
@@ -45,7 +45,7 @@ public class BasicState2() : IState<BasicStateId>
     // Only move to the next state if we are not testing hanging state avoidance
     var testHangingState = context.ParameterAsBool(ParameterType.HungStateAvoidance);
     if (!testHangingState)
-      context.NextState(Result.Ok);
+      context.NextState(Result.Success);
 
     Console.WriteLine($"[BasicState2][OnEnter] {context.Parameters[ParameterType.Counter]} => OK");
     return Task.CompletedTask;
@@ -72,7 +72,7 @@ public class BasicState3() : IState<BasicStateId>
   {
     context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
     context.Parameters[ParameterType.KeyTest] = MessageType.SuccessResponse;
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     Console.WriteLine($"[BasicState3][OnEnter] {context.Parameters[ParameterType.Counter]}");
     return Task.CompletedTask;
   }
