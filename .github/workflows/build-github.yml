@@ -15,7 +15,7 @@ env:
   BASE_VERSION: "2.1"
   PATH_SLNX: "source/Lite.StateMachine.slnx"
   PATH_LIB: "source/Lite.StateMachine/Lite.StateMachine.csproj"
-  PATH_ARTIFACTS: "./artifacts"
+  PATH_ARTIFACTS: ${{github.workspace}}/artifacts
 
 jobs:
   build-test-pack:
@@ -79,8 +79,9 @@ jobs:
 
       # 7. Pack NuGet
       - name: 7) Pack NuGet
+        # Optionally, "--include-symbols"
         run: dotnet pack ${{env.PATH_LIB}} --configuration Release --no-build --output ${{env.PATH_ARTIFACTS}}
-        #run: dotnet pack ${{env.PATH_LIB}} --configuration Release --no-build --include-symbols --output ./artifacts
+        #    dotnet pack source/Lite.StateMachine/Lite.StateMachine.csproj --configuration Release --no-build --output ./artifacts
       #- name: Pack NuGet
       #  shell: pwsh
       #  run: |
