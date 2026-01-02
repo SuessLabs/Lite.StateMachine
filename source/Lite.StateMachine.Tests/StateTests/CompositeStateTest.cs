@@ -234,7 +234,7 @@ public class CompositeStateTest : TestBase
     {
       // "[^1]" == "msgService.Messages.Count - 1"
       Assert.AreEqual(
-        "[Keys-State3]: State1,State2,State2_Sub1,State2_Sub2,State2_Sub2_Sub1,State2_Sub2_Sub2,State2_Sub2_Sub3,State2_Sub3,State3",
+        "[Keys-State3]: State1,State2!Anchor,State2!TEMP,State2,State2_Sub1,State2_Sub2!Anchor,State2_Sub2!TEMP,State2_Sub2,State2_Sub2_Sub1,State2_Sub2_Sub2,State2_Sub2_Sub3,State2_Sub3,State3",
         msgService.Messages[^1]);
     }
     else
@@ -242,7 +242,7 @@ public class CompositeStateTest : TestBase
       // The final does NOT include "State2" because it is a Composite state
       // and Composite states tee-up parameters for the children to use. Thus they get discarded.
       Assert.AreEqual(
-        "[Keys-State3]: State1,State3",
+        "[Keys-State3]: State1,State2!Anchor,State3",
         msgService.Messages[msgService.Messages.Count - 1]);
 
       Assert.AreEqual(4, msgService.Counter2);

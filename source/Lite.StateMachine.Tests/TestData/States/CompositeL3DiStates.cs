@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData.Services;
 using Microsoft.Extensions.Logging;
 
+#pragma warning disable SA1124 // Do not use regions
 #pragma warning disable SA1649 // File name should match first type name
 #pragma warning disable SA1402 // File may only contain a single type
 #pragma warning disable IDE0130 // Namespace does not match folder structure
@@ -42,6 +43,24 @@ public class State1(IMessageService msg, ILogger<State1> log)
 public class State2(IMessageService msg, ILogger<State2> log)
   : CommonDiStateBase<State2, CompositeL3>(msg, log)
 {
+  #region CodeMaid - DoNotReorder
+
+  public override Task OnEntering(Context<CompositeL3> context)
+  {
+    // Demonstrate NEW parameter that will carry forward
+    context.Parameters.Add($"{context.CurrentStateId}!Anchor", Guid.NewGuid());
+    return base.OnEntering(context);
+  }
+
+  #endregion CodeMaid - DoNotReorder
+
+  public override Task OnEnter(Context<CompositeL3> context)
+  {
+    // Demonstrate temporary parameter that will be discarded after State2's OnExit
+    context.Parameters.Add($"{context.CurrentStateId}!TEMP", Guid.NewGuid());
+    return base.OnEnter(context);
+  }
+
   public override Task OnExit(Context<CompositeL3> context)
   {
     // Expected Count: 4 - State2_Sub2 is composite; therefore, discarded.
@@ -59,6 +78,24 @@ public class State2_Sub1(IMessageService msg, ILogger<State2_Sub1> log)
 public class State2_Sub2(IMessageService msg, ILogger<State2_Sub2> log)
   : CommonDiStateBase<State2_Sub2, CompositeL3>(msg, log)
 {
+  #region CodeMaid - DoNotReorder
+
+  public override Task OnEntering(Context<CompositeL3> context)
+  {
+    // Demonstrate NEW parameter that will carry forward
+    context.Parameters.Add($"{context.CurrentStateId}!Anchor", Guid.NewGuid());
+    return base.OnEntering(context);
+  }
+
+  #endregion CodeMaid - DoNotReorder
+
+  public override Task OnEnter(Context<CompositeL3> context)
+  {
+    // Demonstrate temporary parameter that will be discarded after State2_Sub2's OnExit
+    context.Parameters.Add($"{context.CurrentStateId}!TEMP", Guid.NewGuid());
+    return base.OnEnter(context);
+  }
+
   public override Task OnExit(Context<CompositeL3> context)
   {
     // Expected Count: 7
@@ -106,3 +143,4 @@ public class State3(IMessageService msg, ILogger<State3> log)
 #pragma warning restore IDE0130 // Namespace does not match folder structure
 #pragma warning restore SA1649 // File name should match first type name
 #pragma warning restore SA1402 // File may only contain a single type
+#pragma warning restore SA1124 // Do not use regions
