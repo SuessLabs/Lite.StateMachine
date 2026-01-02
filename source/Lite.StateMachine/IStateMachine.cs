@@ -108,5 +108,5 @@ public interface IStateMachine<TStateId>
   /// <param name="cancellationToken">Cancellation Token.</param>
   /// <returns>Async task of The current <see cref="StateMachine{TStateId}"/> instance, enabling method chaining.</returns>
   /// <exception cref="InvalidOperationException">Thrown if the specified state identifier has not been registered.</exception>
-  Task<StateMachine<TStateId>> RunAsync(TStateId initialState, PropertyBag? parameterStack = null, PropertyBag? errorStack = null, CancellationToken cancellationToken = default);
+  Task<StateMachine<TStateId>> RunAsync(TStateId initialState, PropertyBag<object>? parameterStack = null, PropertyBag<object>? errorStack = null, CancellationToken cancellationToken = default);
 }

@@ -198,8 +198,8 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   /// <inheritdoc/>
   public async Task<StateMachine<TStateId>> RunAsync(
     TStateId initialStateId,
-    PropertyBag? parameterStack = null,
-    PropertyBag? errorStack = null,
+    PropertyBag<object>? parameterStack = null,
+    PropertyBag<object>? errorStack = null,
     CancellationToken cancellationToken = default)
   {
     if (!_states.ContainsKey(initialStateId))
@@ -286,13 +286,13 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
   private async Task<Result?> RunAnyStateRecursiveAsync(
     StateRegistration<TStateId> reg,
-    PropertyBag? parameterStack,
-    PropertyBag? errorStack,
+    PropertyBag<object>? parameterStack,
+    PropertyBag<object>? errorStack,
     CancellationToken ct)
   {
     // Ensure we always operate on non-null, shared bags
-    PropertyBag parameters = parameterStack ?? [];
-    PropertyBag errors = errorStack ?? [];
+    PropertyBag<object> parameters = parameterStack ?? [];
+    PropertyBag<object> errors = errorStack ?? [];
 
     // Run Normal or Command State
     if (!reg.IsCompositeParent)
@@ -316,8 +316,8 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     //
     //  Any new Context keys added via OnEnter are considered "for children consumption only".
     //  After our OnExit, they'll be (optionally) removed.
-    var originalParamKeys = new HashSet<string>(parameters.Keys);
-    var originalErrorKeys = new HashSet<string>(errors.Keys);
+    var originalParamKeys = new HashSet<object>(parameters.Keys);
+    var originalErrorKeys = new HashSet<object>(errors.Keys);
 
     await instance.OnEnter(parentEnterCtx).ConfigureAwait(false);
 
@@ -383,13 +383,13 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     {
       if (parameters is not null)
       {
-        foreach (var k in parameters.Keys)
+        foreach (string k in parameters.Keys)
           if (!originalParamKeys.Contains(k)) parameters.Remove(k);
       }
 
       if (errors is not null)
       {
-        foreach (var k in errors.Keys)
+        foreach (string k in errors.Keys)
           if (!originalErrorKeys.Contains(k)) errors.Remove(k);
       }
     }
@@ -404,8 +404,8 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   // Rename: RunSingleStateAsync(...)
   private async Task<Result?> RunLeafAsync(
     StateRegistration<TStateId> reg,
-    PropertyBag? parameterStack,
-    PropertyBag? errorStack,
+    PropertyBag<object>? parameterStack,
+    PropertyBag<object>? errorStack,
     CancellationToken cancellationToken)
   {
     IState<TStateId> instance = GetOrCreateInstance(reg);

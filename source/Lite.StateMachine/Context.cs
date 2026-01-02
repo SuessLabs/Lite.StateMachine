@@ -29,7 +29,7 @@ public sealed class Context<TStateId>
   public TStateId CurrentStateId { get; }
 
   /// <summary>Gets or sets an arbitrary collection of errors to pass along to the next state.</summary>
-  public PropertyBag ErrorStack { get; set; } = [];
+  public PropertyBag<object> ErrorStack { get; set; } = [];
 
   /// <summary>Gets the Event aggregator for Command states (optional).</summary>
   public IEventAggregator? EventAggregator { get; }
@@ -41,13 +41,13 @@ public sealed class Context<TStateId>
   ////public TStateId LastStateId { get; internal set; }
 
   /// <summary>Gets or sets an arbitrary parameter provided by caller to the current action.</summary>
-  public PropertyBag Parameters { get; set; } = [];
+  public PropertyBag<object> Parameters { get; set; } = [];
 
   /// <summary>Signal the machine to move forward (only once per state entry).</summary>
   /// <param name="result">Result to pass to the next state.</param>
   public void NextState(Result result) => _tcs.TrySetResult(result);
 
-  public bool ParameterAsBool(string key, bool defaultBool = false)
+  public bool ParameterAsBool(object key, bool defaultBool = false)
   {
     if (Parameters.TryGetValue(key, out var value) && value is bool boolValue)
       return boolValue;
@@ -59,7 +59,7 @@ public sealed class Context<TStateId>
   /// <param name="key">Parameter Key.</param>
   /// <param name="defaultInt">Default int (default=0).</param>
   /// <returns>Integer or default.</returns>
-  public int ParameterAsInt(string key, int defaultInt = 0)
+  public int ParameterAsInt(object key, int defaultInt = 0)
   {
     if (Parameters.TryGetValue(key, out var value) && value is int intValue)
       return intValue;
