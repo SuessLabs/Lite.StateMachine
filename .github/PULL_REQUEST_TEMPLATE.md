@@ -4,6 +4,4 @@ _REMOVE ME: Descritpion of PR. If you don't provide a full description, we will 
 
 ## Linked To Issue/Feature
 
-* #XXXX - _issue/discussion_
-
-_REMOVE ME: Remember to link to issue/discussion post number_
+* #XX - _issue/discussion_
