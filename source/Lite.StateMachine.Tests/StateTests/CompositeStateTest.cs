@@ -198,7 +198,7 @@ public class CompositeStateTest : TestBase
       .RegisterState<State1>(CompositeL3.State1, CompositeL3.State2)
       .RegisterComposite<State2>(CompositeL3.State2, initialChildStateId: CompositeL3.State2_Sub1, onSuccess: CompositeL3.State3)
       .RegisterSubState<State2_Sub1>(CompositeL3.State2_Sub1, parentStateId: CompositeL3.State2, onSuccess: CompositeL3.State2_Sub2)
-      .RegisterCompositeChild<State2_Sub2>(CompositeL3.State2_Sub2, parentStateId: CompositeL3.State2, initialChildStateId: CompositeL3.State2_Sub2_Sub1, onSuccess: CompositeL3.State2_Sub3)
+      .RegisterSubComposite<State2_Sub2>(CompositeL3.State2_Sub2, parentStateId: CompositeL3.State2, initialChildStateId: CompositeL3.State2_Sub2_Sub1, onSuccess: CompositeL3.State2_Sub3)
       .RegisterSubState<State2_Sub2_Sub1>(CompositeL3.State2_Sub2_Sub1, parentStateId: CompositeL3.State2_Sub2, onSuccess: CompositeL3.State2_Sub2_Sub2)
       .RegisterSubState<State2_Sub2_Sub2>(CompositeL3.State2_Sub2_Sub2, parentStateId: CompositeL3.State2_Sub2, onSuccess: CompositeL3.State2_Sub2_Sub3)
       .RegisterSubState<State2_Sub2_Sub3>(CompositeL3.State2_Sub2_Sub3, parentStateId: CompositeL3.State2_Sub2, onSuccess: null)
@@ -228,7 +228,7 @@ public class CompositeStateTest : TestBase
 
     // Note that "State2" is a Composite state.
     // When Context is NOT persisted, it will be removed on the next substate.
-    Assert.AreEqual("[Keys-State2]: State1,State2", msgService.Messages[1]);
+    Assert.AreEqual("[Keys-State2]: State1,State2!Anchor,State2!TEMP,State2", msgService.Messages[1]);
 
     if (contextIsPersistent)
     {
@@ -245,8 +245,9 @@ public class CompositeStateTest : TestBase
         "[Keys-State3]: State1,State2!Anchor,State3",
         msgService.Messages[msgService.Messages.Count - 1]);
 
-      Assert.AreEqual(4, msgService.Counter2);
-      Assert.AreEqual(7, msgService.Counter3);
+      // Counter2==7: State1,State2!Anchor,State2!TEMP,State2,State2_Sub1,State2_Sub2!Anchor,State2_Sub3
+      Assert.AreEqual(7, msgService.Counter2);
+      Assert.AreEqual(11, msgService.Counter3);
     }
   }
 }

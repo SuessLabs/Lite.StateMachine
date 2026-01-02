@@ -103,34 +103,6 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   }
 
   /// <inheritdoc/>
-  /// <remarks>Renaming to, "RegisterSubComposite" to match "RegisterSubState".</remarks>
-  public StateMachine<TStateId> RegisterCompositeChild<TCompositeParent>(
-    TStateId stateId,
-    TStateId parentStateId,
-    TStateId initialChildStateId,
-    TStateId? onSuccess = null,
-    TStateId? onError = null,
-    TStateId? onFailure = null)
-    where TCompositeParent : class, IState<TStateId>
-  {
-    if (!_states.TryGetValue(parentStateId, out var pr) || !pr.IsCompositeParent)
-      throw new ParentStateMustBeCompositeException($"Parent state '{parentStateId}' must be registered as a composite state.");
-
-    // NOTE (2025-12-28 DS): This is already caught by the base method
-    if (_states.ContainsKey(stateId))
-      throw new DuplicateStateException($"Composite child state '{stateId}' already registered.");
-
-    return RegisterState<TCompositeParent>(
-      stateId: stateId,
-      onSuccess: onSuccess,
-      onError: onError,
-      onFailure: onFailure,
-      parentStateId: parentStateId,
-      isCompositeParent: true,
-      initialChildStateId: initialChildStateId);
-  }
-
-  /// <inheritdoc/>
   public StateMachine<TStateId> RegisterState<TStateClass>(TStateId stateId, TStateId? onSuccess = null)
     where TStateClass : class, IState<TStateId>
   {
@@ -168,6 +140,33 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     _states[stateId] = reg;
 
     return this;
+  }
+
+  /// <inheritdoc/>
+  public StateMachine<TStateId> RegisterSubComposite<TCompositeParent>(
+    TStateId stateId,
+    TStateId parentStateId,
+    TStateId initialChildStateId,
+    TStateId? onSuccess = null,
+    TStateId? onError = null,
+    TStateId? onFailure = null)
+    where TCompositeParent : class, IState<TStateId>
+  {
+    if (!_states.TryGetValue(parentStateId, out var pr) || !pr.IsCompositeParent)
+      throw new ParentStateMustBeCompositeException($"Parent state '{parentStateId}' must be registered as a composite state.");
+
+    // NOTE (2025-12-28 DS): This is already caught by the base method
+    if (_states.ContainsKey(stateId))
+      throw new DuplicateStateException($"Composite child state '{stateId}' already registered.");
+
+    return RegisterState<TCompositeParent>(
+      stateId: stateId,
+      onSuccess: onSuccess,
+      onError: onError,
+      onFailure: onFailure,
+      parentStateId: parentStateId,
+      isCompositeParent: true,
+      initialChildStateId: initialChildStateId);
   }
 
   /// <inheritdoc/>
