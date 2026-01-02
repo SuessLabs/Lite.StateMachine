@@ -24,7 +24,7 @@ public class BasicStateTests
   {
     // Assemble
     var counter = 0;
-    var ctxProperties = new PropertyBag<object>() { { ParameterCounter, counter } };
+    var ctxProperties = new PropertyBag() { { ParameterCounter, counter } };
 
     var machine = new StateMachine<BasicStateId>();
     machine.RegisterState<BasicState1>(BasicStateId.State1, BasicStateId.State2);
@@ -55,7 +55,7 @@ public class BasicStateTests
   {
     // Assemble
     var counter = 0;
-    var ctxProperties = new PropertyBag<object>() { { ParameterCounter, counter } };
+    var ctxProperties = new PropertyBag() { { ParameterCounter, counter } };
 
     var machine = new StateMachine<BasicStateId>();
     machine.RegisterState<BasicState1>(BasicStateId.State1, BasicStateId.State2);
@@ -110,7 +110,7 @@ public class BasicStateTests
   {
     // Assemble
     var counter = 0;
-    var ctxProperties = new PropertyBag<object>() { { ParameterCounter, counter } };
+    var ctxProperties = new PropertyBag() { { ParameterCounter, counter } };
 
     // Assemble/Act - Start your engine!
     var machine = await new StateMachine<BasicStateId>()
@@ -166,7 +166,7 @@ public class BasicStateTests
     var machine = new StateMachine<BasicStateId>();
 
     // This test will take 1 full second to complete versus
-    var paramStack = new PropertyBag<object>() { { ParameterType.HungStateAvoidance, true } };
+    var paramStack = new PropertyBag() { { ParameterType.HungStateAvoidance, true } };
     machine.DefaultStateTimeoutMs = 1000;
 
     machine.RegisterState<BasicState1>(BasicStateId.State1, BasicStateId.State2);
@@ -201,7 +201,7 @@ public class BasicStateTests
     machine.RegisterState<BasicState3>(BasicStateId.State3);
 
     // Act - Start your engine!
-    var ctxProperties = new PropertyBag<object>() { { ParameterCounter, counter } };
+    var ctxProperties = new PropertyBag() { { ParameterCounter, counter } };
     var task = machine.RunAsync(BasicStateId.State1, ctxProperties);
     await task;   // Non async method: task.GetAwaiter().GetResult();
 

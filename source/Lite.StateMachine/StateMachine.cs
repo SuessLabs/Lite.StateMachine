@@ -198,8 +198,8 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   /// <inheritdoc/>
   public async Task<StateMachine<TStateId>> RunAsync(
     TStateId initialStateId,
-    PropertyBag<object>? parameterStack = null,
-    PropertyBag<object>? errorStack = null,
+    PropertyBag? parameterStack = null,
+    PropertyBag? errorStack = null,
     CancellationToken cancellationToken = default)
   {
     if (!_states.ContainsKey(initialStateId))
@@ -286,13 +286,13 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
   private async Task<Result?> RunAnyStateRecursiveAsync(
     StateRegistration<TStateId> reg,
-    PropertyBag<object>? parameterStack,
-    PropertyBag<object>? errorStack,
+    PropertyBag? parameterStack,
+    PropertyBag? errorStack,
     CancellationToken ct)
   {
     // Ensure we always operate on non-null, shared bags
-    PropertyBag<object> parameters = parameterStack ?? [];
-    PropertyBag<object> errors = errorStack ?? [];
+    PropertyBag parameters = parameterStack ?? [];
+    PropertyBag errors = errorStack ?? [];
 
     // Run Normal or Command State
     if (!reg.IsCompositeParent)
@@ -404,8 +404,8 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   // Rename: RunSingleStateAsync(...)
   private async Task<Result?> RunLeafAsync(
     StateRegistration<TStateId> reg,
-    PropertyBag<object>? parameterStack,
-    PropertyBag<object>? errorStack,
+    PropertyBag? parameterStack,
+    PropertyBag? errorStack,
     CancellationToken cancellationToken)
   {
     IState<TStateId> instance = GetOrCreateInstance(reg);

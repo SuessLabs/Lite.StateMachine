@@ -29,7 +29,7 @@ public sealed class Context<TStateId>
   public TStateId CurrentStateId { get; }
 
   /// <summary>Gets or sets an arbitrary collection of errors to pass along to the next state.</summary>
-  public PropertyBag<object> ErrorStack { get; set; } = [];
+  public PropertyBag ErrorStack { get; set; } = [];
 
   /// <summary>Gets the Event aggregator for Command states (optional).</summary>
   public IEventAggregator? EventAggregator { get; }
@@ -41,7 +41,7 @@ public sealed class Context<TStateId>
   ////public TStateId LastStateId { get; internal set; }
 
   /// <summary>Gets or sets an arbitrary parameter provided by caller to the current action.</summary>
-  public PropertyBag<object> Parameters { get; set; } = [];
+  public PropertyBag Parameters { get; set; } = [];
 
   /// <summary>Signal the machine to move forward (only once per state entry).</summary>
   /// <param name="result">Result to pass to the next state.</param>
