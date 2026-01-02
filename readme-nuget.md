@@ -79,9 +79,15 @@ public class BasicState3() : BaseState
 }
 ```
 
-### Composite States
+### Generate DOT Graph (GraphViz)
+
+```cs
+var uml = machine.ExportUml(includeSubmachines: true);
+```
 
 ![Sample Composite State Image](https://raw.githubusercontent.com/SuessLabs/Lite.StateMachine/develop/docs/SampleGraphviz-1080.png)
+
+### Composite States
 
 ```cs
 using Lite.StateMachine;
@@ -169,12 +175,6 @@ public class Composite_State3() : BaseState
     return Task.CompletedTask;
   }
 }
-```
-
-### Generate DOT Graph (GraphViz)
-
-```cs
-var uml = machine.ExportUml(includeSubmachines: true);
 ```
 
 ## Features
