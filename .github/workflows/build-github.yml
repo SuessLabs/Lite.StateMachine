@@ -14,6 +14,8 @@ jobs:
     env:
       # Update to desired major.minor. This is the base version family.
       BASE_VERSION: "2.1"
+      PATH_SLNX: "source/Lite.StateMachine.slnx"
+      PATH_LIB: "source/Lite.StateMachine/Lite.StateMachine.csproj"
 
     steps:
       # 1. Checkout repository code
@@ -30,15 +32,15 @@ jobs:
 
       # 3. Restore dependencies
       - name: 3) Restore dependencies
-        run: dotnet restore
+        run: dotnet restore ${{env.PATH_SLNX}}
 
       # 4. Build solution
       - name: 4) Build Solution
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build ${{env.PATH_SLNX}} --configuration Release --no-restore
 
       # 5. Run tests
       - name: 5) Run Tests
-        run: dotnet test --configuration Release --no-build --verbosity normal
+        run: dotnet test ${{env.PATH_SLNX}} --configuration Release --no-build --verbosity normal
 
       # 6. Determin SemVersion package version
       - name: 6) Determine Version for Package
@@ -73,7 +75,7 @@ jobs:
 
       # 7. Pack NuGet
       - name: 7) Pack NuGet
-        run: dotnet pack --configuration Release --no-build --output ./artifacts
+        run: dotnet pack ${{env.PATH_LIB}} --configuration Release --no-build --output ./artifacts
       #- name: Pack NuGet
       #  shell: pwsh
       #  run: |
