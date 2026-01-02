@@ -125,11 +125,11 @@ jobs:
 
       ## 10) Publish to NuGet.org (master branch, push events only)
       - name: 8) NuGet Push Package
-        if: startsWith(github.ref, 'refs/tags/')
         env:
           NUGET_API_URL: "https://api.nuget.org/v3/index.json"
 
         ## Optionally pass, `--skip-duplicate` if a pkg version already exists on NuGet.org
+        if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
         run: dotnet nuget push ${{env.PATH_ARTIFACTS}}\*.nupkg -k ${{secrets.NUGET_AUTH_TOKEN}} -s ${{env.NUGET_API_URL}}
 
       #- name: Publish to NuGet.org

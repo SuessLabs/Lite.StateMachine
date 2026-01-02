@@ -316,8 +316,8 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     //
     //  Any new Context keys added via OnEnter are considered "for children consumption only".
     //  After our OnExit, they'll be (optionally) removed.
-    var originalParamKeys = new HashSet<string>(parameters.Keys);
-    var originalErrorKeys = new HashSet<string>(errors.Keys);
+    var originalParamKeys = new HashSet<object>(parameters.Keys);
+    var originalErrorKeys = new HashSet<object>(errors.Keys);
 
     await instance.OnEnter(parentEnterCtx).ConfigureAwait(false);
 
@@ -383,13 +383,13 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     {
       if (parameters is not null)
       {
-        foreach (var k in parameters.Keys)
+        foreach (string k in parameters.Keys)
           if (!originalParamKeys.Contains(k)) parameters.Remove(k);
       }
 
       if (errors is not null)
       {
-        foreach (var k in errors.Keys)
+        foreach (string k in errors.Keys)
           if (!originalErrorKeys.Contains(k)) errors.Remove(k);
       }
     }
