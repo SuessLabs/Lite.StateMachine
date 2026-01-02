@@ -31,7 +31,7 @@ public class DiStateBase<TStateClass, TStateId>(IMessageService msg, ILogger<TSt
     if (HasExtraLogging)
       Debug.WriteLine($"[{GetType().Name}] [OnEnter] => OK");
 
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     return Task.CompletedTask;
   }
 
@@ -56,7 +56,7 @@ public class DiStateBase<TStateClass, TStateId>(IMessageService msg, ILogger<TSt
     if (HasExtraLogging)
       Debug.WriteLine($"[{GetType().Name}] [OnExit]");
 
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     return Task.CompletedTask;
   }
 }

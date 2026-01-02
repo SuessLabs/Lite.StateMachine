@@ -51,6 +51,10 @@ public class CompositeStateTest : TestBase
     // Act
     await machine.RunAsync(CompositeL1StateId.State1);
 
+    var umlBasic = machine.ExportUml([CompositeL1StateId.State1], includeLegend: false);
+    var umlLegend = machine.ExportUml([CompositeL1StateId.State1], includeLegend: true);
+    Console.WriteLine(umlBasic);
+
     // Assert
     Assert.IsNotNull(machine);
     Assert.IsNull(machine.Context);
@@ -113,6 +117,8 @@ public class CompositeStateTest : TestBase
 
     AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.Composite(false), umlBasic);
     AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.Composite(true), umlLegend);
+
+    Console.WriteLine(umlBasic);
   }
 
   [TestMethod]
@@ -165,6 +171,37 @@ public class CompositeStateTest : TestBase
 
     // Ensure they're in order
     Assert.IsTrue(enums.SequenceEqual(machine.States));
+  }
+
+  [TestMethod]
+  public async Task Level3_ExportUml_SuccessTestAsync()
+  {
+    // Assemble - Using DI for MessageService's counters
+    var services = new ServiceCollection()
+      //// Register Services
+      .AddLogging(InlineTraceLogger(LogLevel.None))
+      .AddSingleton<IMessageService, MessageService>()
+      .BuildServiceProvider();
+
+    var msgService = services.GetRequiredService<IMessageService>();
+    Func<Type, object?> factory = t => ActivatorUtilities.CreateInstance(services, t);
+
+    var machine = new StateMachine<CompositeL3>(factory);
+
+    machine
+      .RegisterState<State1>(CompositeL3.State1, CompositeL3.State2)
+      .RegisterComposite<State2>(CompositeL3.State2, initialChildStateId: CompositeL3.State2_Sub1, onSuccess: CompositeL3.State3)
+      .RegisterSubState<State2_Sub1>(CompositeL3.State2_Sub1, parentStateId: CompositeL3.State2, onSuccess: CompositeL3.State2_Sub2)
+      .RegisterSubComposite<State2_Sub2>(CompositeL3.State2_Sub2, parentStateId: CompositeL3.State2, initialChildStateId: CompositeL3.State2_Sub2_Sub1, onSuccess: CompositeL3.State2_Sub3)
+      .RegisterSubState<State2_Sub2_Sub1>(CompositeL3.State2_Sub2_Sub1, parentStateId: CompositeL3.State2_Sub2, onSuccess: CompositeL3.State2_Sub2_Sub2)
+      .RegisterSubState<State2_Sub2_Sub2>(CompositeL3.State2_Sub2_Sub2, parentStateId: CompositeL3.State2_Sub2, onSuccess: CompositeL3.State2_Sub2_Sub3)
+      .RegisterSubState<State2_Sub2_Sub3>(CompositeL3.State2_Sub2_Sub3, parentStateId: CompositeL3.State2_Sub2, onSuccess: null)
+      .RegisterSubState<State2_Sub3>(CompositeL3.State2_Sub3, parentStateId: CompositeL3.State2, onSuccess: null)
+      .RegisterState<State3>(CompositeL3.State3, onSuccess: null);
+
+    var uml = machine.ExportUml([CompositeL3.State1], includeLegend: false);
+    Assert.IsNotNull(uml);
+    Console.WriteLine(uml);
   }
 
   [TestMethod]

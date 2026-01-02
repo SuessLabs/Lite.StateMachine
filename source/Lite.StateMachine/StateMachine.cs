@@ -277,7 +277,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   {
     return result switch
     {
-      Result.Ok => reg.OnSuccess,
+      Result.Success => reg.OnSuccess,
       Result.Error => reg.OnError,
       Result.Failure => reg.OnFailure,
       _ => null,

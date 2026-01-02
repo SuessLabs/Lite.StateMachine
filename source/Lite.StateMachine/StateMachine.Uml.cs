@@ -38,7 +38,7 @@ public sealed partial class StateMachine<TStateId>
   /// <param name="includeLegend">Include a legend subgraph that explains shapes and colors.</param>
   /// <param name="transitionColors">
   ///   Optional color overrides for Result-based transitions. Keys not present fall back to defaults:
-  ///   Ok=Blue, Error=Yellow, Failure=Red.
+  ///   Success=Blue, Error=Yellow, Failure=Red.
   /// </param>
   /// <param name="parentToChildColor">Color used for parent → initial-child transition edges (default "Green").</param>
   /// <param name="graphName">Logical graph name (default "StateMachine").</param>
@@ -61,7 +61,7 @@ public sealed partial class StateMachine<TStateId>
     // Defaults for Result edge colors
     var colors = new Dictionary<Result, string>
     {
-      [Result.Ok] = "Blue",
+      [Result.Success] = "Blue",
       [Result.Error] = "Yellow",
       [Result.Failure] = "Red",
     };
@@ -143,7 +143,7 @@ public sealed partial class StateMachine<TStateId>
       }
     }
 
-    // Result-based transitions (Ok, Error, Failure) with labels and color overrides
+    // Result-based transitions (Success, Error, Failure) with labels and color overrides
     foreach (var reg in regs)
     {
       var fromId = reg.StateId;
@@ -158,7 +158,7 @@ public sealed partial class StateMachine<TStateId>
         sb.AppendLine($"  \"{Escape(fromId.ToString())}\" -> \"{Escape(toId.Value.ToString())}\" [color=\"{Escape(color)}\", label=\"{Escape(label)}\"];");
       }
 
-      Emit(Result.Ok, reg.OnSuccess);
+      Emit(Result.Success, reg.OnSuccess);
       Emit(Result.Error, reg.OnError);
       Emit(Result.Failure, reg.OnFailure);
     }
@@ -216,13 +216,13 @@ public sealed partial class StateMachine<TStateId>
       sb.AppendLine("    legend_start [shape=circle, style=filled, fillcolor=\"black\", label=\"\"];");
       sb.AppendLine("    legend_final [shape=doublecircle, style=filled, fillcolor=\"black\", label=\"\"];");
 
-      var legendOkColor = Escape(colors[Result.Ok]);
+      var legendSuccessColor = Escape(colors[Result.Success]);
       var legendErrColor = Escape(colors[Result.Error]);
       var legendFailColor = Escape(colors[Result.Failure]);
       var legendParentColor = Escape(parentToChildColor);
 
       sb.AppendLine("    legend_start -> legend_state [color=\"black\", label=\"start\"];");
-      sb.AppendLine($"    legend_state -> legend_state_ok   [color=\"{legendOkColor}\",   label=\"Ok\"];");
+      sb.AppendLine($"    legend_state -> legend_state_ok   [color=\"{legendSuccessColor}\",   label=\"Success\"];");
       sb.AppendLine($"    legend_state -> legend_state_err  [color=\"{legendErrColor}\", label=\"Error\"];");
       sb.AppendLine($"    legend_state -> legend_state_fail [color=\"{legendFailColor}\", label=\"Failure\"];");
       sb.AppendLine($"    legend_state -> legend_state_init [color=\"{legendParentColor}\", label=\"parent → initial child\"];");
@@ -234,7 +234,7 @@ public sealed partial class StateMachine<TStateId>
 
       var legendBody = legendText ??
         $"Shapes:\n  • rounded rectangle = State\n  • filled circle = Start\n  • double circle (filled) = Final\n\n" +
-        $"Edge colors:\n  • Ok = {colors[Result.Ok]}\n  • Error = {colors[Result.Error]}\n  • Failure = {colors[Result.Failure]}\n  • Parent→Child = {parentToChildColor}\n  • Start/Final edges = black";
+        $"Edge colors:\n  • Success = {colors[Result.Success]}\n  • Error = {colors[Result.Error]}\n  • Failure = {colors[Result.Failure]}\n  • Parent→Child = {parentToChildColor}\n  • Start/Final edges = black";
 
       sb.AppendLine($"    legend_note [shape=note, label=\"{Escape(legendBody)}\"];");
       sb.AppendLine("  }");

@@ -156,6 +156,8 @@ public class BasicStateTests
     Assert.Contains("State1", umlBasic);
     Assert.Contains("State2", umlBasic);
     Assert.Contains("State3", umlBasic);
+
+    Console.WriteLine(umlLegend);
   }
 
   [TestMethod]

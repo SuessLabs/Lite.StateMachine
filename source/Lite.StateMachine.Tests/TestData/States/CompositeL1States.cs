@@ -41,7 +41,7 @@ public class CompositeL1_State1() : BaseState
   public override Task OnEnter(Context<CompositeL1StateId> context)
   {
     Log("OnEnter", "=> OK");
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     return Task.CompletedTask;
   }
 }
@@ -55,7 +55,7 @@ public class CompositeL1_State2() : BaseState
     // NOTE:
     //  Signify we're ready to go to sub-states
     //  The true entry point of the state. You MUST return a Result here, else you'll hang!!
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     Log("OnEnter", "=> OK");
     return Task.CompletedTask;
   }
@@ -66,7 +66,7 @@ public class CompositeL1_State2() : BaseState
     //  Signify we're ready to go to next state after composite
     //  The true exit point of the state. You MUST return a Result here, else you'll hang!!
     Log("OnExit", "=> OK");
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     return Task.CompletedTask;
   }
 }
@@ -77,7 +77,7 @@ public class CompositeL1_State2_Sub1() : BaseState
   {
     Log("OnEnter", "=> GO-TO Child");
     context.Parameters.Add(ParameterSubStateEntered, SUCCESS);
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     return Task.CompletedTask;
   }
 }
@@ -87,7 +87,7 @@ public class CompositeL1_State2_Sub2() : BaseState
   public override Task OnEnter(Context<CompositeL1StateId> context)
   {
     Log("OnEnter", "=> OK");
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     return Task.CompletedTask;
   }
 }
@@ -97,7 +97,7 @@ public class CompositeL1_State3() : BaseState
   public override Task OnEnter(Context<CompositeL1StateId> context)
   {
     Log("OnEnter", "=> OK");
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     return Task.CompletedTask;
   }
 }

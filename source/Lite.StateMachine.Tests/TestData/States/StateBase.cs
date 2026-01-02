@@ -11,7 +11,7 @@ public class StateBase<TStateClass, TStateId> : IState<TStateId>
 {
   public virtual Task OnEnter(Context<TStateId> context)
   {
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     return Task.CompletedTask;
   }
 
