@@ -55,7 +55,7 @@ public interface IStateMachine<TStateId>
   /// <param name="onFailure">Optional transition to next state on failure.</param>
   /// <returns>State machine instance.</returns>
   /// <typeparam name="TCompositeParent">Composite State Class.</typeparam>
-  StateMachine<TStateId> RegisterCompositeChild<TCompositeParent>(TStateId stateId, TStateId parentStateId, TStateId initialChildStateId, TStateId? onSuccess = null, TStateId? onError = null, TStateId? onFailure = null)
+  StateMachine<TStateId> RegisterSubComposite<TCompositeParent>(TStateId stateId, TStateId parentStateId, TStateId initialChildStateId, TStateId? onSuccess = null, TStateId? onError = null, TStateId? onFailure = null)
     where TCompositeParent : class, IState<TStateId>;
 
   /// <summary>Registers a regular or command state (optionally with transitions).</summary>

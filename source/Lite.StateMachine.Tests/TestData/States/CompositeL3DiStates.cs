@@ -63,8 +63,8 @@ public class State2(IMessageService msg, ILogger<State2> log)
 
   public override Task OnExit(Context<CompositeL3> context)
   {
-    // Expected Count: 4 - State2_Sub2 is composite; therefore, discarded.
-    // State1,State2,State2_Sub1,State2_Sub3
+    // Expected Count: 7 - State2_Sub2 is composite; therefore, discarded.
+    // State1,State2!Anchor,State2!TEMP,State2,State2_Sub1,State2_Sub2!Anchor,State2_Sub3
     MessageService.Counter2 = context.Parameters.Count;
     return base.OnExit(context);
   }
