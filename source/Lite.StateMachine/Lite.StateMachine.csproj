@@ -17,11 +17,14 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageProjectUrl>https://github.com/SuessLabs/Lite.StateMachine</PackageProjectUrl>
     <PackageIcon>icon-128x128.png</PackageIcon>
-    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <PackageReadmeFile>readme-nuget.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/SuessLabs/Lite.StateMachine</RepositoryUrl>
     <PackageTags>statemachine;lite;fsm;suesslabs;xeno-innovations</PackageTags>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-    <PackageReleaseNotes>Overhauled framework to include enhanced state definitions for deep sub-state hierarchy, async/await friendly state classes, RegisterState overloads with friendly naming conventions, uses new namespace "Lite.StateMachine".</PackageReleaseNotes>
+    <PackageReleaseNotes>New features in v2.1:
+
+* Proprety: IsContextPersistent - Auto-cleans Context parameters added by substates.
+* Renamed `RegisterCompositeChild(...)` to `RegisterSubComposite(...)`</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -41,7 +44,7 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <None Include="..\..\readme.md">
+    <None Include="..\..\readme-nuget.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
