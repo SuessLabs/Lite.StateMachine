@@ -47,6 +47,7 @@ jobs:
         run: dotnet test ${{env.PATH_SLNX}} --configuration Release --no-build --verbosity normal
 
       # 6. Determin SemVersion package version
+      # "$run" is based on GitHub Action's Workflow "Runs" counter.
       - name: 6) Determine Version for Package
         shell: pwsh
         run: |
@@ -126,12 +127,12 @@ jobs:
           NUGET_API_URL: "https://api.nuget.org/v3/index.json"
 
         ## Optionally pass, `--skip-duplicate` if a pkg version already exists on NuGet.org
-        run: dotnet nuget push ${{env.PATH_ARTIFACTS}}/*.nupkg -k ${{secrets.AUTH_TOKEN}} -s ${{env.NUGET_API_URL}}
+        run: dotnet nuget push ${{env.PATH_ARTIFACTS}}/*.nupkg -k ${{secrets.NUGET_AUTH_TOKEN}} -s ${{env.NUGET_API_URL}}
 
       #- name: Publish to NuGet.org
       #  if: github.ref_name == 'master' && github.event_name == 'push'
       #  env:
-      #    NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      #    NUGET_API_KEY: ${{ secrets.NUGET_AUTH_TOKEN }}
       #  shell: pwsh
       #  run: |
       #    # Push .nupkg first
