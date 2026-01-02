@@ -2,7 +2,6 @@
   <Folder Name="/Samples/">
     <Project Path="Sample.Basics/Sample.Basics.csproj" Id="88e1e0a9-34b8-4610-a2f4-bfb36e0d1b43" />
     <Project Path="Sample.Mk4/Sample.Mk4.csproj" Id="f7481ec8-d3be-4acd-9eae-a4723c09e245" />
-    <Project Path="Sample.Phone/Sample.Phone.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path="../build.ps1" />
