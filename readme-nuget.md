@@ -1,8 +1,6 @@
 # Lite State Machine for .NET
 
-<!-- ![Lite.StateMachine Logo](https://raw.githubusercontent.com/SuessLabs/Lite.StateMachine/develop/docs/icon-128x128.png) -->
-
-<image align="right" width="200" height="200" src="https://raw.githubusercontent.com/SuessLabs/Lite.StateMachine/develop/docs/icon-128x128.png" />
+![Lite.StateMachine Logo](https://raw.githubusercontent.com/SuessLabs/Lite.StateMachine/develop/docs/icon-128x128.png)
 
 Flexible lightweight finite state machine (FSM) for .NET, supporting shared context for passing parameters, composite (sub) states, command states, lazy-loading and thread safe. The library is AOT friendly, cross-platform and optimized for speed for use in enterprise, robotic/industrial systems, and even tiny (mobile) applications.
 
