@@ -20,12 +20,16 @@ public class Program
     //  A. Visual Studio > Project (R-Click) > Debug > Start Without Debugging
     //  B. dotnet run --configuration release
     //
+    // NOTE: "bin\" must be a subfolder of this project. Otherwise, BenchmarkDotNet wont find it in our "../../output"
     // For more information on the VS BenchmarkDotNet Diagnosers see:
     //  https://learn.microsoft.com/visualstudio/profiling/profiling-with-benchmark-dotnet
     Console.WriteLine("Hello, Lite.StateMachine Benchmark Tests!");
 
     // Run single benchmark class
-    BenchmarkRunner.Run<BasicStateBenchmarks>();
+    if (args.Length == 0)
+      BenchmarkRunner.Run<BasicStateBenchmarks>();
+    else
+      _ = BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, BenchmarkConfig.Get());
 
     // Auto-Discover:
     ////BenchmarkRunner.Run(typeof(Program).Assembly);
