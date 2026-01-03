@@ -3,39 +3,34 @@
 
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
-using Lite.StateMachine.BenchmarkTest.States;
+using Lite.StateMachine.BenchmarkTests.States;
 using Microsoft.VSDiagnostics;
 
-namespace Lite.StateMachine.BenchmarkTest;
+namespace Lite.StateMachine.BenchmarkTests;
 
-//// For more information on the VS BenchmarkDotNet Diagnosers see https://learn.microsoft.com/visualstudio/profiling/profiling-with-benchmark-dotnet
-
-////[ShortRunJob]
 [CPUUsageDiagnoser]
 [MemoryDiagnoser]
-public class Benchmarks
+public class BasicStateBenchmarks
 {
-  ////private SHA256 _sha256 = SHA256.Create();
-  ////private byte[] _data = [];
-
   private StateMachine<BasicStateId> _machine = new();
 
-  [Params(1, 100, 1_000, 10_000, 100_000, 1_000_000)]
+  ////[Params(1, 100, 1_000, 10_000, 100_000, 1_000_000)]
+  [Params(1, 100, 1_000, 10_000)]
   public int CyclesBeforeExit { get; set; }
 
   [GlobalSetup]
-  public void BenchmarkSetup()
+  public void BasicStateGlobalSetup()
   {
     // We will continue to loop using OnError transition until we reached our max counter
     // upon which, we will OnSuccess and exit the state machine.
     _machine = new StateMachine<BasicStateId>(null, null, isContextPersistent: true);
-    _machine.RegisterState<FlatState1>(BasicStateId.State1, BasicStateId.State2);
-    _machine.RegisterState<FlatState2>(BasicStateId.State2, BasicStateId.State3);
-    _machine.RegisterState<FlatState3>(BasicStateId.State3, onSuccess: null, onError: BasicStateId.State1);
+    _machine.RegisterState<BasicState1>(BasicStateId.State1, BasicStateId.State2);
+    _machine.RegisterState<BasicState2>(BasicStateId.State2, BasicStateId.State3);
+    _machine.RegisterState<BasicState3>(BasicStateId.State3, onSuccess: null, onError: BasicStateId.State1);
   }
 
   [Benchmark]
-  public async Task FlatStateMachineRunsAsync()
+  public async Task BasicStatesRunsAsync()
   {
     var maxCounter = CyclesBeforeExit;
     PropertyBag parameters = new()
@@ -57,6 +52,8 @@ public class Benchmarks
       { ParameterType.Counter, 0 },
     };
 
-    _machine.RunAsync(BasicStateId.State1).GetAwaiter().GetResult();
+    _machine.RunAsync(BasicStateId.State1, parameters)
+            .GetAwaiter()
+            .GetResult();
   }
 }

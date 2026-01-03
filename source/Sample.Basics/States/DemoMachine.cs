@@ -16,10 +16,13 @@ public enum BasicStateId
 
 public static class DemoMachine
 {
-  public static async Task RunAsync()
+  public static async Task RunAsync(bool logOutput = true)
   {
     var counter = 0;
-    var ctxProperties = new PropertyBag() { { ParameterType.Counter, counter } };
+    var ctxProperties = new PropertyBag() {
+      { ParameterType.Counter, counter },
+      { ParameterType.LogOutput, logOutput },
+    };
 
     var machine = new StateMachine<BasicStateId>();
     machine.RegisterState<BasicState1>(BasicStateId.State1, BasicStateId.State2);

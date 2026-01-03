@@ -1,21 +1,14 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Lite.StateMachine.BenchmarkTest.States;
+namespace Lite.StateMachine.BenchmarkTests.States;
 
 #pragma warning disable SA1649 // File name should match first type name
 #pragma warning disable SA1402 // File may only contain a single type
 
-public enum ParameterType
-{
-  MaxCounter,
-  Counter,
-}
-
-public class FlatState1 : StateBase<FlatState1, BasicStateId>
+public class BasicState1 : StateBase<BasicState1, BasicStateId>
 {
   public override Task OnEnter(Context<BasicStateId> context)
   {
@@ -24,7 +17,7 @@ public class FlatState1 : StateBase<FlatState1, BasicStateId>
   }
 }
 
-public class FlatState2 : StateBase<FlatState2, BasicStateId>
+public class BasicState2 : StateBase<BasicState2, BasicStateId>
 {
   public override Task OnEnter(Context<BasicStateId> context)
   {
@@ -33,7 +26,7 @@ public class FlatState2 : StateBase<FlatState2, BasicStateId>
   }
 }
 
-public class FlatState3 : StateBase<FlatState3, BasicStateId>
+public class BasicState3 : StateBase<BasicState3, BasicStateId>
 {
   public override Task OnEnter(Context<BasicStateId> context)
   {
@@ -43,6 +36,7 @@ public class FlatState3 : StateBase<FlatState3, BasicStateId>
     cnt++;
     context.Parameters.SafeAdd(ParameterType.Counter, cnt);
 
+    ////context.NextState(Result.Success);
     if (cnt > max)
       context.NextState(Result.Success);
     else

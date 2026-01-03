@@ -3,9 +3,8 @@
 
 using System;
 using System.Threading.Tasks;
-using Lite.StateMachine;
 
-namespace Lite.StateMachine.BenchmarkTest.States;
+namespace Lite.StateMachine.BenchmarkTests.States;
 
 public class StateBase<TStateClass, TStateId> : IState<TStateId>
   where TStateId : struct, Enum
