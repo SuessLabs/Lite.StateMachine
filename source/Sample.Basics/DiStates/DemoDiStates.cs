@@ -1,14 +1,15 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
-namespace Sample.Basics;
 /*
+namespace Sample.Basics.DiStates;
+
 using System;
 using System.Threading.Tasks;
 using Lite.StateMachine;
 using Microsoft.Extensions.Logging;
 
-public sealed class CompletedState : StateNode
+public sealed class CompletedState : DiStateBase<CompletedState, StateId>(msg, log)
 {
   public CompletedState(ILogger<CompletedState> logger)
     : base("Completed", logger) { }

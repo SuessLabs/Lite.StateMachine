@@ -1,8 +1,9 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
-namespace Sample.Basics;
 /*
+namespace Sample.Basics.DiStates;
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -10,7 +11,16 @@ using Lite.StateMachine;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-public static class DemoMachine
+public enum StateId
+{
+  Init,
+  Loading,
+  Processing,
+  Completed,
+  Error,
+}
+
+public static class DemoDiMachine
 {
   public static async Task RunAsync()
   {
@@ -27,28 +37,18 @@ public static class DemoMachine
       .AddTransient<ProcessingState>()
       .AddTransient<CompletedState>()
       .AddTransient<ErrorState>()
-      .AddTransient<CompositeState>() // if you want DI to be able to create composites generically
       .BuildServiceProvider();
 
     // Create FSMs with DI + loggers
     var rootLogger = services.GetRequiredService<ILogger<StateMachine>>();
-    var fsm = new StateMachine(services, rootLogger, isRoot: true);
 
-    var childLogger = services.GetRequiredService<ILogger<StateMachine>>();
-    var subFsm = new StateMachine(services, childLogger, isRoot: false);
+    var fsm = new StateMachine(services, rootLogger, isRoot: true);
 
     // Register child states lazily via DI
     subFsm.RegisterState<LoadingState>(StateId.Loading);
     subFsm.RegisterState<ProcessingState>(StateId.Processing);
     subFsm.RegisterState<CompletedState>(StateId.Completed);
-
-    // TODO: Set default Error/Failure states for everyone to use
-    //  Or, don't set it and have an Exception thrown if missing
-    //  - InvalidStateTransitionException
-    //  - MissingStateTransitionException
-
-    subFsm.SetTransitions(StateId.Loading, new Dictionary<Result, StateId>
-    {
+    subFsm.Register(StateId.Loading, State
       [Result.Success] = StateId.Processing,
       [Result.Error] = StateId.Completed,
       [Result.Failure] = StateId.Completed

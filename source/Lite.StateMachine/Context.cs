@@ -47,6 +47,14 @@ public sealed class Context<TStateId>
   /// <param name="result">Result to pass to the next state.</param>
   public void NextState(Result result) => _tcs.TrySetResult(result);
 
+  /// <summary>Override the previously defined <see cref="NextState(Result)"/> transition with the one specified.</summary>
+  /// <param name="result">On <see cref="Result"/> value.</param>
+  /// <param name="newStateId">New <see cref="TStateId"/> to transition to.</param>
+  public void OnTransition(Result result, TStateId newStateId)
+  {
+    throw new NotImplementedException();
+  }
+
   public bool ParameterAsBool(object key, bool defaultBool = false)
   {
     if (Parameters.TryGetValue(key, out var value) && value is bool boolValue)

@@ -20,6 +20,10 @@
 *.sln.docstates
 *.autorecover
 *.coverage
+*.log
+
+# BenchmarkDotNet
+[Bb]enchmarkDotNet.Artifacts/
 
 # SQLite datbases
 *.db3
