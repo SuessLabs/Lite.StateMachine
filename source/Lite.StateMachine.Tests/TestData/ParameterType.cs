@@ -3,9 +3,14 @@
 
 namespace Lite.StateMachine.Tests.TestData;
 
-public static class ParameterType
+public enum ParameterType
 {
-  public const string Counter = "Counter";
-  public const string HungStateAvoidance = "DoNotAllowHungStatesTest";
-  public const string KeyTest = "TestKey";
+  /// <summary>Generic counter.</summary>
+  Counter,
+
+  /// <summary>Tests for DoNotAllowHungStatesTest.</summary>
+  HungStateAvoidance,
+
+  /// <summary>Random test.</summary>
+  KeyTest,
 }

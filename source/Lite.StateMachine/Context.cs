@@ -4,6 +4,7 @@
 namespace Lite.StateMachine;
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 /// <summary>Context passed to every state. Provides a "Parameter" and a NextState(Result) trigger.</summary>
@@ -15,11 +16,13 @@ public sealed class Context<TStateId>
 
   internal Context(
     TStateId current,
+    Dictionary<Result, TStateId?> nextStates,
     TaskCompletionSource<Result> tcs,
     IEventAggregator? eventAggregator = null,
     Result? lastChildResult = null)
   {
     CurrentStateId = current;
+    NextStates = nextStates;
     _tcs = tcs;
     EventAggregator = eventAggregator;
     LastChildResult = lastChildResult;
@@ -38,7 +41,10 @@ public sealed class Context<TStateId>
   public Result? LastChildResult { get; }
 
   /////// <summary>Gets the previous state's enum value.</summary>
-  ////public TStateId LastStateId { get; internal set; }
+  ////public TStateId PreviousState { get; internal set; }
+
+  /// <summary>Gets or sets the next transition for previewing and overriding.</summary>
+  public Dictionary<Result, TStateId?> NextStates { get; set; } = [];
 
   /// <summary>Gets or sets an arbitrary parameter provided by caller to the current action.</summary>
   public PropertyBag Parameters { get; set; } = [];
@@ -46,14 +52,6 @@ public sealed class Context<TStateId>
   /// <summary>Signal the machine to move forward (only once per state entry).</summary>
   /// <param name="result">Result to pass to the next state.</param>
   public void NextState(Result result) => _tcs.TrySetResult(result);
-
-  /// <summary>Override the previously defined <see cref="NextState(Result)"/> transition with the one specified.</summary>
-  /// <param name="result">On <see cref="Result"/> value.</param>
-  /// <param name="newStateId">New <see cref="TStateId"/> to transition to.</param>
-  public void OnTransition(Result result, TStateId newStateId)
-  {
-    throw new NotImplementedException();
-  }
 
   public bool ParameterAsBool(object key, bool defaultBool = false)
   {

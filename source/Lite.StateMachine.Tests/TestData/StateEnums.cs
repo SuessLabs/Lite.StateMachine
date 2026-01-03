@@ -1,7 +1,7 @@
 // Copyright Xeno Innovations, Inc. 2025
 // See the LICENSE file in the project root for more information.
 
-namespace Lite.StateMachine.Tests.TestData.States;
+namespace Lite.StateMachine.Tests.TestData;
 
 #pragma warning disable SA1649 // File name should match first type name
 
@@ -44,6 +44,19 @@ public enum CompositeMsgStateId
   Done,
   Error,
   Failure,
+}
+
+public enum CustomBasicStateId
+{
+  State1,
+  State2_Dummy,
+  State2_SuccessA,
+  State2_SuccessB,
+  State2_ErrorA,
+  State2_ErrorB,
+  State2_FailureA,
+  State2_FailureB,
+  State3,
 }
 
 #pragma warning restore SA1649 // File name should match first type name

@@ -301,8 +301,15 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     // Composite States
     var instance = GetOrCreateInstance(reg);
 
+    Dictionary<Result, TStateId?> nextStates = new()
+    {
+      { Result.Success, reg.OnSuccess },
+      { Result.Error, reg.OnError },
+      { Result.Failure, reg.OnFailure },
+    };
+
     var parentEnterTcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
-    var parentEnterCtx = new Context<TStateId>(reg.StateId, parentEnterTcs, _eventAggregator)
+    var parentEnterCtx = new Context<TStateId>(reg.StateId, nextStates, parentEnterTcs, _eventAggregator)
     {
       Parameters = parameters,
       Errors = errors,
@@ -348,6 +355,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       if (childResult is null)
         return null;
 
+      // TODO (#76): Extract the Context.OnSuccess/Error/Failure override (if any)
       lastChildResult = childResult;
       var nextChildId = ResolveNext(childReg, childResult.Value);
 
@@ -367,7 +375,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     // Parent's OnExit decides Ok/Error/Failure; Inform parent of last child's result via Context
     // TODO (2025-12-28 DS): Pass one Context object. Just clear "lastChildResult" after the OnExit.
     var parentExitTcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
-    var parentExitCtx = new Context<TStateId>(reg.StateId, parentExitTcs, _eventAggregator, lastChildResult)
+    var parentExitCtx = new Context<TStateId>(reg.StateId, nextStates, parentExitTcs, _eventAggregator, lastChildResult)
     {
       Parameters = parameters ?? [],
       Errors = errors ?? [],
@@ -409,8 +417,17 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     CancellationToken cancellationToken)
   {
     IState<TStateId> instance = GetOrCreateInstance(reg);
+
+    // Next state transitions
+    Dictionary<Result, TStateId?> nextStates = new()
+    {
+      { Result.Success, reg.OnSuccess },
+      { Result.Error, reg.OnError },
+      { Result.Failure, reg.OnFailure },
+    };
+
     var tcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
-    var ctx = new Context<TStateId>(reg.StateId, tcs, _eventAggregator)
+    var ctx = new Context<TStateId>(reg.StateId, nextStates, tcs, _eventAggregator)
     {
       Parameters = parameterStack ?? [],
       Errors = errorStack ?? [],
