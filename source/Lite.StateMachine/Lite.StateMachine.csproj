@@ -21,15 +21,17 @@
     <RepositoryUrl>https://github.com/SuessLabs/Lite.StateMachine</RepositoryUrl>
     <PackageTags>statemachine;lite;fsm;suesslabs;xeno-innovations</PackageTags>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-    <PackageReleaseNotes>New Features in v2.2:
+    <PackageReleaseNotes>
+      New Features in v2.2:
 
-* New: Custom override NextState Transition
-* New: Renamed, Result.Ok -&gt; Result.Success (Breaking Change)
+      * New: Renamed, Result.Ok -&gt; Result.Success (Breaking Change).
+      * New: Renamed, Context.ErrorStaack -&gt; Context.Errors (Breaking Change).
+      * New: Context.NextStates provides ability to override the next transitions for a state.
 
-New Features in v2.1:
+      New Features in v2.1:
 
-* Proprety: IsContextPersistent - Auto-cleans Context parameters added by substates.
-* Renamed `RegisterCompositeChild(...)` to `RegisterSubComposite(...)` (breaking change)</PackageReleaseNotes>
+      * Proprety: IsContextPersistent - Auto-cleans Context parameters added by substates.
+      * Renamed `RegisterCompositeChild(...)` to `RegisterSubComposite(...)` (breaking change)</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

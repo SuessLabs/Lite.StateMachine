@@ -301,11 +301,11 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     // Composite States
     var instance = GetOrCreateInstance(reg);
 
-    Dictionary<Result, TStateId?> nextStates = new()
+    StateMap<TStateId> nextStates = new()
     {
-      { Result.Success, reg.OnSuccess },
-      { Result.Error, reg.OnError },
-      { Result.Failure, reg.OnFailure },
+      OnSuccess = reg.OnSuccess,
+      OnError = reg.OnError,
+      OnFailure = reg.OnFailure,
     };
 
     var parentEnterTcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -327,6 +327,11 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     var originalErrorKeys = new HashSet<object>(errors.Keys);
 
     await instance.OnEnter(parentEnterCtx).ConfigureAwait(false);
+
+    // Check for next transition overrides
+    ////reg.OnSuccess = parentEnterCtx.NextStates.OnSuccess;
+    ////reg.OnError = parentEnterCtx.NextStates.OnError;
+    ////reg.OnFailure = parentEnterCtx.NextStates.OnFailure;
 
     // TODO (2025-12-28 DS): Consider StateMachine config param to just move along or throw exception
     if (reg.InitialChildId is null)
@@ -419,11 +424,11 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     IState<TStateId> instance = GetOrCreateInstance(reg);
 
     // Next state transitions
-    Dictionary<Result, TStateId?> nextStates = new()
+    StateMap<TStateId> nextStates = new()
     {
-      { Result.Success, reg.OnSuccess },
-      { Result.Error, reg.OnError },
-      { Result.Failure, reg.OnFailure },
+      OnSuccess = reg.OnSuccess,
+      OnError = reg.OnError,
+      OnFailure = reg.OnFailure,
     };
 
     var tcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -460,7 +465,9 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
             {
               await Task.Delay(timeoutMs, timeoutCts.Token).ConfigureAwait(false);
               if (!tcs.Task.IsCompleted && !timeoutCts.IsCancellationRequested)
+              {
                 await cmd.OnTimeout(ctx).ConfigureAwait(false);
+              }
             }
             catch (TaskCanceledException)
             {
@@ -480,10 +487,16 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       var result = await WaitForNextOrCancelAsync(tcs.Task, cancellationToken).ConfigureAwait(false);
 
       // TODO (2025-12-28 DS): Potential DefaultStateTimeoutMs. Even leaving OnEnter without NextState(Result.OK), should consider calling `OnExit` to allow states to cleanup.
+      // TODO (2026-01-04 DS): Consider handling "OnTRANSITION" overrides. Passing a single Context would solve this as it's passed by ref.
       if (result is null)
         return null;
 
       await instance.OnExit(ctx).ConfigureAwait(false);
+
+      reg.OnSuccess = ctx.NextStates.OnSuccess;
+      reg.OnError = ctx.NextStates.OnError;
+      reg.OnFailure = ctx.NextStates.OnFailure;
+
       return result.Value;
     }
     finally

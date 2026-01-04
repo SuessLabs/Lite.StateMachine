@@ -13,4 +13,10 @@ public enum ParameterType
 
   /// <summary>Random test.</summary>
   KeyTest,
+
+  /// <summary>Test triggers an early exit. Setting OnSuccess to NULL.</summary>
+  TestExitEarly,
+
+  /// <summary>Test trigger to go to an invalid state transition.</summary>
+  TestUnregisteredTransition,
 }

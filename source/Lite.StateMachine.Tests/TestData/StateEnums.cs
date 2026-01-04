@@ -50,12 +50,13 @@ public enum CustomBasicStateId
 {
   State1,
   State2_Dummy,
-  State2_SuccessA,
-  State2_SuccessB,
-  State2_ErrorA,
-  State2_ErrorB,
-  State2_FailureA,
-  State2_FailureB,
+  State2_Success,
+  State2_Unregistered,
+
+  ////State2_ErrorA,
+  ////State2_ErrorB,
+  ////State2_FailureA,
+  ////State2_FailureB,
   State3,
 }
 

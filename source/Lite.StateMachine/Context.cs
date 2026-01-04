@@ -4,7 +4,6 @@
 namespace Lite.StateMachine;
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 /// <summary>Context passed to every state. Provides a "Parameter" and a NextState(Result) trigger.</summary>
@@ -12,11 +11,19 @@ using System.Threading.Tasks;
 public sealed class Context<TStateId>
   where TStateId : struct, Enum
 {
+#pragma warning disable SA1401 // Fields should be private
+
+  /// <summary>Mapping of the next state transitions for this state.</summary>
+  /// <remarks>Optionally override your next transitions.</remarks>
+  public StateMap<TStateId> NextStates;
+
+#pragma warning restore SA1401 // Fields should be private
+
   private readonly TaskCompletionSource<Result> _tcs;
 
   internal Context(
     TStateId current,
-    Dictionary<Result, TStateId?> nextStates,
+    StateMap<TStateId> nextStates,
     TaskCompletionSource<Result> tcs,
     IEventAggregator? eventAggregator = null,
     Result? lastChildResult = null)
@@ -42,9 +49,6 @@ public sealed class Context<TStateId>
 
   /////// <summary>Gets the previous state's enum value.</summary>
   ////public TStateId PreviousState { get; internal set; }
-
-  /// <summary>Gets or sets the next transition for previewing and overriding.</summary>
-  public Dictionary<Result, TStateId?> NextStates { get; set; } = [];
 
   /// <summary>Gets or sets an arbitrary parameter provided by caller to the current action.</summary>
   public PropertyBag Parameters { get; set; } = [];
