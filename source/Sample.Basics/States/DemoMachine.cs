@@ -19,7 +19,8 @@ public static class DemoMachine
   public static async Task RunAsync(bool logOutput = true)
   {
     var counter = 0;
-    var ctxProperties = new PropertyBag() {
+    var ctxProperties = new PropertyBag()
+    {
       { ParameterType.Counter, counter },
       { ParameterType.LogOutput, logOutput },
     };

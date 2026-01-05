@@ -94,8 +94,8 @@ public class CustomStateTests : TestBase
 
   [TestMethod]
   [DataRow(false, DisplayName = "Run State2_Sub3")]
-  [DataRow(true, DisplayName = "Skip State2_Sub3")]
-  public async Task Composite_Override_Executes_SuccessAsync(bool skipSubState3)
+  [DataRow(true, DisplayName = "Skip State2_Sub2")]
+  public async Task Composite_Override_Executes_SuccessAsync(bool skipSubState2)
   {
     // Assemble with Dependency Injection
     var services = new ServiceCollection()
@@ -110,7 +110,7 @@ public class CustomStateTests : TestBase
     var ctxProperties = new PropertyBag()
     {
       { ParameterType.Counter, 0 },
-      { ParameterType.TestExitEarly2, skipSubState3 },
+      { ParameterType.TestExitEarly2, skipSubState2 },
     };
 
     var machine = new StateMachine<CustomStateId>(factory, null, isContextPersistent: true);
@@ -130,7 +130,7 @@ public class CustomStateTests : TestBase
     Assert.IsNotNull(machine);
     Assert.IsNull(machine.Context);
 
-    Assert.AreEqual(skipSubState3 ? 2 : 3, msgService.Counter1, "State Counter1 failed.");
+    Assert.AreEqual(skipSubState2 ? 3 : 4, msgService.Counter1, "State Counter1 failed.");
     Assert.AreEqual(0, msgService.Counter2, "State2Dummy should never enter");
     Assert.AreEqual(1, msgService.Counter3, "Skip Substate Counter3 failed");
   }

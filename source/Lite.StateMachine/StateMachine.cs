@@ -205,11 +205,13 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     if (!_states.ContainsKey(initialStateId))
       throw new MissingInitialStateException($"Initial state '{initialStateId}' was not registered.");
 
-    var current = initialStateId;
+    TStateId? prevStateId = null;
+    var currentStateId = initialStateId;
 
     while (!cancellationToken.IsCancellationRequested)
     {
-      var reg = GetRegistration(current);
+      var reg = GetRegistration(currentStateId);
+      reg.PreviousStateId = prevStateId;
 
       // TODO (2025-12-28 DS): Configure context and pass it along
       ////var tcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -231,7 +233,8 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       if (nextId is null)
         break;
 
-      current = nextId.Value;
+      prevStateId = currentStateId;
+      currentStateId = nextId.Value;
     }
 
     return this;
@@ -310,6 +313,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     {
       Parameters = parameters,
       Errors = errors,
+      PreviousStateId = reg.PreviousStateId,
     };
 
     await instance.OnEntering(parentEnterCtx).ConfigureAwait(false);
@@ -337,10 +341,14 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     var childId = reg.InitialChildId.Value;
     Result? lastChildResult = null;
 
+    // Set the initial substate's PreviousStateId to NULL, as we already know the parent.
+    TStateId? childPrevStateId = null;
+
     // Composite Loop
     while (!ct.IsCancellationRequested)
     {
       var childReg = GetRegistration(childId);
+      childReg.PreviousStateId = childPrevStateId;
 
       // The child state was not registered the specified composite parent state
       if (!Equals(childReg.ParentId, reg.StateId))
@@ -371,6 +379,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
         throw new DisjointedNextSubStateException($"Child '{childId}' maps to '{nextChildId}', which is not a sibling under '{reg.StateId}'.");
 
       // Proceed to the next substate
+      childPrevStateId = childId;
       childId = nextChildId.Value;
     }
 
@@ -433,6 +442,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     {
       Parameters = parameterStack ?? [],
       Errors = errorStack ?? [],
+      PreviousStateId = reg.PreviousStateId,
     };
 
     IDisposable? subscription = null;

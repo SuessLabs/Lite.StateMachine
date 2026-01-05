@@ -33,6 +33,9 @@ public class State1(IMessageService msg, ILogger<State1> log)
 {
   public override Task OnEnter(Context<CompositeL3> context)
   {
+    if (context.ParameterAsBool(ParameterType.TestExecutionOrder))
+      Assert.IsNull(context.PreviousStateId);
+
     context.Parameters.Add(context.CurrentStateId.ToString(), Guid.NewGuid());
     MessageService.AddMessage($"[Keys-{context.CurrentStateId}]: {string.Join(",", context.Parameters.Keys)}");
     return base.OnEnter(context);
@@ -56,6 +59,9 @@ public class State2(IMessageService msg, ILogger<State2> log)
 
   public override Task OnEnter(Context<CompositeL3> context)
   {
+    if (context.ParameterAsBool(ParameterType.TestExecutionOrder))
+      Assert.AreEqual(CompositeL3.State1, context.PreviousStateId);
+
     // Demonstrate temporary parameter that will be discarded after State2's OnExit
     context.Parameters.Add($"{context.CurrentStateId}!TEMP", Guid.NewGuid());
     return base.OnEnter(context);
@@ -72,7 +78,16 @@ public class State2(IMessageService msg, ILogger<State2> log)
 
 /// <summary>Sublevel-2: State.<summary>
 public class State2_Sub1(IMessageService msg, ILogger<State2_Sub1> log)
-  : CommonDiStateBase<State2_Sub1, CompositeL3>(msg, log);
+  : CommonDiStateBase<State2_Sub1, CompositeL3>(msg, log)
+{
+  public override Task OnEnter(Context<CompositeL3> context)
+  {
+    if (context.ParameterAsBool(ParameterType.TestExecutionOrder))
+      Assert.IsNull(context.PreviousStateId);
+
+    return base.OnEnter(context);
+  }
+}
 
 /// <summary>Sublevel-2: Composite.</summary>
 public class State2_Sub2(IMessageService msg, ILogger<State2_Sub2> log)
@@ -91,6 +106,9 @@ public class State2_Sub2(IMessageService msg, ILogger<State2_Sub2> log)
 
   public override Task OnEnter(Context<CompositeL3> context)
   {
+    if (context.ParameterAsBool(ParameterType.TestExecutionOrder))
+      Assert.AreEqual(CompositeL3.State2_Sub1, context.PreviousStateId);
+
     // Demonstrate temporary parameter that will be discarded after State2_Sub2's OnExit
     context.Parameters.Add($"{context.CurrentStateId}!TEMP", Guid.NewGuid());
     return base.OnEnter(context);
@@ -106,7 +124,16 @@ public class State2_Sub2(IMessageService msg, ILogger<State2_Sub2> log)
 
 /// <summary>Sublevel-3: State.</summary>
 public class State2_Sub2_Sub1(IMessageService msg, ILogger<State2_Sub2_Sub1> log)
-  : CommonDiStateBase<State2_Sub2_Sub1, CompositeL3>(msg, log);
+  : CommonDiStateBase<State2_Sub2_Sub1, CompositeL3>(msg, log)
+{
+  public override Task OnEnter(Context<CompositeL3> context)
+  {
+    if (context.ParameterAsBool(ParameterType.TestExecutionOrder))
+      Assert.IsNull(context.PreviousStateId);
+
+    return base.OnEnter(context);
+  }
+}
 
 /// <summary>Sublevel-3: State.</summary>
 public class State2_Sub2_Sub2(IMessageService msg, ILogger<State2_Sub2_Sub2> log)
@@ -114,7 +141,16 @@ public class State2_Sub2_Sub2(IMessageService msg, ILogger<State2_Sub2_Sub2> log
 
 /// <summary>Sublevel-3: Last State.</summary>
 public class State2_Sub2_Sub3(IMessageService msg, ILogger<State2_Sub2_Sub3> log)
-  : CommonDiStateBase<State2_Sub2_Sub3, CompositeL3>(msg, log);
+  : CommonDiStateBase<State2_Sub2_Sub3, CompositeL3>(msg, log)
+{
+  public override Task OnEnter(Context<CompositeL3> context)
+  {
+    if (context.ParameterAsBool(ParameterType.TestExecutionOrder))
+      Assert.AreEqual(CompositeL3.State2_Sub2_Sub2, context.PreviousStateId);
+
+    return base.OnEnter(context);
+  }
+}
 
 /// <summary>Sublevel-2: Last State.</summary>
 public class State2_Sub3(IMessageService msg, ILogger<State2_Sub3> log)
@@ -122,6 +158,9 @@ public class State2_Sub3(IMessageService msg, ILogger<State2_Sub3> log)
 {
   public override Task OnEnter(Context<CompositeL3> context)
   {
+    if (context.ParameterAsBool(ParameterType.TestExecutionOrder))
+      Assert.AreEqual(CompositeL3.State2_Sub2, context.PreviousStateId);
+
     context.Parameters.Add(context.CurrentStateId.ToString(), Guid.NewGuid());
     MessageService.AddMessage($"[Keys-{context.CurrentStateId}]: {string.Join(",", context.Parameters.Keys)}");
     return base.OnEnter(context);

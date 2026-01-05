@@ -61,7 +61,7 @@ public class CompositeStateTest : TestBase
 
     // Ensure all states are hit
     var enums = Enum.GetValues<CompositeL1StateId>().Cast<CompositeL1StateId>();
-    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.HasCount(enums.Count(), machine.States);
     Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
 
     // Ensure they're in order
@@ -89,7 +89,7 @@ public class CompositeStateTest : TestBase
 
     // Ensure all states are hit
     var enums = Enum.GetValues<CompositeL1StateId>().Cast<CompositeL1StateId>();
-    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.HasCount(enums.Count(), machine.States);
     Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
 
     // Ensure they're in order
@@ -139,7 +139,7 @@ public class CompositeStateTest : TestBase
 
     // Ensure all states are hit
     var enums = Enum.GetValues<CompositeL1StateId>().Cast<CompositeL1StateId>();
-    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.HasCount(enums.Count(), machine.States);
     Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
 
     // Ensure they're in order
@@ -166,7 +166,7 @@ public class CompositeStateTest : TestBase
 
     // Ensure all states are hit
     var enums = Enum.GetValues<CompositeL1StateId>().Cast<CompositeL1StateId>();
-    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.HasCount(enums.Count(), machine.States);
     Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
 
     // Ensure they're in order
@@ -186,20 +186,10 @@ public class CompositeStateTest : TestBase
     var msgService = services.GetRequiredService<IMessageService>();
     Func<Type, object?> factory = t => ActivatorUtilities.CreateInstance(services, t);
 
-    var machine = new StateMachine<CompositeL3>(factory);
-
-    machine
-      .RegisterState<State1>(CompositeL3.State1, CompositeL3.State2)
-      .RegisterComposite<State2>(CompositeL3.State2, initialChildStateId: CompositeL3.State2_Sub1, onSuccess: CompositeL3.State3)
-      .RegisterSubState<State2_Sub1>(CompositeL3.State2_Sub1, parentStateId: CompositeL3.State2, onSuccess: CompositeL3.State2_Sub2)
-      .RegisterSubComposite<State2_Sub2>(CompositeL3.State2_Sub2, parentStateId: CompositeL3.State2, initialChildStateId: CompositeL3.State2_Sub2_Sub1, onSuccess: CompositeL3.State2_Sub3)
-      .RegisterSubState<State2_Sub2_Sub1>(CompositeL3.State2_Sub2_Sub1, parentStateId: CompositeL3.State2_Sub2, onSuccess: CompositeL3.State2_Sub2_Sub2)
-      .RegisterSubState<State2_Sub2_Sub2>(CompositeL3.State2_Sub2_Sub2, parentStateId: CompositeL3.State2_Sub2, onSuccess: CompositeL3.State2_Sub2_Sub3)
-      .RegisterSubState<State2_Sub2_Sub3>(CompositeL3.State2_Sub2_Sub3, parentStateId: CompositeL3.State2_Sub2, onSuccess: null)
-      .RegisterSubState<State2_Sub3>(CompositeL3.State2_Sub3, parentStateId: CompositeL3.State2, onSuccess: null)
-      .RegisterState<State3>(CompositeL3.State3, onSuccess: null);
-
+    // Act
+    var machine = GenerateStateMachineL3(new StateMachine<CompositeL3>(factory));
     var uml = machine.ExportUml([CompositeL3.State1], includeLegend: false);
+
     Assert.IsNotNull(uml);
     Console.WriteLine(uml);
   }
@@ -229,18 +219,7 @@ public class CompositeStateTest : TestBase
     var msgService = services.GetRequiredService<IMessageService>();
     Func<Type, object?> factory = t => ActivatorUtilities.CreateInstance(services, t);
 
-    var machine = new StateMachine<CompositeL3>(factory, null, isContextPersistent: contextIsPersistent);
-
-    machine
-      .RegisterState<State1>(CompositeL3.State1, CompositeL3.State2)
-      .RegisterComposite<State2>(CompositeL3.State2, initialChildStateId: CompositeL3.State2_Sub1, onSuccess: CompositeL3.State3)
-      .RegisterSubState<State2_Sub1>(CompositeL3.State2_Sub1, parentStateId: CompositeL3.State2, onSuccess: CompositeL3.State2_Sub2)
-      .RegisterSubComposite<State2_Sub2>(CompositeL3.State2_Sub2, parentStateId: CompositeL3.State2, initialChildStateId: CompositeL3.State2_Sub2_Sub1, onSuccess: CompositeL3.State2_Sub3)
-      .RegisterSubState<State2_Sub2_Sub1>(CompositeL3.State2_Sub2_Sub1, parentStateId: CompositeL3.State2_Sub2, onSuccess: CompositeL3.State2_Sub2_Sub2)
-      .RegisterSubState<State2_Sub2_Sub2>(CompositeL3.State2_Sub2_Sub2, parentStateId: CompositeL3.State2_Sub2, onSuccess: CompositeL3.State2_Sub2_Sub3)
-      .RegisterSubState<State2_Sub2_Sub3>(CompositeL3.State2_Sub2_Sub3, parentStateId: CompositeL3.State2_Sub2, onSuccess: null)
-      .RegisterSubState<State2_Sub3>(CompositeL3.State2_Sub3, parentStateId: CompositeL3.State2, onSuccess: null)
-      .RegisterState<State3>(CompositeL3.State3, onSuccess: null);
+    var machine = GenerateStateMachineL3(new StateMachine<CompositeL3>(factory, null, isContextPersistent: contextIsPersistent));
 
     // Act
     await machine.RunAsync(CompositeL3.State1, cancellationToken: TestContext.CancellationToken);
@@ -251,7 +230,7 @@ public class CompositeStateTest : TestBase
 
     // Ensure all states are registered
     var enums = Enum.GetValues<CompositeL3>().Cast<CompositeL3>();
-    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.HasCount(enums.Count(), machine.States);
     Assert.IsTrue(enums.All(stateId => machine.States.Contains(stateId)));
 
     // State Transition counter (9 states, 3 transitions)
@@ -286,5 +265,44 @@ public class CompositeStateTest : TestBase
       Assert.AreEqual(7, msgService.Counter2);
       Assert.AreEqual(11, msgService.Counter3);
     }
+  }
+
+  [TestMethod]
+  public async Task Level3_PreviousStateId_SuccessTestAsync()
+  {
+    // Assemble - Using DI for MessageService's counters
+    var services = new ServiceCollection()
+      .AddLogging(InlineTraceLogger(LogLevel.None))
+      .AddSingleton<IMessageService, MessageService>()
+      .BuildServiceProvider();
+
+    var msgService = services.GetRequiredService<IMessageService>();
+    Func<Type, object?> factory = t => ActivatorUtilities.CreateInstance(services, t);
+
+    var ctxProperties = new PropertyBag() { { ParameterType.TestExecutionOrder, true } };
+    var machine = GenerateStateMachineL3(new StateMachine<CompositeL3>(factory));
+
+    // Act
+    await machine.RunAsync(CompositeL3.State1, ctxProperties, null, TestContext.CancellationToken);
+
+    // Assert
+    Assert.IsNotNull(machine);
+    Assert.IsNull(machine.Context);
+  }
+
+  private static StateMachine<CompositeL3> GenerateStateMachineL3(StateMachine<CompositeL3> machine)
+  {
+    machine
+      .RegisterState<State1>(CompositeL3.State1, CompositeL3.State2)
+      .RegisterComposite<State2>(CompositeL3.State2, initialChildStateId: CompositeL3.State2_Sub1, onSuccess: CompositeL3.State3)
+      .RegisterSubState<State2_Sub1>(CompositeL3.State2_Sub1, parentStateId: CompositeL3.State2, onSuccess: CompositeL3.State2_Sub2)
+      .RegisterSubComposite<State2_Sub2>(CompositeL3.State2_Sub2, parentStateId: CompositeL3.State2, initialChildStateId: CompositeL3.State2_Sub2_Sub1, onSuccess: CompositeL3.State2_Sub3)
+      .RegisterSubState<State2_Sub2_Sub1>(CompositeL3.State2_Sub2_Sub1, parentStateId: CompositeL3.State2_Sub2, onSuccess: CompositeL3.State2_Sub2_Sub2)
+      .RegisterSubState<State2_Sub2_Sub2>(CompositeL3.State2_Sub2_Sub2, parentStateId: CompositeL3.State2_Sub2, onSuccess: CompositeL3.State2_Sub2_Sub3)
+      .RegisterSubState<State2_Sub2_Sub3>(CompositeL3.State2_Sub2_Sub3, parentStateId: CompositeL3.State2_Sub2, onSuccess: null)
+      .RegisterSubState<State2_Sub3>(CompositeL3.State2_Sub3, parentStateId: CompositeL3.State2, onSuccess: null)
+      .RegisterState<State3>(CompositeL3.State3, onSuccess: null);
+
+    return machine;
   }
 }

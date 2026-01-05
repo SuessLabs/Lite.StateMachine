@@ -12,10 +12,6 @@ namespace Lite.StateMachine.Tests.StateTests;
 [TestClass]
 public class BasicStateTests
 {
-  public const string ParameterCounter = "Counter";
-  public const string ParameterKeyTest = "TestKey";
-  public const string TestValue = "success";
-
   public TestContext TestContext { get; set; }
 
   /// <summary>Standard synchronous state registration exiting to completion.</summary>
@@ -23,8 +19,11 @@ public class BasicStateTests
   public void Basic_RegisterState_Executes123_SuccessTest()
   {
     // Assemble
-    var counter = 0;
-    var ctxProperties = new PropertyBag() { { ParameterCounter, counter } };
+    var ctxProperties = new PropertyBag()
+    {
+      { ParameterType.Counter, 0 },
+      { ParameterType.TestExecutionOrder, true },
+    };
 
     var machine = new StateMachine<BasicStateId>();
     machine.RegisterState<BasicState1>(BasicStateId.State1, BasicStateId.State2);
@@ -41,7 +40,7 @@ public class BasicStateTests
 
     // Ensure all states are registered
     var enums = Enum.GetValues<BasicStateId>().Cast<BasicStateId>();
-    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.HasCount(enums.Count(), machine.States);
     Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
 
     // Ensure they're registered in order
@@ -54,8 +53,11 @@ public class BasicStateTests
   public async Task Basic_RegisterState_Executes123_SuccessTestAsync()
   {
     // Assemble
-    var counter = 0;
-    var ctxProperties = new PropertyBag() { { ParameterCounter, counter } };
+    var ctxProperties = new PropertyBag()
+    {
+      { ParameterType.Counter, 0 },
+      { ParameterType.TestExecutionOrder, true },
+    };
 
     var machine = new StateMachine<BasicStateId>();
     machine.RegisterState<BasicState1>(BasicStateId.State1, BasicStateId.State2);
@@ -71,7 +73,7 @@ public class BasicStateTests
 
     // Ensure all states are registered
     var enums = Enum.GetValues<BasicStateId>().Cast<BasicStateId>();
-    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.HasCount(enums.Count(), machine.States);
     Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
 
     // Ensure they're registered in order
@@ -88,7 +90,8 @@ public class BasicStateTests
     machine.RegisterState<BasicState2>(BasicStateId.State2);
 
     // Act - Start your engine!
-    await machine.RunAsync(BasicStateId.State1);
+    var ctxProperties = new PropertyBag() { { ParameterType.TestExecutionOrder, false } };
+    await machine.RunAsync(BasicStateId.State1, ctxProperties);
 
     // Assert Results
     Assert.IsNotNull(machine);
@@ -96,7 +99,7 @@ public class BasicStateTests
 
     // Ensure all states are registered
     var enums = Enum.GetValues<BasicStateId>().Cast<BasicStateId>();
-    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.HasCount(enums.Count(), machine.States);
     Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
 
     // Ensure they're NOT registered in order
@@ -109,8 +112,11 @@ public class BasicStateTests
   public async Task Basic_RegisterState_Fluent_SuccessTestAsync()
   {
     // Assemble
-    var counter = 0;
-    var ctxProperties = new PropertyBag() { { ParameterCounter, counter } };
+    var ctxProperties = new PropertyBag()
+    {
+      { ParameterType.Counter, 0 },
+      { ParameterType.TestExecutionOrder, true },
+    };
 
     // Assemble/Act - Start your engine!
     var machine = await new StateMachine<BasicStateId>()
@@ -125,7 +131,7 @@ public class BasicStateTests
 
     // Ensure all states are registered
     var enums = Enum.GetValues<BasicStateId>().Cast<BasicStateId>();
-    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.HasCount(enums.Count(), machine.States);
     Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
 
     // Ensure they're registered in order
@@ -168,7 +174,12 @@ public class BasicStateTests
     var machine = new StateMachine<BasicStateId>();
 
     // This test will take 1 full second to complete versus
-    var paramStack = new PropertyBag() { { ParameterType.HungStateAvoidance, true } };
+    var ctxProperties = new PropertyBag()
+    {
+      { ParameterType.TestHungStateAvoidance, true },
+      { ParameterType.TestExecutionOrder, true },
+    };
+
     machine.DefaultStateTimeoutMs = 1000;
 
     machine.RegisterState<BasicState1>(BasicStateId.State1, BasicStateId.State2);
@@ -176,7 +187,7 @@ public class BasicStateTests
     machine.RegisterState<BasicState3>(BasicStateId.State3);
 
     // Act - Start your engine!
-    await machine.RunAsync(BasicStateId.State1, paramStack);
+    await machine.RunAsync(BasicStateId.State1, ctxProperties);
 
     // Assert Results
     Assert.IsNotNull(machine);
@@ -184,7 +195,7 @@ public class BasicStateTests
 
     // Ensure all states are registered
     var enums = Enum.GetValues<BasicStateId>().Cast<BasicStateId>();
-    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.HasCount(enums.Count(), machine.States);
     Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
   }
 
@@ -194,8 +205,14 @@ public class BasicStateTests
   [Ignore("vNext - Currently StateMachine destroys context after run completes.")]
   public async Task RegisterState_ReturnsContext_SuccessTestAsync()
   {
+    const string TestValue = "success";
+
     // Assemble
-    var counter = 0;
+    var ctxProperties = new PropertyBag()
+    {
+      { ParameterType.Counter, 0 },
+      { ParameterType.TestExecutionOrder, true },
+    };
 
     var machine = new StateMachine<BasicStateId>();
     machine.RegisterState<BasicState1>(BasicStateId.State1, BasicStateId.State2);
@@ -203,7 +220,6 @@ public class BasicStateTests
     machine.RegisterState<BasicState3>(BasicStateId.State3);
 
     // Act - Start your engine!
-    var ctxProperties = new PropertyBag() { { ParameterCounter, counter } };
     var task = machine.RunAsync(BasicStateId.State1, ctxProperties);
     await task;   // Non async method: task.GetAwaiter().GetResult();
 
@@ -213,10 +229,10 @@ public class BasicStateTests
 
     var ctxFinalParams = machine.Context.Parameters;
     Assert.IsNotNull(ctxFinalParams);
-    Assert.AreEqual(TestValue, ctxFinalParams[ParameterKeyTest]);
+    Assert.AreEqual(TestValue, ctxFinalParams[ParameterType.KeyTest]);
 
     // NOTE: This should be 9 because each state has 3 hooks that increment the counter
     // TODO (2025-12-22 DS): Fix last state not calling OnExit.
-    Assert.AreEqual(9, ctxFinalParams[ParameterCounter]);
+    Assert.AreEqual(9, ctxFinalParams[ParameterType.Counter]);
   }
 }
