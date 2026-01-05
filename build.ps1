@@ -43,3 +43,5 @@ Copy-Item -Path "output/Lite.StateMachine/Release/*.nupkg" -Destination "publish
 ##$dttm = (Get-Date).ToString("yyyy-MM-dd")
 ##$version = (Get-Item -Path "publish/win-x64/Lite.EventIpc.dll").VersionInfo.FileVersion
 ##Compress-Archive -Path "publish/win-x64/*" -DestinationPath "publish/Lite.EventIpc-${version}-(win-x64)_${dttm}.zip"
+
+Write-Output "Done"
