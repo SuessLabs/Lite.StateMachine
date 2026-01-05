@@ -16,8 +16,6 @@ public class State1 : StateBase<State1, CustomStateId>
 
   public override async Task OnEnter(Context<CustomStateId> ctx)
   {
-    int cnt = ctx.ParameterAsInt(ParameterType.Counter);
-
     if (ctx.ParameterAsBool(ParameterType.TestUnregisteredTransition))
       ctx.NextStates.OnSuccess = CustomStateId.State2_Unregistered;
     else
@@ -60,6 +58,8 @@ public class State2Success : StateBase<State2Success, CustomStateId>
   {
     _msgService.Counter1++;
 
+    Assert.AreEqual(CustomStateId.State1, ctx.PreviousStateId);
+
     if (ctx.ParameterAsBool(ParameterType.TestExitEarly))
       ctx.NextStates.OnSuccess = null;
 
@@ -76,7 +76,24 @@ public class State2Success : StateBase<State2Success, CustomStateId>
 
 public class State2Success_Sub1 : StateBase<State2Success_Sub1, CustomStateId>
 {
-  public State2Success_Sub1() => HasDebugLogging = true;
+  private readonly IMessageService _msgService;
+
+  public State2Success_Sub1(IMessageService msg)
+  {
+    _msgService = msg;
+    HasDebugLogging = true;
+  }
+
+  public override Task OnEnter(Context<CustomStateId> ctx)
+  {
+    _msgService.Counter1++;
+
+    // Skip Sub2 and goto Sub3
+    if (ctx.ParameterAsBool(ParameterType.TestExitEarly2))
+      ctx.NextStates.OnSuccess = CustomStateId.State2_Sub3;
+
+    return base.OnEnter(ctx);
+  }
 }
 
 public class State2Success_Sub2 : StateBase<State2Success_Sub2, CustomStateId>
@@ -92,10 +109,6 @@ public class State2Success_Sub2 : StateBase<State2Success_Sub2, CustomStateId>
   public override Task OnEnter(Context<CustomStateId> ctx)
   {
     _msgService.Counter1++;
-
-    if (ctx.ParameterAsBool(ParameterType.TestExitEarly2))
-      ctx.NextStates.OnSuccess = null;
-
     return base.OnEnter(ctx);
   }
 }
@@ -112,6 +125,11 @@ public class State2Success_Sub3 : StateBase<State2Success_Sub3, CustomStateId>
 
   public override Task OnEnter(Context<CustomStateId> ctx)
   {
+    if (ctx.ParameterAsBool(ParameterType.TestExitEarly2))
+      Assert.AreEqual(CustomStateId.State2_Sub1, ctx.PreviousStateId);
+    else
+      Assert.AreEqual(CustomStateId.State2_Sub2, ctx.PreviousStateId);
+
     _msgService.Counter1++;
     return base.OnEnter(ctx);
   }
@@ -129,6 +147,8 @@ public class State3 : StateBase<State3, CustomStateId>
 
   public override Task OnEnter(Context<CustomStateId> ctx)
   {
+    Assert.AreEqual(CustomStateId.State2_Success, ctx.PreviousStateId);
+
     _msgService.Counter3++;
     return base.OnEnter(ctx);
   }

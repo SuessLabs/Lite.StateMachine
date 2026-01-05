@@ -61,7 +61,7 @@ public class CompositeStateTest : TestBase
 
     // Ensure all states are hit
     var enums = Enum.GetValues<CompositeL1StateId>().Cast<CompositeL1StateId>();
-    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.HasCount(enums.Count(), machine.States);
     Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
 
     // Ensure they're in order
@@ -89,7 +89,7 @@ public class CompositeStateTest : TestBase
 
     // Ensure all states are hit
     var enums = Enum.GetValues<CompositeL1StateId>().Cast<CompositeL1StateId>();
-    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.HasCount(enums.Count(), machine.States);
     Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
 
     // Ensure they're in order
@@ -139,7 +139,7 @@ public class CompositeStateTest : TestBase
 
     // Ensure all states are hit
     var enums = Enum.GetValues<CompositeL1StateId>().Cast<CompositeL1StateId>();
-    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.HasCount(enums.Count(), machine.States);
     Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
 
     // Ensure they're in order
@@ -166,7 +166,7 @@ public class CompositeStateTest : TestBase
 
     // Ensure all states are hit
     var enums = Enum.GetValues<CompositeL1StateId>().Cast<CompositeL1StateId>();
-    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.HasCount(enums.Count(), machine.States);
     Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
 
     // Ensure they're in order
@@ -230,7 +230,7 @@ public class CompositeStateTest : TestBase
 
     // Ensure all states are registered
     var enums = Enum.GetValues<CompositeL3>().Cast<CompositeL3>();
-    Assert.AreEqual(enums.Count(), machine.States.Count());
+    Assert.HasCount(enums.Count(), machine.States);
     Assert.IsTrue(enums.All(stateId => machine.States.Contains(stateId)));
 
     // State Transition counter (9 states, 3 transitions)
@@ -290,7 +290,7 @@ public class CompositeStateTest : TestBase
     Assert.IsNull(machine.Context);
   }
 
-  private StateMachine<CompositeL3> GenerateStateMachineL3(StateMachine<CompositeL3> machine)
+  private static StateMachine<CompositeL3> GenerateStateMachineL3(StateMachine<CompositeL3> machine)
   {
     machine
       .RegisterState<State1>(CompositeL3.State1, CompositeL3.State2)
