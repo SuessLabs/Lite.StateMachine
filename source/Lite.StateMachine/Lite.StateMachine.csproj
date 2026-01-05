@@ -11,7 +11,7 @@
     <AssemblyVersion>2.2.0</AssemblyVersion>
     <FileVersion>$(AssemblyVersion)</FileVersion>
     <VersionPrefix>$(AssemblyVersion)</VersionPrefix>
-    <VersionSuffix>-alpha2</VersionSuffix>
+    <VersionSuffix></VersionSuffix>
     <Version>$(VersionPrefix)$(VersionSuffix)</Version>
 
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -25,8 +25,11 @@
       New Features in v2.2:
 
       * New: Renamed, Result.Ok -&gt; Result.Success (Breaking Change).
-      * New: Renamed, Context.ErrorStaack -&gt; Context.Errors (Breaking Change).
+      * New: Renamed, Context.ErrorStack -&gt; Context.Errors (Breaking Change).
       * New: Context.NextStates provides ability to override the next transitions for a state.
+      * New: Context.PreviousStateId for informing where state came from (null on initial state)
+      * Update: Quicker execution
+      * Update: Generic cleanup
 
       New Features in v2.1:
 
