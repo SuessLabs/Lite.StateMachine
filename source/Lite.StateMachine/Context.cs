@@ -55,6 +55,7 @@ public sealed class Context<TStateId>
 
   /// <summary>Signal the machine to move forward (only once per state entry).</summary>
   /// <param name="result">Result to pass to the next state.</param>
+  /// <remarks>Consider renaming to `StateResult` or `Result` for clarity.</remarks>
   public void NextState(Result result) => _tcs.TrySetResult(result);
 
   public bool ParameterAsBool(object key, bool defaultBool = false)

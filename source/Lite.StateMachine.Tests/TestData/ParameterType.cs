@@ -17,6 +17,9 @@ public enum ParameterType
   /// <summary>Test triggers an early exit. Setting OnSuccess to NULL.</summary>
   TestExitEarly,
 
+  /// <summary>Test triggers a 2nd early exit. Setting OnSuccess to NULL.</summary>
+  TestExitEarly2,
+
   /// <summary>Test trigger to go to an invalid state transition.</summary>
   TestUnregisteredTransition,
 }

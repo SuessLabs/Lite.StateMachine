@@ -8,27 +8,27 @@ using Lite.StateMachine.Tests.TestData.Services;
 #pragma warning disable SA1402 // File may only contain a single type
 #pragma warning disable IDE0130 // Namespace does not match folder structure
 
-namespace Lite.StateMachine.Tests.TestData.States.CustomBasicStates;
+namespace Lite.StateMachine.Tests.TestData.States.CustomStates;
 
-public class State1 : StateBase<State1, CustomBasicStateId>
+public class State1 : StateBase<State1, CustomStateId>
 {
   public State1() => HasDebugLogging = true;
 
-  public override async Task OnEnter(Context<CustomBasicStateId> ctx)
+  public override async Task OnEnter(Context<CustomStateId> ctx)
   {
     int cnt = ctx.ParameterAsInt(ParameterType.Counter);
 
     if (ctx.ParameterAsBool(ParameterType.TestUnregisteredTransition))
-      ctx.NextStates.OnSuccess = CustomBasicStateId.State2_Unregistered;
+      ctx.NextStates.OnSuccess = CustomStateId.State2_Unregistered;
     else
-      ctx.NextStates.OnSuccess = CustomBasicStateId.State2_Success;
+      ctx.NextStates.OnSuccess = CustomStateId.State2_Success;
 
     await base.OnEnter(ctx);
   }
 }
 
 /// <summary>This state should NEVER be transitioned into.</summary>
-public class State2Dummy : StateBase<State2Dummy, CustomBasicStateId>
+public class State2Dummy : StateBase<State2Dummy, CustomStateId>
 {
   private readonly IMessageService _msgService;
 
@@ -38,7 +38,7 @@ public class State2Dummy : StateBase<State2Dummy, CustomBasicStateId>
     HasDebugLogging = true;
   }
 
-  public override Task OnEnter(Context<CustomBasicStateId> context)
+  public override Task OnEnter(Context<CustomStateId> context)
   {
     Assert.Fail("Overridden state transitions should not all us to be here.");
     _msgService.Counter2++;
@@ -46,17 +46,17 @@ public class State2Dummy : StateBase<State2Dummy, CustomBasicStateId>
   }
 }
 
-public class State2SuccessA : StateBase<State2SuccessA, CustomBasicStateId>
+public class State2Success : StateBase<State2Success, CustomStateId>
 {
   private readonly IMessageService _msgService;
 
-  public State2SuccessA(IMessageService msg)
+  public State2Success(IMessageService msg)
   {
     _msgService = msg;
     HasDebugLogging = true;
   }
 
-  public override Task OnEnter(Context<CustomBasicStateId> ctx)
+  public override Task OnEnter(Context<CustomStateId> ctx)
   {
     _msgService.Counter1++;
 
@@ -65,9 +65,59 @@ public class State2SuccessA : StateBase<State2SuccessA, CustomBasicStateId>
 
     return base.OnEnter(ctx);
   }
+
+  public override Task OnExit(Context<CustomStateId> context)
+  {
+    // When operating as a Composite, we need to pass back Success.
+    context.NextState(Result.Success);
+    return base.OnExit(context);
+  }
 }
 
-public class State3 : StateBase<State3, CustomBasicStateId>
+public class State2Success_Sub1 : StateBase<State2Success_Sub1, CustomStateId>
+{
+  public State2Success_Sub1() => HasDebugLogging = true;
+}
+
+public class State2Success_Sub2 : StateBase<State2Success_Sub2, CustomStateId>
+{
+  private readonly IMessageService _msgService;
+
+  public State2Success_Sub2(IMessageService msg)
+  {
+    _msgService = msg;
+    HasDebugLogging = true;
+  }
+
+  public override Task OnEnter(Context<CustomStateId> ctx)
+  {
+    _msgService.Counter1++;
+
+    if (ctx.ParameterAsBool(ParameterType.TestExitEarly2))
+      ctx.NextStates.OnSuccess = null;
+
+    return base.OnEnter(ctx);
+  }
+}
+
+public class State2Success_Sub3 : StateBase<State2Success_Sub3, CustomStateId>
+{
+  private readonly IMessageService _msgService;
+
+  public State2Success_Sub3(IMessageService msg)
+  {
+    _msgService = msg;
+    HasDebugLogging = true;
+  }
+
+  public override Task OnEnter(Context<CustomStateId> ctx)
+  {
+    _msgService.Counter1++;
+    return base.OnEnter(ctx);
+  }
+}
+
+public class State3 : StateBase<State3, CustomStateId>
 {
   private readonly IMessageService _msgService;
 
@@ -77,7 +127,7 @@ public class State3 : StateBase<State3, CustomBasicStateId>
     HasDebugLogging = true;
   }
 
-  public override Task OnEnter(Context<CustomBasicStateId> ctx)
+  public override Task OnEnter(Context<CustomStateId> ctx)
   {
     _msgService.Counter3++;
     return base.OnEnter(ctx);

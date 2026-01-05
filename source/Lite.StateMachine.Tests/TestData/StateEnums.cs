@@ -46,17 +46,23 @@ public enum CompositeMsgStateId
   Failure,
 }
 
-public enum CustomBasicStateId
+public enum CustomStateId
 {
+  /// <summary>Initial state.</summary>
   State1,
+
+  /// <summary>Dummy state that is registered but never transitioned to.</summary>
   State2_Dummy,
+
   State2_Success,
+
+  /// <summary>This state must NEVER be registered.</summary>
   State2_Unregistered,
 
-  ////State2_ErrorA,
-  ////State2_ErrorB,
-  ////State2_FailureA,
-  ////State2_FailureB,
+  State2_Sub1,
+  State2_Sub2,
+  State2_Sub3,
+
   State3,
 }
 
