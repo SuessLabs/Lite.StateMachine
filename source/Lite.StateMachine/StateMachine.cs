@@ -227,7 +227,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       if (result is null)
         break;
 
-      var nextId = ResolveNext(reg, result.Value);
+      var nextId = StateMachine<TStateId>.ResolveNext(reg, result.Value);
       if (nextId is null)
         break;
 
@@ -236,6 +236,18 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
     return this;
   }
+
+  /// <summary>Get next state transition based on state's result.</summary>
+  /// <param name="reg">State registration.</param>
+  /// <param name="result">State's returned result.</param>
+  /// <returns><see cref="TStateId"/> to go to next or NULL to bubble-up or end state machine process.</returns>
+  private static TStateId? ResolveNext(StateRegistration<TStateId> reg, Result result) => result switch
+  {
+    Result.Success => reg.OnSuccess,
+    Result.Error => reg.OnError,
+    Result.Failure => reg.OnFailure,
+    _ => null,
+  };
 
   /// <summary>
   ///   Retrieves an existing state instance associated with the specified registration,
@@ -269,21 +281,6 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     return reg;
   }
 
-  /// <summary>Get next state transition based on state's result.</summary>
-  /// <param name="reg">State registration.</param>
-  /// <param name="result">State's returned result.</param>
-  /// <returns><see cref="TStateId"/> to go to next or NULL to bubble-up or end state machine process.</returns>
-  private TStateId? ResolveNext(StateRegistration<TStateId> reg, Result result)
-  {
-    return result switch
-    {
-      Result.Success => reg.OnSuccess,
-      Result.Error => reg.OnError,
-      Result.Failure => reg.OnFailure,
-      _ => null,
-    };
-  }
-
   private async Task<Result?> RunAnyStateRecursiveAsync(
     StateRegistration<TStateId> reg,
     PropertyBag? parameters,
@@ -291,8 +288,8 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     CancellationToken ct)
   {
     // Ensure we always operate on non-null, shared bags
-    parameters = parameters ?? [];
-    errors = errors ?? [];
+    parameters ??= [];
+    errors ??= [];
 
     // Run Normal or Command State
     if (!reg.IsCompositeParent)
@@ -362,7 +359,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
       // TODO (#76): Extract the Context.OnSuccess/Error/Failure override (if any)
       lastChildResult = childResult;
-      var nextChildId = ResolveNext(childReg, childResult.Value);
+      var nextChildId = StateMachine<TStateId>.ResolveNext(childReg, childResult.Value);
 
       // NULL mapping => last child => bubble-up to parent and exit
       if (nextChildId is null)
@@ -396,13 +393,13 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     {
       if (parameters is not null)
       {
-        foreach (string k in parameters.Keys)
+        foreach (var k in parameters.Keys)
           if (!originalParamKeys.Contains(k)) parameters.Remove(k);
       }
 
       if (errors is not null)
       {
-        foreach (string k in errors.Keys)
+        foreach (var k in errors.Keys)
           if (!originalErrorKeys.Contains(k)) errors.Remove(k);
       }
     }
