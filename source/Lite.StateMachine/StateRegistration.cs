@@ -32,10 +32,9 @@ internal sealed class StateRegistration<TStateId>
   /// <summary>Gets the sub-state's parent State Id (optional).</summary>
   public TStateId? ParentId { get; init; }
 
+  /// <summary>Gets or sets the Previous <typeparamref name="TStateId"/> we transitioned from.</summary>
+  public TStateId? PreviousStateId { get; set; }
+
   /// <summary>Gets the State Id, used by ExportUml for <see cref="RegisterState{TStateClass}(TStateId, TStateId?, TStateId?, TStateId?, Action{StateMachine{TStateId}}?)"./> .</summary>
   public TStateId StateId { get; init; }
-
-  //// INFO: Though dict lookup is more flexible, properties are faster. Leaving this here for reference.
-  /////// <summary>Gets the state result transitions OnSuccess, OnError, OnFailure.</summary>
-  ////public Dictionary<Result, TStateId?> Transitions { get; } = new();
 }

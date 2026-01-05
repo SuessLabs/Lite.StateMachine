@@ -47,11 +47,11 @@ public sealed class Context<TStateId>
   /// <summary>Gets result emitted by the last child state (for composite parents only).</summary>
   public Result? LastChildResult { get; }
 
-  /////// <summary>Gets the previous state's enum value.</summary>
-  ////public TStateId PreviousState { get; internal set; }
-
   /// <summary>Gets or sets an arbitrary parameter provided by caller to the current action.</summary>
   public PropertyBag Parameters { get; set; } = [];
+
+  /// <summary>Gets the previous state's enum value.</summary>
+  public TStateId? PreviousStateId { get; internal set; }
 
   /// <summary>Signal the machine to move forward (only once per state entry).</summary>
   /// <param name="result">Result to pass to the next state.</param>
