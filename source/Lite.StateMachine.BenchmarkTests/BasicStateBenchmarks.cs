@@ -43,7 +43,7 @@ public class BasicStateBenchmarks
   }
 
   [Benchmark]
-  public void FlatStateMachineRunsSync()
+  public void BasicStatesRunsSync()
   {
     var maxCounter = CyclesBeforeExit;
     PropertyBag parameters = new()

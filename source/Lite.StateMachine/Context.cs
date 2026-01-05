@@ -11,15 +11,25 @@ using System.Threading.Tasks;
 public sealed class Context<TStateId>
   where TStateId : struct, Enum
 {
+#pragma warning disable SA1401 // Fields should be private
+
+  /// <summary>Mapping of the next state transitions for this state.</summary>
+  /// <remarks>Optionally override your next transitions.</remarks>
+  public StateMap<TStateId> NextStates;
+
+#pragma warning restore SA1401 // Fields should be private
+
   private readonly TaskCompletionSource<Result> _tcs;
 
   internal Context(
     TStateId current,
+    StateMap<TStateId> nextStates,
     TaskCompletionSource<Result> tcs,
     IEventAggregator? eventAggregator = null,
     Result? lastChildResult = null)
   {
     CurrentStateId = current;
+    NextStates = nextStates;
     _tcs = tcs;
     EventAggregator = eventAggregator;
     LastChildResult = lastChildResult;
@@ -38,22 +48,15 @@ public sealed class Context<TStateId>
   public Result? LastChildResult { get; }
 
   /////// <summary>Gets the previous state's enum value.</summary>
-  ////public TStateId LastStateId { get; internal set; }
+  ////public TStateId PreviousState { get; internal set; }
 
   /// <summary>Gets or sets an arbitrary parameter provided by caller to the current action.</summary>
   public PropertyBag Parameters { get; set; } = [];
 
   /// <summary>Signal the machine to move forward (only once per state entry).</summary>
   /// <param name="result">Result to pass to the next state.</param>
+  /// <remarks>Consider renaming to `StateResult` or `Result` for clarity.</remarks>
   public void NextState(Result result) => _tcs.TrySetResult(result);
-
-  /// <summary>Override the previously defined <see cref="NextState(Result)"/> transition with the one specified.</summary>
-  /// <param name="result">On <see cref="Result"/> value.</param>
-  /// <param name="newStateId">New <see cref="TStateId"/> to transition to.</param>
-  public void OnTransition(Result result, TStateId newStateId)
-  {
-    throw new NotImplementedException();
-  }
 
   public bool ParameterAsBool(object key, bool defaultBool = false)
   {

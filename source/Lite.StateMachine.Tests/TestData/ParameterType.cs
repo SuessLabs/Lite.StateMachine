@@ -3,9 +3,23 @@
 
 namespace Lite.StateMachine.Tests.TestData;
 
-public static class ParameterType
+public enum ParameterType
 {
-  public const string Counter = "Counter";
-  public const string HungStateAvoidance = "DoNotAllowHungStatesTest";
-  public const string KeyTest = "TestKey";
+  /// <summary>Generic counter.</summary>
+  Counter,
+
+  /// <summary>Tests for DoNotAllowHungStatesTest.</summary>
+  HungStateAvoidance,
+
+  /// <summary>Random test.</summary>
+  KeyTest,
+
+  /// <summary>Test triggers an early exit. Setting OnSuccess to NULL.</summary>
+  TestExitEarly,
+
+  /// <summary>Test triggers a 2nd early exit. Setting OnSuccess to NULL.</summary>
+  TestExitEarly2,
+
+  /// <summary>Test trigger to go to an invalid state transition.</summary>
+  TestUnregisteredTransition,
 }

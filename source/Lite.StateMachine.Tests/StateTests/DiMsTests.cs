@@ -13,11 +13,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 
-namespace Lite.StateMachine.Tests.DiTests;
+namespace Lite.StateMachine.Tests.StateTests;
 
+/// <summary>Microsoft Dependency Injection Tests.</summary>
 [TestClass]
 [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test class")]
-public class MsDiTests
+public class DiMsTests
 {
   [TestMethod]
   public async Task Basic_FlatStates_SuccessTestAsync()
@@ -197,7 +198,7 @@ public class MsDiTests
 
     var aggregator = services.GetRequiredService<IEventAggregator>();
     var msgService = services.GetRequiredService<IMessageService>();
-    var logService = services.GetRequiredService<ILogger<MsDiTests>>();
+    var logService = services.GetRequiredService<ILogger<DiMsTests>>();
 
     msgService.Counter1 = 0;
     msgService.Counter2 = 0;
