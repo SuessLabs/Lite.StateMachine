@@ -25,8 +25,4 @@ public interface IState<TStateId>
   /// <param name="context"><see cref="Context{TState}"/>.</param>
   /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
   Task OnExit(Context<TStateId> context);
-
-  /////// <summary>Forcibly set the <see cref="TStateId"/> late; used by, ExportUml().</summary>
-  /////// <param name="id">State Id.</param>
-  ////void SetStateId(TStateId id);
 }

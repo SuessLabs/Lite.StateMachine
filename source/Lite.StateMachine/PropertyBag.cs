@@ -5,12 +5,6 @@ using System.Collections.Generic;
 
 namespace Lite.StateMachine;
 
-[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1649:File name should match first type name", Justification = "No need to waste a file.")]
-public interface IPropertyBag<TKey> : IDictionary<TKey, object?>
-{
-  void SafeAdd(object key, object? value);
-}
-
 /// <summary>Context parameter stack properties for passing data between states.</summary>
 /// <typeparam name="TKey">TKey is Key.</typeparam>
 /// <remarks>
