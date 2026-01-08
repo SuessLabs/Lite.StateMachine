@@ -19,8 +19,6 @@ public class CompositeStateTest : TestBase
   public const string ParameterSubStateEntered = "SubEntered";
   public const string SUCCESS = "success";
 
-  public TestContext TestContext { get; set; }
-
   [TestMethod]
   public async Task Level1_Basic_RegisterHelpers_SuccessTestAsync()
   {

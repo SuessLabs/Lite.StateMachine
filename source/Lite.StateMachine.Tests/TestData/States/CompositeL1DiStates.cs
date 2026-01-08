@@ -25,7 +25,7 @@ public class ParentState(IMessageService msg, ILogger<ParentState> log)
   public override Task OnExit(Context<CompositeMsgStateId> context)
   {
     MessageService.Counter1++;
-    MessageService.AddMessage(GetType().Name + " OnExit");
+    MessageService.AddMessage(GetType().Name + " [OnExit]");
     Log.LogInformation("[OnExit] => {result}", context.LastChildResult);
 
     context.NextState(context.LastChildResult switch
@@ -51,7 +51,7 @@ public class ParentSub_WaitMessageState(IMessageService msg, ILogger<ParentSub_W
   public override Task OnEnter(Context<CompositeMsgStateId> context)
   {
     MessageService.Counter1++;
-    MessageService.AddMessage(GetType().Name + " OnEnter");
+    MessageService.AddMessage(GetType().Name + " [OnEnter]");
 
     Log.LogInformation("[OnEnter] (Counter2: {cnt})", MessageService.Counter2);
     switch (MessageService.Counter2)
@@ -84,7 +84,7 @@ public class ParentSub_WaitMessageState(IMessageService msg, ILogger<ParentSub_W
   public Task OnMessage(Context<CompositeMsgStateId> context, object message)
   {
     MessageService.Counter1++;
-    MessageService.AddMessage(GetType().Name + " OnEnter");
+    MessageService.AddMessage(GetType().Name + " [OnEnter]");
 
     if (message is not string response)
     {
@@ -122,7 +122,7 @@ public class ParentSub_WaitMessageState(IMessageService msg, ILogger<ParentSub_W
   public Task OnTimeout(Context<CompositeMsgStateId> context)
   {
     MessageService.Counter1++;
-    MessageService.AddMessage(GetType().Name + " OnEnter");
+    MessageService.AddMessage(GetType().Name + " [OnEnter]");
     context.NextState(Result.Failure);
 
     Log.LogInformation("[OnTimeout] => Failure; (Publishing: ReceivedTimeout)");
@@ -145,7 +145,7 @@ public class Workflow_ErrorState(IMessageService msg, ILogger<Workflow_ErrorStat
   {
     MessageService.Counter1++;
     MessageService.Counter2++;
-    MessageService.AddMessage(GetType().Name + " OnEnter");
+    MessageService.AddMessage(GetType().Name + " [OnEnter]");
 
     Log.LogInformation("[{StateName}] [OnEnter] => OK; Counter2++", GetType().Name);
     Debug.WriteLine($"[{GetType().Name}] [OnEnter] => OK; Counter2++");
@@ -164,7 +164,7 @@ public class Workflow_FailureState(IMessageService msg, ILogger<Workflow_Failure
   {
     MessageService.Counter1++;
     MessageService.Counter2++;
-    MessageService.AddMessage(GetType().Name + " OnEnter");
+    MessageService.AddMessage(GetType().Name + " [OnEnter]");
 
     Log.LogInformation("[{StateName}] [OnEnter] => OK; (Counter2++)", GetType().Name);
     Debug.WriteLine($"[{GetType().Name}] [OnEnter] => OK; (Counter2++)");

@@ -27,7 +27,7 @@ public class DiStateBase<TStateClass, TStateId>(IMessageService msg, ILogger<TSt
   public virtual Task OnEnter(Context<TStateId> context)
   {
     _msgService.Counter1++;
-    ////_msgService.AddMessage(GetType().Name + " OnEnter");
+    ////_msgService.AddMessage(GetType().Name + " [OnEnter]");
     _logger.LogInformation("[OnEnter] => OK");
 
     if (HasExtraLogging)
@@ -40,7 +40,7 @@ public class DiStateBase<TStateClass, TStateId>(IMessageService msg, ILogger<TSt
   public virtual Task OnEntering(Context<TStateId> context)
   {
     _msgService.Counter1++;
-    ////_msgService.AddMessage(GetType().Name + " OnEntering");
+    ////_msgService.AddMessage(GetType().Name + " [OnEntering]");
     _logger.LogInformation("[OnEntering]");
 
     if (HasExtraLogging)
@@ -52,7 +52,7 @@ public class DiStateBase<TStateClass, TStateId>(IMessageService msg, ILogger<TSt
   public virtual Task OnExit(Context<TStateId> context)
   {
     _msgService.Counter1++;
-    ////_msgService.AddMessage(GetType().Name + " OnExit");
+    ////_msgService.AddMessage(GetType().Name + " [OnExit]");
     _logger.LogInformation("[OnExit]");
 
     if (HasExtraLogging)

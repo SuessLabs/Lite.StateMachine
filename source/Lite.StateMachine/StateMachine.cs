@@ -135,6 +135,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       OnSuccess = onSuccess,
       OnError = onError,
       OnFailure = onFailure,
+      //// vNext: SubscribedMessages = cmdMsgs ?? [],
     };
 
     _states[stateId] = reg;
@@ -452,15 +453,21 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     {
       if (_eventAggregator is not null)
       {
+        // Subscribed message types or `Array.Empty<Type>()` for none
+        //// vNext: IReadOnlyCollection<Type> types2 = [.. cmd.SubscribedMessageTypes ?? [], .. reg.SubscribedMessageTypes ?? []];
+        var types = cmd.SubscribedMessageTypes ?? [];
+
         subscription = _eventAggregator.Subscribe(async (msgObj) =>
         {
           if (cancellationToken.IsCancellationRequested || tcs.Task.IsCompleted)
             return;
 
 #pragma warning disable SA1501 // Statement should not be on a single line
+          // Swallow to avoid breaking publication loop
           try { await cmd.OnMessage(ctx, msgObj).ConfigureAwait(false); } catch { }
 #pragma warning restore SA1501 // Statement should not be on a single line
-        });
+        },
+        [.. types]);   //// [.. types] == types.ToArray()
 
         var timeoutMs = cmd.TimeoutMs ?? DefaultCommandTimeoutMs;
         if (timeoutMs > 0)
@@ -472,9 +479,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
             {
               await Task.Delay(timeoutMs, timeoutCts.Token).ConfigureAwait(false);
               if (!tcs.Task.IsCompleted && !timeoutCts.IsCancellationRequested)
-              {
                 await cmd.OnTimeout(ctx).ConfigureAwait(false);
-              }
             }
             catch (TaskCanceledException)
             {
