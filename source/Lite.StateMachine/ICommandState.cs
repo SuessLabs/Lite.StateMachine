@@ -2,6 +2,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Lite.StateMachine;
@@ -11,6 +12,14 @@ namespace Lite.StateMachine;
 public interface ICommandState<TStateId> : IState<TStateId>
   where TStateId : struct, Enum
 {
+  /// <summary>
+  ///   Gets the declared the message types this command state wants to receive.
+  ///   Return multiple types to subscribe to all of them.
+  ///   Return an empty collection (default) to receive all messages (wildcard).
+  /// </summary
+  /// <remarks>Initialize to <![CDATA[Array.Empty<Type>();]]> or NULL when not in use.</remarks>
+  IReadOnlyCollection<Type> SubscribedMessageTypes => [];
+
   /// <summary>Gets optional override of timeout for this state; null uses machine default.</summary>
   int? TimeoutMs => null;
 

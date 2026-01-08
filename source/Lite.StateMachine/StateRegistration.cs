@@ -14,11 +14,11 @@ internal sealed class StateRegistration<TStateId>
   /// <remarks>OLD: <![CDATA[public Func<IState<TStateId>>? Factory = default;]]>.</remarks>
   public Func<IState<TStateId>> Factory { get; init; } = default!;
 
-  /// <summary>Gets a value indicating whether this is a composite parent state or not.</summary>
-  public bool IsCompositeParent { get; init; }
-
   /// <summary>Gets the initial child <see cref="TStateId"/> (for Composite states only).</summary>
   public TStateId? InitialChildId { get; init; }
+
+  /// <summary>Gets a value indicating whether this is a composite parent state or not.</summary>
+  public bool IsCompositeParent { get; init; }
 
   /// <summary>Gets or sets an optional auto-wire OnError StateId transition.</summary>
   public TStateId? OnError { get; set; } = null;
@@ -37,4 +37,7 @@ internal sealed class StateRegistration<TStateId>
 
   /// <summary>Gets the State Id, used by ExportUml for <see cref="RegisterState{TStateClass}(TStateId, TStateId?, TStateId?, TStateId?, Action{StateMachine{TStateId}}?)"./> .</summary>
   public TStateId StateId { get; init; }
+
+  /////// <summary>Gets the messages for <see cref="ICommandState{TStateId}"/> to subscribe to.</summary>
+  ////public System.Collections.Generic.IReadOnlyCollection<Type>? SubscribedMessageTypes { get; init; } = null;
 }

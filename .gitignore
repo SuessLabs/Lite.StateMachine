@@ -39,6 +39,7 @@
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
+[Tt]estResults/
 x64/
 x86/
 build/
@@ -92,5 +93,5 @@ sdkconfig.*
 ## USER DEFINED
 /[Dd]ocs/*.csv
 /[Dd]ocs/backup
-/[Tt]ests
+/[Ss]andbox
 /[Tt]ools
