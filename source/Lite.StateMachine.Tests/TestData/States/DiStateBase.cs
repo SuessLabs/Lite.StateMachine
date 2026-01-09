@@ -9,6 +9,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Lite.StateMachine.Tests.TestData.States;
 
+#pragma warning disable SA1124 // Do not use regions
+
 public class DiStateBase<TStateClass, TStateId>(IMessageService msg, ILogger<TStateClass> logger) : IState<TStateId>
   where TStateId : struct, Enum
 {
@@ -22,10 +24,24 @@ public class DiStateBase<TStateClass, TStateId>(IMessageService msg, ILogger<TSt
 
   public IMessageService MessageService => _msgService;
 
+  #region Suppress CodeMaid Method Sorting
+
+  public virtual Task OnEntering(Context<TStateId> context)
+  {
+    _msgService.Counter1++;
+    _logger.LogInformation("[OnEntering]");
+
+    if (HasExtraLogging)
+      Debug.WriteLine($"[{GetType().Name}] [OnEntering]");
+
+    return Task.CompletedTask;
+  }
+
+  #endregion Suppress CodeMaid Method Sorting
+
   public virtual Task OnEnter(Context<TStateId> context)
   {
     _msgService.Counter1++;
-    ////_msgService.AddMessage(GetType().Name + " OnEnter");
     _logger.LogInformation("[OnEnter] => OK");
 
     if (HasExtraLogging)
@@ -35,22 +51,9 @@ public class DiStateBase<TStateClass, TStateId>(IMessageService msg, ILogger<TSt
     return Task.CompletedTask;
   }
 
-  public virtual Task OnEntering(Context<TStateId> context)
-  {
-    _msgService.Counter1++;
-    ////_msgService.AddMessage(GetType().Name + " OnEntering");
-    _logger.LogInformation("[OnEntering]");
-
-    if (HasExtraLogging)
-      Debug.WriteLine($"[{GetType().Name}] [OnEntering]");
-
-    return Task.CompletedTask;
-  }
-
   public virtual Task OnExit(Context<TStateId> context)
   {
     _msgService.Counter1++;
-    ////_msgService.AddMessage(GetType().Name + " OnExit");
     _logger.LogInformation("[OnExit]");
 
     if (HasExtraLogging)
@@ -60,3 +63,5 @@ public class DiStateBase<TStateClass, TStateId>(IMessageService msg, ILogger<TSt
     return Task.CompletedTask;
   }
 }
+
+#pragma warning restore SA1124 // Do not use regions

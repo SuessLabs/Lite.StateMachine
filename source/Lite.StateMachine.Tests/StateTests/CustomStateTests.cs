@@ -14,8 +14,6 @@ namespace Lite.StateMachine.Tests.StateTests;
 [TestClass]
 public class CustomStateTests : TestBase
 {
-  public TestContext TestContext { get; set; }
-
   [TestMethod]
   [DataRow(false, DisplayName = "Don't skip State3")]
   [DataRow(true, DisplayName = "Skip State3")]

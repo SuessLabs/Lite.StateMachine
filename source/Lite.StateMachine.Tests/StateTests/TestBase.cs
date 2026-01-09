@@ -9,6 +9,8 @@ namespace Lite.StateMachine.Tests.StateTests;
 
 public class TestBase
 {
+  public TestContext TestContext { get; set; }
+
   /// <summary>ILogger Helper for generating clean in-line logs.</summary>
   /// <param name="logLevel">Log level (Default: Trace).</param>
   /// <returns><see cref="ILoggingBuilder"/>.</returns>
