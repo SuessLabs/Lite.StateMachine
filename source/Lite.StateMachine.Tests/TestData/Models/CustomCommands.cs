@@ -16,7 +16,7 @@ public class UnlockCommand : ICustomCommand
 }
 
 /// <summary>Sample command response received by state machine.</summary>
-public class OpenResponse : ICustomCommand
+public class UnlockResponse : ICustomCommand
 {
   public int Counter { get; set; } = 0;
 }

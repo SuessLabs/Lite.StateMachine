@@ -16,9 +16,7 @@ namespace Lite.StateMachine.Tests.StateTests;
 public class CommandStateTests : TestBase
 {
   [TestMethod]
-  [DataRow(false, DisplayName = "Don't skip State3")]
-  [DataRow(true, DisplayName = "Skip State3")]
-  public async Task BasicState_Override_Executes_SuccessAsync(bool skipState3)
+  public async Task BasicState_Override_Executes_SuccessAsync()
   {
     // Assemble with Dependency Injection
     var services = new ServiceCollection()
@@ -34,27 +32,27 @@ public class CommandStateTests : TestBase
     var ctxProperties = new PropertyBag()
     {
       { ParameterType.Counter, 0 },
-      { ParameterType.TestExitEarly, skipState3 },
     };
 
-    var machine = new StateMachine<CompositeL3>(factory, events)
+    var machine = new StateMachine<StateId>(factory, events)
     {
       // Make sure we don't get stuck.
       // And send some message after leaving Command state
       // to make sure we unsubscribed successfully.
       DefaultStateTimeoutMs = 3000,
+      IsContextPersistent = true,
     };
 
     machine
-      .RegisterState<State1>(CompositeL3.State1, CompositeL3.State2)
-      .RegisterComposite<State2>(CompositeL3.State2, initialChildStateId: CompositeL3.State2_Sub1, onSuccess: CompositeL3.State3)
-      .RegisterSubState<State2_Sub1>(CompositeL3.State2_Sub1, parentStateId: CompositeL3.State2, onSuccess: CompositeL3.State2_Sub2)
-      .RegisterSubComposite<State2_Sub2>(CompositeL3.State2_Sub2, parentStateId: CompositeL3.State2, initialChildStateId: CompositeL3.State2_Sub2_Sub1, onSuccess: CompositeL3.State2_Sub3)
-      .RegisterSubState<State2_Sub2_Sub1>(CompositeL3.State2_Sub2_Sub1, parentStateId: CompositeL3.State2_Sub2, onSuccess: CompositeL3.State2_Sub2_Sub2)
-      .RegisterSubState<State2_Sub2_Sub2>(CompositeL3.State2_Sub2_Sub2, parentStateId: CompositeL3.State2_Sub2, onSuccess: CompositeL3.State2_Sub2_Sub3)
-      .RegisterSubState<State2_Sub2_Sub3>(CompositeL3.State2_Sub2_Sub3, parentStateId: CompositeL3.State2_Sub2, onSuccess: null)
-      .RegisterSubState<State2_Sub3>(CompositeL3.State2_Sub3, parentStateId: CompositeL3.State2, onSuccess: null)
-      .RegisterState<State3>(CompositeL3.State3, onSuccess: null);
+      .RegisterState<State1>(StateId.State1, StateId.State2)
+      .RegisterComposite<State2>(StateId.State2, initialChildStateId: StateId.State2_Sub1, onSuccess: StateId.State3)
+      .RegisterSubState<State2_Sub1>(StateId.State2_Sub1, parentStateId: StateId.State2, onSuccess: StateId.State2_Sub2)
+      .RegisterSubComposite<State2_Sub2>(StateId.State2_Sub2, parentStateId: StateId.State2, initialChildStateId: StateId.State2_Sub2_Sub1, onSuccess: StateId.State2_Sub3)
+      .RegisterSubState<State2_Sub2_Sub1>(StateId.State2_Sub2_Sub1, parentStateId: StateId.State2_Sub2, onSuccess: StateId.State2_Sub2_Sub2)
+      .RegisterSubState<State2_Sub2_Sub2>(StateId.State2_Sub2_Sub2, parentStateId: StateId.State2_Sub2, onSuccess: StateId.State2_Sub2_Sub3)
+      .RegisterSubState<State2_Sub2_Sub3>(StateId.State2_Sub2_Sub3, parentStateId: StateId.State2_Sub2, onSuccess: null)
+      .RegisterSubState<State2_Sub3>(StateId.State2_Sub3, parentStateId: StateId.State2, onSuccess: null)
+      .RegisterState<State3>(StateId.State3, onSuccess: null);
 
     events.Subscribe(msg =>
     {
@@ -72,7 +70,7 @@ public class CommandStateTests : TestBase
           if (cmd.Counter < 200)
             events.Publish(new UnlockCommand { Counter = cmd.Counter + 100 });
 
-          events.Publish(new OpenResponse { Counter = cmd.Counter + 100 });
+          events.Publish(new UnlockResponse { Counter = cmd.Counter + 100 });
 
           // NOTE: This doesn't reach State2_Sub2_Sub2 because it already left (GOOD)
           events.Publish(new CloseResponse { Counter = cmd.Counter + 100 });
@@ -81,14 +79,15 @@ public class CommandStateTests : TestBase
     });
 
     // Act - Start your engine!
-    await machine.RunAsync(CompositeL3.State1, ctxProperties, null, TestContext.CancellationToken);
+    await machine.RunAsync(StateId.State1, ctxProperties, null, TestContext.CancellationToken);
 
     // Assert Results
     Assert.IsNotNull(machine);
     Assert.IsNull(machine.Context);
 
-    Assert.AreEqual(27, msgService.Counter1);
-    Assert.AreEqual(14, msgService.Counter2, "State2 Context.Param Count");
-    Assert.AreEqual(skipState3 ? 13 : 13, msgService.Counter3);
+    Assert.AreEqual(29, msgService.Counter1);
+    Assert.AreEqual(13, msgService.Counter2, "State2 Context.Param Count");
+    Assert.AreEqual(12, msgService.Counter3);
+    Assert.AreEqual(2, msgService.Counter4);
   }
 }

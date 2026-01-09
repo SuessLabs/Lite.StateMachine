@@ -2,7 +2,9 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Lite.StateMachine.Tests.TestData.Models;
 using Lite.StateMachine.Tests.TestData.Services;
 using Microsoft.Extensions.Logging;
 
@@ -13,6 +15,21 @@ using Microsoft.Extensions.Logging;
 
 /// <summaryAdded "CommandL3DiStates" to namespace to reduce class naming collisions</summary>
 namespace Lite.StateMachine.Tests.TestData.States.CommandL3DiStates;
+
+public enum StateId
+{
+  State1,
+  State2,
+  State2_Sub1,
+  State2_Sub2,
+  State2_Sub2_Sub1,
+  State2_Sub2_Sub2,
+  State2_Sub2_Sub3,
+  State2_Sub3,
+  State3,
+  Done,
+  Error,
+}
 
 public class CommonDiStateBase<TStateClass, TStateId>(IMessageService msg, ILogger<TStateClass> logger)
   : DiStateBase<TStateClass, TStateId>(msg, logger)
@@ -29,45 +46,77 @@ public class CommonDiStateBase<TStateClass, TStateId>(IMessageService msg, ILogg
 }
 
 public class State1(IMessageService msg, ILogger<State1> log)
-  : DiStateBase<State1, CompositeL3>(msg, log)
+  : CommandStateBase<State1, StateId>(msg, log)
 {
-  public override Task OnEnter(Context<CompositeL3> context)
+  /// <summary>Gets message types for command state to subscribe to.</summary>
+  public override IReadOnlyCollection<Type> SubscribedMessageTypes => new[]
   {
-    if (context.ParameterAsBool(ParameterType.TestExecutionOrder))
-      Assert.IsNull(context.PreviousStateId);
+    //// typeof(OpenCommand),  // <---- NOTE: Not needed
+    typeof(UnlockResponse),
+  };
 
+  public override Task OnEnter(Context<StateId> context)
+  {
     context.Parameters.Add(context.CurrentStateId.ToString(), Guid.NewGuid());
     MessageService.AddMessage($"[Keys-{context.CurrentStateId}]: {string.Join(",", context.Parameters.Keys)}");
+
+    context.EventAggregator?.Publish(new UnlockCommand { Counter = 1 });
+
     return base.OnEnter(context);
+  }
+
+  public override Task OnMessage(Context<StateId> context, object message)
+  {
+    // NOTE: Cannot supply our own types yet.
+    ////public override Task OnMessage(Context<StateId> context, OpenResponse message)
+
+    if (message is not UnlockResponse)
+    {
+      // SHOUD NEVER BE HERE!  As only 'OpenResponse' is in the filter list
+      context.NextState(Result.Error);
+      return Task.CompletedTask;
+    }
+
+    MessageService.Counter4++;
+
+    context.NextState(Result.Success);
+    return base.OnMessage(context, message);
+  }
+
+  public override Task OnTimeout(Context<StateId> context)
+  {
+    context.NextState(Result.Error);
+
+    // Never gets thrown
+    ////throw new TimeoutException();
+
+    return base.OnTimeout(context);
   }
 }
 
 /// <summary>Level-1: Composite.</summary>
 public class State2(IMessageService msg, ILogger<State2> log)
-  : CommonDiStateBase<State2, CompositeL3>(msg, log)
+  : CommonDiStateBase<State2, StateId>(msg, log)
 {
-  #region CodeMaid - DoNotReorder
+  #region CodeMaid - Suppress method sorting
 
-  public override Task OnEntering(Context<CompositeL3> context)
+  public override Task OnEntering(Context<StateId> context)
   {
     // Demonstrate NEW parameter that will carry forward
     context.Parameters.Add($"{context.CurrentStateId}!Anchor", Guid.NewGuid());
     return base.OnEntering(context);
   }
 
-  #endregion CodeMaid - DoNotReorder
+  #endregion CodeMaid - Suppress method sorting
 
-  public override Task OnEnter(Context<CompositeL3> context)
+  public override Task OnEnter(Context<StateId> context)
   {
-    if (context.ParameterAsBool(ParameterType.TestExecutionOrder))
-      Assert.AreEqual(CompositeL3.State1, context.PreviousStateId);
-
     // Demonstrate temporary parameter that will be discarded after State2's OnExit
     context.Parameters.Add($"{context.CurrentStateId}!TEMP", Guid.NewGuid());
     return base.OnEnter(context);
   }
 
-  public override Task OnExit(Context<CompositeL3> context)
+  public override Task OnExit(Context<StateId> context)
   {
     // Expected Count: 7 - State2_Sub2 is composite; therefore, discarded.
     // State1,State2!Anchor,State2!TEMP,State2,State2_Sub1,State2_Sub2!Anchor,State2_Sub3
@@ -78,24 +127,18 @@ public class State2(IMessageService msg, ILogger<State2> log)
 
 /// <summary>Sublevel-2: State.<summary>
 public class State2_Sub1(IMessageService msg, ILogger<State2_Sub1> log)
-  : CommonDiStateBase<State2_Sub1, CompositeL3>(msg, log)
+  : CommonDiStateBase<State2_Sub1, StateId>(msg, log)
 {
-  public override Task OnEnter(Context<CompositeL3> context)
-  {
-    if (context.ParameterAsBool(ParameterType.TestExecutionOrder))
-      Assert.IsNull(context.PreviousStateId);
-
-    return base.OnEnter(context);
-  }
+  public override Task OnEnter(Context<StateId> context) => base.OnEnter(context);
 }
 
 /// <summary>Sublevel-2: Composite.</summary>
 public class State2_Sub2(IMessageService msg, ILogger<State2_Sub2> log)
-  : CommonDiStateBase<State2_Sub2, CompositeL3>(msg, log)
+  : CommonDiStateBase<State2_Sub2, StateId>(msg, log)
 {
   #region CodeMaid - DoNotReorder
 
-  public override Task OnEntering(Context<CompositeL3> context)
+  public override Task OnEntering(Context<StateId> context)
   {
     // Demonstrate NEW parameter that will carry forward
     context.Parameters.Add($"{context.CurrentStateId}!Anchor", Guid.NewGuid());
@@ -104,17 +147,14 @@ public class State2_Sub2(IMessageService msg, ILogger<State2_Sub2> log)
 
   #endregion CodeMaid - DoNotReorder
 
-  public override Task OnEnter(Context<CompositeL3> context)
+  public override Task OnEnter(Context<StateId> context)
   {
-    if (context.ParameterAsBool(ParameterType.TestExecutionOrder))
-      Assert.AreEqual(CompositeL3.State2_Sub1, context.PreviousStateId);
-
     // Demonstrate temporary parameter that will be discarded after State2_Sub2's OnExit
     context.Parameters.Add($"{context.CurrentStateId}!TEMP", Guid.NewGuid());
     return base.OnEnter(context);
   }
 
-  public override Task OnExit(Context<CompositeL3> context)
+  public override Task OnExit(Context<StateId> context)
   {
     // Expected Count: 7
     MessageService.Counter3 = context.Parameters.Count;
@@ -124,43 +164,62 @@ public class State2_Sub2(IMessageService msg, ILogger<State2_Sub2> log)
 
 /// <summary>Sublevel-3: State.</summary>
 public class State2_Sub2_Sub1(IMessageService msg, ILogger<State2_Sub2_Sub1> log)
-  : CommonDiStateBase<State2_Sub2_Sub1, CompositeL3>(msg, log)
+  : CommonDiStateBase<State2_Sub2_Sub1, StateId>(msg, log)
 {
-  public override Task OnEnter(Context<CompositeL3> context)
-  {
-    if (context.ParameterAsBool(ParameterType.TestExecutionOrder))
-      Assert.IsNull(context.PreviousStateId);
-
-    return base.OnEnter(context);
-  }
+  public override Task OnEnter(Context<StateId> context) => base.OnEnter(context);
 }
 
 /// <summary>Sublevel-3: State.</summary>
 public class State2_Sub2_Sub2(IMessageService msg, ILogger<State2_Sub2_Sub2> log)
-  : CommonDiStateBase<State2_Sub2_Sub2, CompositeL3>(msg, log);
+  : CommandStateBase<State2_Sub2_Sub2, StateId>(msg, log)
+{
+  /// <summary>Gets message types for command state to subscribe to.</summary>
+  public override IReadOnlyCollection<Type> SubscribedMessageTypes =>
+  [
+    typeof(UnlockResponse),
+    typeof(CloseResponse),
+  ];
+
+  public override Task OnEnter(Context<StateId> context)
+  {
+    context.Parameters.Add(context.CurrentStateId.ToString(), Guid.NewGuid());
+    MessageService.AddMessage($"[Keys-{context.CurrentStateId}]: {string.Join(",", context.Parameters.Keys)}");
+
+    // NOTE:
+    //  1) We're sending the same OpenCommand to prove that State1's OnMessage isn't called a 2nd time.
+    //  2) CloseResponse doesn't reached our OnMessage because we left already.
+    context.EventAggregator?.Publish(new UnlockCommand { Counter = 200 });
+    return base.OnEnter(context);
+  }
+
+  public override Task OnMessage(Context<StateId> context, object message)
+  {
+    MessageService.Counter4++;
+
+    context.NextState(Result.Success);
+    return base.OnMessage(context, message);
+  }
+
+  public override Task OnTimeout(Context<StateId> context)
+  {
+    context.NextState(Result.Error);
+    return base.OnTimeout(context);
+  }
+}
 
 /// <summary>Sublevel-3: Last State.</summary>
 public class State2_Sub2_Sub3(IMessageService msg, ILogger<State2_Sub2_Sub3> log)
-  : CommonDiStateBase<State2_Sub2_Sub3, CompositeL3>(msg, log)
+: CommonDiStateBase<State2_Sub2_Sub3, StateId>(msg, log)
 {
-  public override Task OnEnter(Context<CompositeL3> context)
-  {
-    if (context.ParameterAsBool(ParameterType.TestExecutionOrder))
-      Assert.AreEqual(CompositeL3.State2_Sub2_Sub2, context.PreviousStateId);
-
-    return base.OnEnter(context);
-  }
+  public override Task OnEnter(Context<StateId> context) => base.OnEnter(context);
 }
 
 /// <summary>Sublevel-2: Last State.</summary>
 public class State2_Sub3(IMessageService msg, ILogger<State2_Sub3> log)
-  : DiStateBase<State2_Sub3, CompositeL3>(msg, log)
+  : DiStateBase<State2_Sub3, StateId>(msg, log)
 {
-  public override Task OnEnter(Context<CompositeL3> context)
+  public override Task OnEnter(Context<StateId> context)
   {
-    if (context.ParameterAsBool(ParameterType.TestExecutionOrder))
-      Assert.AreEqual(CompositeL3.State2_Sub2, context.PreviousStateId);
-
     context.Parameters.Add(context.CurrentStateId.ToString(), Guid.NewGuid());
     MessageService.AddMessage($"[Keys-{context.CurrentStateId}]: {string.Join(",", context.Parameters.Keys)}");
     return base.OnEnter(context);
@@ -169,9 +228,9 @@ public class State2_Sub3(IMessageService msg, ILogger<State2_Sub3> log)
 
 /// <summary>Make sure not child-created context is there.</summary>
 public class State3(IMessageService msg, ILogger<State3> log)
-  : DiStateBase<State3, CompositeL3>(msg, log)
+  : DiStateBase<State3, StateId>(msg, log)
 {
-  public override Task OnEnter(Context<CompositeL3> context)
+  public override Task OnEnter(Context<StateId> context)
   {
     context.Parameters.Add(context.CurrentStateId.ToString(), Guid.NewGuid());
     MessageService.AddMessage($"[Keys-{context.CurrentStateId}]: {string.Join(",", context.Parameters.Keys)}");

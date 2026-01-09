@@ -21,6 +21,9 @@ public interface IMessageService
   /// <summary>Gets or sets the user's custom counter.</summary>
   int Counter3 { get; set; }
 
+  /// <summary>Gets or sets the user's custom counter.</summary>
+  int Counter4 { get; set; }
+
   /// <summary>Gets a list of user's custom messages.</summary>
   List<string> Messages { get; }
 
@@ -39,6 +42,9 @@ public class MessageService : IMessageService
 
   /// <inheritdoc/>
   public int Counter3 { get; set; }
+
+  /// <inheritdoc/>
+  public int Counter4 { get; set; }
 
   /// <inheritdoc/>
   public List<string> Messages { get; } = [];
