@@ -40,9 +40,10 @@ public class ContextTests : TestBase
     machine.RegisterState<CtxState1>(CtxStateId.State1, CtxStateId.State2);
     machine.RegisterState<CtxState2>(CtxStateId.State2, CtxStateId.State3);
     machine.RegisterState<CtxState3>(CtxStateId.State3);
+    machine.AddContext(ctxProperties);
 
     // Act - Non async Start your engine!
-    var task = machine.RunAsync(CtxStateId.State1, ctxProperties);
+    var task = machine.RunAsync(CtxStateId.State1);
     task.GetAwaiter().GetResult();
 
     // Assert Results

@@ -29,20 +29,19 @@ public class CustomStateTests : TestBase
     var msgService = services.GetRequiredService<IMessageService>();
     Func<Type, object?> factory = t => ActivatorUtilities.CreateInstance(services, t);
 
-    var ctxProperties = new PropertyBag()
-    {
-      { ParameterType.Counter, 0 },
-      { ParameterType.TestExitEarly, skipState3 },
-    };
-
     var machine = new StateMachine<CustomStateId>(factory, null, isContextPersistent: true);
     machine.RegisterState<State1>(CustomStateId.State1, CustomStateId.State2_Dummy);
     machine.RegisterState<State2Dummy>(CustomStateId.State2_Dummy, CustomStateId.State3);
     machine.RegisterState<State2Success>(CustomStateId.State2_Success, CustomStateId.State3);
     machine.RegisterState<State3>(CustomStateId.State3);
+    machine.AddContext(new()
+    {
+      { ParameterType.Counter, 0 },
+      { ParameterType.TestExitEarly, skipState3 },
+    });
 
     // Act - Start your engine!
-    await machine.RunAsync(CustomStateId.State1, ctxProperties, cancellationToken: TestContext.CancellationToken);
+    await machine.RunAsync(CustomStateId.State1, cancellationToken: TestContext.CancellationToken);
 
     // Assert Results
     AssertMachineNotNull(machine);
@@ -72,6 +71,7 @@ public class CustomStateTests : TestBase
     };
 
     var machine = new StateMachine<CustomStateId>(factory, null, isContextPersistent: true);
+    machine.AddContext(ctxProperties);
     machine.RegisterState<State1>(CustomStateId.State1, CustomStateId.State2_Dummy);
     machine.RegisterState<State2Dummy>(CustomStateId.State2_Dummy, CustomStateId.State3);
     machine.RegisterState<State2Success>(CustomStateId.State2_Success, CustomStateId.State3);
@@ -79,7 +79,7 @@ public class CustomStateTests : TestBase
 
     // Act - Start your engine!
     await Assert.ThrowsExactlyAsync<UnregisteredStateTransitionException>(()
-      => machine.RunAsync(CustomStateId.State1, ctxProperties, null, TestContext.CancellationToken));
+      => machine.RunAsync(CustomStateId.State1, TestContext.CancellationToken));
 
     // Assert Results
     AssertMachineNotNull(machine);
@@ -110,7 +110,7 @@ public class CustomStateTests : TestBase
     };
 
     var machine = new StateMachine<CustomStateId>(factory, null, isContextPersistent: true);
-
+    machine.AddContext(ctxProperties);
     machine.RegisterState<State1>(CustomStateId.State1, CustomStateId.State2_Dummy);
     machine.RegisterState<State2Dummy>(CustomStateId.State2_Dummy, CustomStateId.State3);
     machine.RegisterComposite<State2Success>(CustomStateId.State2_Success, CustomStateId.State2_Sub1, CustomStateId.State3);
@@ -120,7 +120,7 @@ public class CustomStateTests : TestBase
     machine.RegisterState<State3>(CustomStateId.State3);
 
     // Act - Start your engine!
-    await machine.RunAsync(CustomStateId.State1, ctxProperties, cancellationToken: TestContext.CancellationToken);
+    await machine.RunAsync(CustomStateId.State1, cancellationToken: TestContext.CancellationToken);
 
     // Assert Results
     AssertMachineNotNull(machine);

@@ -46,6 +46,7 @@ public class CommandStateTests : TestBase
     };
 
     machine
+      .AddContext(ctxProperties)
       .RegisterState<State1>(StateId.State1, StateId.State2)
       .RegisterComposite<State2>(StateId.State2, initialChildStateId: StateId.State2_Sub1, onSuccess: StateId.State3)
       .RegisterSubState<State2_Sub1>(StateId.State2_Sub1, parentStateId: StateId.State2, onSuccess: StateId.State2_Sub2)
@@ -81,7 +82,7 @@ public class CommandStateTests : TestBase
     });
 
     // Act - Start your engine!
-    await machine.RunAsync(StateId.State1, ctxProperties, null, TestContext.CancellationToken);
+    await machine.RunAsync(StateId.State1, TestContext.CancellationToken);
 
     // Assert Results
     AssertMachineNotNull(machine);
@@ -131,7 +132,7 @@ public class CommandStateTests : TestBase
       events.Publish(new CancelResponse());
     });
 
-    var result = await machine.RunAsync(StateId.State1, null, null, cts.Token);
+    var result = await machine.RunAsync(StateId.State1, cts.Token);
 
     // Assert
     Assert.IsNotNull(result);
