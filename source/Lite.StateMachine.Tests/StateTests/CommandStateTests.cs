@@ -2,6 +2,8 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData;
 using Lite.StateMachine.Tests.TestData.Models;
@@ -82,12 +84,97 @@ public class CommandStateTests : TestBase
     await machine.RunAsync(StateId.State1, ctxProperties, null, TestContext.CancellationToken);
 
     // Assert Results
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    AssertMachineNotNull(machine);
 
     Assert.AreEqual(29, msgService.Counter1);
     Assert.AreEqual(13, msgService.Counter2, "State2 Context.Param Count");
     Assert.AreEqual(12, msgService.Counter3);
     Assert.AreEqual(2, msgService.Counter4);
+  }
+
+  [TestMethod]
+  public async Task CancelsInfiniteStateMachineTestAsync()
+  {
+    // Assemble with Dependency Injection
+    var services = new ServiceCollection()
+      .AddLogging(InlineTraceLogger(LogLevel.Trace))
+      .AddSingleton<IMessageService, MessageService>()
+      .AddSingleton<IEventAggregator, EventAggregator>()
+      .BuildServiceProvider();
+
+    var msgService = services.GetRequiredService<IMessageService>();
+    var events = services.GetRequiredService<IEventAggregator>();
+
+    Func<Type, object?> factory = t => ActivatorUtilities.CreateInstance(services, t);
+
+    var machine = new StateMachine<StateId>(factory, events)
+      .RegisterState<InfState1>(StateId.State1, StateId.State2)
+      .RegisterState<InfState2>(StateId.State2, StateId.State1);
+
+    var cts = new CancellationTokenSource();
+
+    var counter = 0;
+    events.Subscribe(msg =>
+    {
+      // All messages get received, even `CancelResponse`
+      if (msg is not CancelCommand cmd)
+        return;
+
+      counter++;
+      if (counter >= 100)
+      {
+        // Get outta here!!
+        cts.Cancel();
+      }
+
+      // Don't let it hang waiting for a response
+      events.Publish(new CancelResponse());
+    });
+
+    var result = await machine.RunAsync(StateId.State1, null, null, cts.Token);
+
+    // Assert
+    Assert.IsNotNull(result);
+    AssertMachineNotNull(machine);
+    Assert.AreEqual(100, counter);
+  }
+
+  private class InfState1 : IState<StateId>
+  {
+    public Task OnEnter(Context<StateId> context)
+    {
+      context.NextState(Result.Success);
+      return Task.CompletedTask;
+    }
+
+    public Task OnEntering(Context<StateId> context) => Task.CompletedTask;
+
+    public Task OnExit(Context<StateId> context) => Task.CompletedTask;
+  }
+
+  private class InfState2 : ICommandState<StateId>
+  {
+    public IReadOnlyCollection<Type> SubscribedMessageTypes =>
+    [
+      typeof(CancelResponse),
+    ];
+
+    public Task OnEnter(Context<StateId> context)
+    {
+      context.EventAggregator?.Publish(new CancelCommand());
+      return Task.CompletedTask;
+    }
+
+    public Task OnEntering(Context<StateId> context) => Task.CompletedTask;
+
+    public Task OnExit(Context<StateId> context) => Task.CompletedTask;
+
+    public Task OnMessage(Context<StateId> context, object message)
+    {
+      context.NextState(Result.Success);
+      return Task.CompletedTask;
+    }
+
+    public Task OnTimeout(Context<StateId> context) => Task.CompletedTask;
   }
 }

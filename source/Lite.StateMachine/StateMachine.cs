@@ -65,7 +65,8 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   }
 
   /// <inheritdoc/>
-  public Context<TStateId> Context { get; private set; } = default!;
+  public Context<TStateId> Context { get; private set; } = new Context<TStateId>(default, default, default!, null);
+  ////public Context<TStateId> Context { get; private set; } = default!;
 
   /// <inheritdoc/>
   public int DefaultCommandTimeoutMs { get; set; } = 3000;
@@ -209,6 +210,9 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     TStateId? prevStateId = null;
     var currentStateId = initialStateId;
 
+    // TBD
+    ////Context = new Context<TStateId>(currentStateId, default, default!, null);
+
     while (!cancellationToken.IsCancellationRequested)
     {
       var reg = GetRegistration(currentStateId);
@@ -222,11 +226,15 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       ////  Errors = errorStack ?? [],
       ////};
 
+      ////Context.Parameters = parameterStack ?? [];
+      ////Context.Errors = errorStack ?? [];
+
       parameterStack ??= [];
       errorStack ??= [];
 
       // Run any state (composite or leaf) recursively.
       var result = await RunAnyStateRecursiveAsync(reg, parameterStack, errorStack, cancellationToken).ConfigureAwait(false);
+      ////var result = await RunAnyStateRecursiveAsync(reg, cancellationToken).ConfigureAwait(false);
       if (result is null)
         break;
 
@@ -292,11 +300,12 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     CancellationToken ct)
   {
     // Ensure we always operate on non-null, shared bags
-    parameters ??= [];
-    errors ??= [];
+    ////parameters ??= [];
+    ////errors ??= [];
 
     // Run Normal or Command State
     if (!reg.IsCompositeParent)
+      ////return await RunLeafAsync(reg, ct).ConfigureAwait(false);
       return await RunLeafAsync(reg, parameters, errors, ct).ConfigureAwait(false);
 
     // Composite States

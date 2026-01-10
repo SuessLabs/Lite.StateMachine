@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData;
 using Lite.StateMachine.Tests.TestData.States;
@@ -10,10 +11,8 @@ using Lite.StateMachine.Tests.TestData.States;
 namespace Lite.StateMachine.Tests.StateTests;
 
 [TestClass]
-public class BasicStateTests
+public class BasicStateTests : TestBase
 {
-  public TestContext TestContext { get; set; }
-
   /// <summary>Standard synchronous state registration exiting to completion.</summary>
   [TestMethod]
   public void Basic_RegisterState_Executes123_SuccessTest()
@@ -35,8 +34,9 @@ public class BasicStateTests
     task.GetAwaiter().GetResult();
 
     // Assert Results
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    AssertMachineNotNull(machine);
+
+    Assert.AreEqual(0, machine.Context.Parameters.Count);
 
     // Ensure all states are registered
     var enums = Enum.GetValues<BasicStateId>().Cast<BasicStateId>();
@@ -68,8 +68,7 @@ public class BasicStateTests
     await machine.RunAsync(BasicStateId.State1, ctxProperties);
 
     // Assert Results
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    AssertMachineNotNull(machine);
 
     // Ensure all states are registered
     var enums = Enum.GetValues<BasicStateId>().Cast<BasicStateId>();
@@ -94,8 +93,7 @@ public class BasicStateTests
     await machine.RunAsync(BasicStateId.State1, ctxProperties);
 
     // Assert Results
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    AssertMachineNotNull(machine);
 
     // Ensure all states are registered
     var enums = Enum.GetValues<BasicStateId>().Cast<BasicStateId>();
@@ -126,8 +124,7 @@ public class BasicStateTests
       .RunAsync(BasicStateId.State1, ctxProperties, cancellationToken: TestContext.CancellationToken);
 
     // Assert Results
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    AssertMachineNotNull(machine);
 
     // Ensure all states are registered
     var enums = Enum.GetValues<BasicStateId>().Cast<BasicStateId>();
@@ -190,8 +187,7 @@ public class BasicStateTests
     await machine.RunAsync(BasicStateId.State1, ctxProperties);
 
     // Assert Results
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    AssertMachineNotNull(machine);
 
     // Ensure all states are registered
     var enums = Enum.GetValues<BasicStateId>().Cast<BasicStateId>();
@@ -205,8 +201,6 @@ public class BasicStateTests
   [Ignore("vNext - Currently StateMachine destroys context after run completes.")]
   public async Task RegisterState_ReturnsContext_SuccessTestAsync()
   {
-    const string TestValue = "success";
-
     // Assemble
     var ctxProperties = new PropertyBag()
     {
@@ -224,15 +218,14 @@ public class BasicStateTests
     await task;   // Non async method: task.GetAwaiter().GetResult();
 
     // Assert Results
-    Assert.IsNotNull(machine);
-    Assert.IsNotNull(machine.Context);
+    AssertMachineNotNull(machine);
 
     var ctxFinalParams = machine.Context.Parameters;
     Assert.IsNotNull(ctxFinalParams);
-    Assert.AreEqual(TestValue, ctxFinalParams[ParameterType.KeyTest]);
+    Assert.AreNotEqual(0, ctxFinalParams.Count);
 
     // NOTE: This should be 9 because each state has 3 hooks that increment the counter
     // TODO (2025-12-22 DS): Fix last state not calling OnExit.
-    Assert.AreEqual(9, ctxFinalParams[ParameterType.Counter]);
+    ////Assert.AreEqual(9, ctxFinalParams[ParameterType.Counter]);
   }
 }

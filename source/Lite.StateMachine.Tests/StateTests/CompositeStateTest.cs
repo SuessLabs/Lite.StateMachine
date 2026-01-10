@@ -54,8 +54,7 @@ public class CompositeStateTest : TestBase
     Console.WriteLine(umlBasic);
 
     // Assert
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    AssertMachineNotNull(machine);
 
     // Ensure all states are hit
     var enums = Enum.GetValues<CompositeL1StateId>().Cast<CompositeL1StateId>();
@@ -82,8 +81,7 @@ public class CompositeStateTest : TestBase
     await machine.RunAsync(CompositeL1StateId.State1);
 
     // Assert
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    AssertMachineNotNull(machine);
 
     // Ensure all states are hit
     var enums = Enum.GetValues<CompositeL1StateId>().Cast<CompositeL1StateId>();
@@ -132,8 +130,7 @@ public class CompositeStateTest : TestBase
       .RunAsync(CompositeL1StateId.State1, cancellationToken: TestContext.CancellationToken);
 
     // Assert
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    AssertMachineNotNull(machine);
 
     // Ensure all states are hit
     var enums = Enum.GetValues<CompositeL1StateId>().Cast<CompositeL1StateId>();
@@ -159,8 +156,7 @@ public class CompositeStateTest : TestBase
       .GetResult();
 
     // Assert
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    AssertMachineNotNull(machine);
 
     // Ensure all states are hit
     var enums = Enum.GetValues<CompositeL1StateId>().Cast<CompositeL1StateId>();
@@ -223,8 +219,7 @@ public class CompositeStateTest : TestBase
     await machine.RunAsync(CompositeL3.State1, cancellationToken: TestContext.CancellationToken);
 
     // Assert
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    AssertMachineNotNull(machine);
 
     // Ensure all states are registered
     var enums = Enum.GetValues<CompositeL3>().Cast<CompositeL3>();
@@ -284,8 +279,7 @@ public class CompositeStateTest : TestBase
     await machine.RunAsync(CompositeL3.State1, ctxProperties, null, TestContext.CancellationToken);
 
     // Assert
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    AssertMachineNotNull(machine);
   }
 
   private static StateMachine<CompositeL3> GenerateStateMachineL3(StateMachine<CompositeL3> machine)
