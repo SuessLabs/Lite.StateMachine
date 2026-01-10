@@ -10,9 +10,9 @@ The Lite State Machine is designed for vertical scaling. Meaning, it can be used
 
 ||
 |-|
-| Copyright 2021-2025 Xeno Innovations, Inc. (_dba, Suess Labs_) |
+| Copyright 2021-2026 Xeno Innovations, Inc. (_DBA: Suess Labs_) |
 | Created by: Damian Suess |
-| Date: 2021-06-07 |
+| Date: 2021-06-07 (_inception 2016_) |
 
 ## Package Releases
 
@@ -94,10 +94,9 @@ var uml = machine.ExportUml(includeSubmachines: true);
 ```cs
 using Lite.StateMachine;
 
-var ctxProperties = new PropertyBag() { { "CounterKey", 0 } };
-
 // Note the use of generics '<TStateClass>' to strongly-type the state machine
 var machine = new StateMachine<CompositeL1StateId>()
+  .AddContext(new() { { ParameterType.Counter, 999 } });
   .RegisterState<Composite_State1>(CompositeL1StateId.State1, CompositeL1StateId.State2)
 
   .RegisterComposite<Composite_State2>(
@@ -128,6 +127,9 @@ public class Composite_State1() : BaseState
 {
   public override Task OnEnter(Context<CompositeL1StateId> context)
   {
+    var cnt = context.ParameterAsInt(ParameterType.Counter);
+    var blank = context.ParameterAsBool(ParameterType.DummyBool);
+
     context.NextState(Result.Ok);
     return Task.CompletedTask;
   }
@@ -154,7 +156,9 @@ public class Composite_State2_Sub1() : BaseState
 {
   public override Task OnEnter(Context<CompositeL1StateId> context)
   {
-    context.Parameters.Add("ParameterSubStateEntered", SUCCESS);
+    // Safely add/update key-value in Context
+    context.Parameters.SafeAdd("StringBasedParamKey", SUCCESS);
+
     context.NextState(Result.Ok);
     return Task.CompletedTask;
   }
