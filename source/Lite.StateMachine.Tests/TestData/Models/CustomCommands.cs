@@ -9,6 +9,19 @@ namespace Lite.StateMachine.Tests.TestData.Models;
 /// <summary>Signifies it's one of our event packets.</summary>
 public interface ICustomCommand;
 
+public class CancelCommand : ICustomCommand
+{
+  public int Counter { get; set; }
+}
+
+public class CancelResponse : ICustomCommand;
+
+/// <summary>Sample command response received by state machine.</summary>
+public class CloseResponse : ICustomCommand
+{
+  public int Counter { get; set; } = 0;
+}
+
 /// <summary>Sample command sent by state machine.</summary>
 public class UnlockCommand : ICustomCommand
 {
@@ -17,12 +30,6 @@ public class UnlockCommand : ICustomCommand
 
 /// <summary>Sample command response received by state machine.</summary>
 public class UnlockResponse : ICustomCommand
-{
-  public int Counter { get; set; } = 0;
-}
-
-/// <summary>Sample command response received by state machine.</summary>
-public class CloseResponse : ICustomCommand
 {
   public int Counter { get; set; } = 0;
 }

@@ -18,7 +18,7 @@ namespace Lite.StateMachine.Tests.StateTests;
 /// <summary>Microsoft Dependency Injection Tests.</summary>
 [TestClass]
 [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "Allowed for this test class")]
-public class DiMsTests
+public class DiMsTests : TestBase
 {
   [TestMethod]
   public async Task Basic_FlatStates_SuccessTestAsync()
@@ -44,8 +44,7 @@ public class DiMsTests
     var result = await machine.RunAsync(BasicStateId.State1);
 
     Assert.IsNotNull(result);
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    AssertMachineNotNull(machine);
 
     var msgService = services.GetRequiredService<IMessageService>();
     Assert.AreEqual(9, msgService.Counter1, "Message service should have 9 from the 3 states.");
@@ -142,8 +141,7 @@ public class DiMsTests
     var result = await machine.RunAsync(BasicStateId.State1);
 
     Assert.IsNotNull(result);
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    AssertMachineNotNull(machine);
 
     // Ensure all states are registered
     var enums = Enum.GetValues<BasicStateId>().Cast<BasicStateId>();
@@ -276,6 +274,9 @@ public class DiMsTests
     await machine.RunAsync(CompositeMsgStateId.Entry, null, null, CancellationToken.None);
 
     Console.WriteLine("MS.DI workflow finished.");
+
+    // Assert
+    AssertMachineNotNull(machine);
 
     Assert.AreEqual(2, msgService.Counter2);
     Assert.AreEqual(42, msgService.Counter1);

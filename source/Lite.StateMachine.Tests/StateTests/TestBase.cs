@@ -9,7 +9,14 @@ namespace Lite.StateMachine.Tests.StateTests;
 
 public class TestBase
 {
-  public TestContext TestContext { get; set; }
+  public required TestContext TestContext { get; set; }
+
+  protected static void AssertMachineNotNull<T>(Lite.StateMachine.StateMachine<T> machine)
+    where T : struct, Enum
+  {
+    Assert.IsNotNull(machine);
+    Assert.IsNotNull(machine.Context);
+  }
 
   /// <summary>ILogger Helper for generating clean in-line logs.</summary>
   /// <param name="logLevel">Log level (Default: Trace).</param>

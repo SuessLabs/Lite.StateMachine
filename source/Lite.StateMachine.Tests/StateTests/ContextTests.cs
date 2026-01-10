@@ -9,7 +9,7 @@ using Lite.StateMachine.Tests.TestData.States;
 namespace Lite.StateMachine.Tests.StateTests;
 
 [TestClass]
-public class ContextTests
+public class ContextTests : TestBase
 {
   public const string ParameterCounter = "Counter";
   public const string ParameterKeyTest = "TestKey";
@@ -29,8 +29,6 @@ public class ContextTests
     Param3,
   }
 
-  public TestContext TestContext { get; set; }
-
   /// <summary>Standard synchronous state registration exiting to completion.</summary>
   [TestMethod]
   public void Basic_RegisterState_Executes123_SuccessTest()
@@ -48,8 +46,7 @@ public class ContextTests
     task.GetAwaiter().GetResult();
 
     // Assert Results
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    AssertMachineNotNull(machine);
 
     // Ensure all states are registered
     var enums = Enum.GetValues<CtxStateId>().Cast<CtxStateId>();

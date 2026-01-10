@@ -45,8 +45,7 @@ public class CustomStateTests : TestBase
     await machine.RunAsync(CustomStateId.State1, ctxProperties, cancellationToken: TestContext.CancellationToken);
 
     // Assert Results
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    AssertMachineNotNull(machine);
 
     Assert.AreEqual(1, msgService.Counter1);
     Assert.AreEqual(0, msgService.Counter2, "State2Dummy should never enter");
@@ -83,8 +82,7 @@ public class CustomStateTests : TestBase
       => machine.RunAsync(CustomStateId.State1, ctxProperties, null, TestContext.CancellationToken));
 
     // Assert Results
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    AssertMachineNotNull(machine);
 
     Assert.AreEqual(0, msgService.Counter1);
     Assert.AreEqual(0, msgService.Counter2, "State2Dummy should never enter");
@@ -125,8 +123,7 @@ public class CustomStateTests : TestBase
     await machine.RunAsync(CustomStateId.State1, ctxProperties, cancellationToken: TestContext.CancellationToken);
 
     // Assert Results
-    Assert.IsNotNull(machine);
-    Assert.IsNull(machine.Context);
+    AssertMachineNotNull(machine);
 
     Assert.AreEqual(skipSubState2 ? 3 : 4, msgService.Counter1, "State Counter1 failed.");
     Assert.AreEqual(0, msgService.Counter2, "State2Dummy should never enter");
