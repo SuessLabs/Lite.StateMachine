@@ -26,11 +26,12 @@ public static class DemoMachine
     };
 
     var machine = new StateMachine<BasicStateId>();
+    machine.AddContext(ctxProperties);
     machine.RegisterState<BasicState1>(BasicStateId.State1, BasicStateId.State2);
     machine.RegisterState<BasicState2>(BasicStateId.State2, BasicStateId.State3);
     machine.RegisterState<BasicState3>(BasicStateId.State3);
 
     // Act - Start your engine!
-    await machine.RunAsync(BasicStateId.State1, ctxProperties);
+    await machine.RunAsync(BasicStateId.State1);
   }
 }

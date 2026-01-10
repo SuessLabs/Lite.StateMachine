@@ -3,7 +3,6 @@
 
 using System;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Lite.StateMachine.Tests.TestData;
 using Lite.StateMachine.Tests.TestData.States;
@@ -18,25 +17,26 @@ public class BasicStateTests : TestBase
   public void Basic_RegisterState_Executes123_SuccessTest()
   {
     // Assemble
-    var ctxProperties = new PropertyBag()
-    {
-      { ParameterType.Counter, 0 },
-      { ParameterType.TestExecutionOrder, true },
-    };
-
     var machine = new StateMachine<BasicStateId>();
     machine.RegisterState<BasicState1>(BasicStateId.State1, BasicStateId.State2);
     machine.RegisterState<BasicState2>(BasicStateId.State2, BasicStateId.State3);
     machine.RegisterState<BasicState3>(BasicStateId.State3);
+    machine.AddContext(new()
+    {
+      { ParameterType.Counter, 0 },
+      { ParameterType.TestExecutionOrder, true },
+    });
 
     // Act - Non async Start your engine!
-    var task = machine.RunAsync(BasicStateId.State1, ctxProperties);
+    var task = machine.RunAsync(BasicStateId.State1);
     task.GetAwaiter().GetResult();
 
     // Assert Results
     AssertMachineNotNull(machine);
 
-    Assert.AreEqual(0, machine.Context.Parameters.Count);
+    Assert.IsNotEmpty(machine.Context.Parameters);
+    Assert.AreEqual(9, machine.Context.ParameterAsInt(ParameterType.Counter));
+    Assert.IsTrue(machine.Context.ParameterAsBool(ParameterType.TestExecutionOrder));
 
     // Ensure all states are registered
     var enums = Enum.GetValues<BasicStateId>().Cast<BasicStateId>();
@@ -53,19 +53,19 @@ public class BasicStateTests : TestBase
   public async Task Basic_RegisterState_Executes123_SuccessTestAsync()
   {
     // Assemble
-    var ctxProperties = new PropertyBag()
-    {
-      { ParameterType.Counter, 0 },
-      { ParameterType.TestExecutionOrder, true },
-    };
-
     var machine = new StateMachine<BasicStateId>();
     machine.RegisterState<BasicState1>(BasicStateId.State1, BasicStateId.State2);
     machine.RegisterState<BasicState2>(BasicStateId.State2, BasicStateId.State3);
     machine.RegisterState<BasicState3>(BasicStateId.State3);
 
+    machine.Context.Parameters = new()
+    {
+      { ParameterType.Counter, 0 },
+      { ParameterType.TestExecutionOrder, true },
+    };
+
     // Act - Start your engine!
-    await machine.RunAsync(BasicStateId.State1, ctxProperties);
+    await machine.RunAsync(BasicStateId.State1);
 
     // Assert Results
     AssertMachineNotNull(machine);
@@ -89,8 +89,8 @@ public class BasicStateTests : TestBase
     machine.RegisterState<BasicState2>(BasicStateId.State2);
 
     // Act - Start your engine!
-    var ctxProperties = new PropertyBag() { { ParameterType.TestExecutionOrder, false } };
-    await machine.RunAsync(BasicStateId.State1, ctxProperties);
+    machine.Context.Parameters = new() { { ParameterType.TestExecutionOrder, false } };
+    await machine.RunAsync(BasicStateId.State1);
 
     // Assert Results
     AssertMachineNotNull(machine);
@@ -121,7 +121,8 @@ public class BasicStateTests : TestBase
       .RegisterState<BasicState1>(BasicStateId.State1, BasicStateId.State2)
       .RegisterState<BasicState2>(BasicStateId.State2, BasicStateId.State3)
       .RegisterState<BasicState3>(BasicStateId.State3)
-      .RunAsync(BasicStateId.State1, ctxProperties, cancellationToken: TestContext.CancellationToken);
+      .AddContext(ctxProperties)
+      .RunAsync(BasicStateId.State1, cancellationToken: TestContext.CancellationToken);
 
     // Assert Results
     AssertMachineNotNull(machine);
@@ -182,9 +183,10 @@ public class BasicStateTests : TestBase
     machine.RegisterState<BasicState1>(BasicStateId.State1, BasicStateId.State2);
     machine.RegisterState<BasicState2>(BasicStateId.State2, BasicStateId.State3);
     machine.RegisterState<BasicState3>(BasicStateId.State3);
+    machine.AddContext(ctxProperties);
 
     // Act - Start your engine!
-    await machine.RunAsync(BasicStateId.State1, ctxProperties);
+    await machine.RunAsync(BasicStateId.State1);
 
     // Assert Results
     AssertMachineNotNull(machine);
@@ -193,39 +195,5 @@ public class BasicStateTests : TestBase
     var enums = Enum.GetValues<BasicStateId>().Cast<BasicStateId>();
     Assert.HasCount(enums.Count(), machine.States);
     Assert.IsTrue(enums.All(k => machine.States.Contains(k)));
-  }
-
-  /// <summary>Context is returned at the end.</summary>
-  /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-  [TestMethod]
-  [Ignore("vNext - Currently StateMachine destroys context after run completes.")]
-  public async Task RegisterState_ReturnsContext_SuccessTestAsync()
-  {
-    // Assemble
-    var ctxProperties = new PropertyBag()
-    {
-      { ParameterType.Counter, 0 },
-      { ParameterType.TestExecutionOrder, true },
-    };
-
-    var machine = new StateMachine<BasicStateId>();
-    machine.RegisterState<BasicState1>(BasicStateId.State1, BasicStateId.State2);
-    machine.RegisterState<BasicState2>(BasicStateId.State2, BasicStateId.State3);
-    machine.RegisterState<BasicState3>(BasicStateId.State3);
-
-    // Act - Start your engine!
-    var task = machine.RunAsync(BasicStateId.State1, ctxProperties);
-    await task;   // Non async method: task.GetAwaiter().GetResult();
-
-    // Assert Results
-    AssertMachineNotNull(machine);
-
-    var ctxFinalParams = machine.Context.Parameters;
-    Assert.IsNotNull(ctxFinalParams);
-    Assert.AreNotEqual(0, ctxFinalParams.Count);
-
-    // NOTE: This should be 9 because each state has 3 hooks that increment the counter
-    // TODO (2025-12-22 DS): Fix last state not calling OnExit.
-    ////Assert.AreEqual(9, ctxFinalParams[ParameterType.Counter]);
   }
 }

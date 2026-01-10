@@ -271,7 +271,7 @@ public class DiMsTests : TestBase
     });
 
     // Act - Run the state machine and send messages
-    await machine.RunAsync(CompositeMsgStateId.Entry, null, null, CancellationToken.None);
+    await machine.RunAsync(CompositeMsgStateId.Entry, CancellationToken.None);
 
     Console.WriteLine("MS.DI workflow finished.");
 
