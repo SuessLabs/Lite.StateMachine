@@ -151,6 +151,9 @@ public class State2_Sub2(IMessageService msg, ILogger<State2_Sub2> log)
   {
     // Demonstrate temporary parameter that will be discarded after State2_Sub2's OnExit
     context.Parameters.Add($"{context.CurrentStateId}!TEMP", Guid.NewGuid());
+
+    Log.LogInformation($"[OnEnter] CurrentStateId: {context.CurrentStateId} PreviousStateId: {context.PreviousStateId}");
+    Assert.AreEqual(StateId.State2_Sub2, context.CurrentStateId);
     return base.OnEnter(context);
   }
 
@@ -158,6 +161,12 @@ public class State2_Sub2(IMessageService msg, ILogger<State2_Sub2> log)
   {
     // Expected Count: 7
     MessageService.Counter3 = context.Parameters.Count;
+
+    Log.LogInformation("[OnExit] CurrentStateId: {c} PreviousStateId: {p}", context.CurrentStateId, context.PreviousStateId);
+    Assert.AreEqual(StateId.State2_Sub2, context.CurrentStateId);
+    Assert.AreEqual(StateId.State2_Sub1, context.PreviousStateId);
+    Assert.AreEqual(StateId.State2_Sub2_Sub3, context.LastChildStateId);
+    Assert.AreEqual(Result.Success, context.LastChildResult);
     return base.OnExit(context);
   }
 }
@@ -189,6 +198,9 @@ public class State2_Sub2_Sub2(IMessageService msg, ILogger<State2_Sub2_Sub2> log
     //  1) We're sending the same OpenCommand to prove that State1's OnMessage isn't called a 2nd time.
     //  2) CloseResponse doesn't reached our OnMessage because we left already.
     context.EventAggregator?.Publish(new UnlockCommand { Counter = 200 });
+
+    Log.LogInformation($"[OnEnter] CurrentStateId: {context.CurrentStateId} PreviousStateId: {context.PreviousStateId}");
+    Assert.AreEqual(StateId.State2_Sub2_Sub2, context.CurrentStateId);
     return base.OnEnter(context);
   }
 
@@ -197,6 +209,9 @@ public class State2_Sub2_Sub2(IMessageService msg, ILogger<State2_Sub2_Sub2> log
     MessageService.Counter4++;
 
     context.NextState(Result.Success);
+
+    Log.LogInformation($"[OnMessage] CurrentStateId: {context.CurrentStateId} PreviousStateId: {context.PreviousStateId}");
+    Assert.AreEqual(StateId.State2_Sub2_Sub2, context.CurrentStateId);
     return base.OnMessage(context, message);
   }
 
@@ -222,6 +237,13 @@ public class State2_Sub3(IMessageService msg, ILogger<State2_Sub3> log)
   {
     context.Parameters.Add(context.CurrentStateId.ToString(), Guid.NewGuid());
     MessageService.AddMessage($"[Keys-{context.CurrentStateId}]: {string.Join(",", context.Parameters.Keys)}");
+
+    // NOTE: We the state following the composite doesn't know about "LastChildXXX".
+    Log.LogInformation($"[OnEnter] CurrentStateId: {context.CurrentStateId} PreviousStateId: {context.PreviousStateId}");
+    Assert.AreEqual(StateId.State2_Sub3, context.CurrentStateId);
+    Assert.AreEqual(StateId.State2_Sub2, context.PreviousStateId);
+    Assert.IsNull(context.LastChildStateId);
+    Assert.IsNull(context.LastChildResult);
     return base.OnEnter(context);
   }
 }
@@ -234,6 +256,9 @@ public class State3(IMessageService msg, ILogger<State3> log)
   {
     context.Parameters.Add(context.CurrentStateId.ToString(), Guid.NewGuid());
     MessageService.AddMessage($"[Keys-{context.CurrentStateId}]: {string.Join(",", context.Parameters.Keys)}");
+
+    Log.LogInformation($"[OnEnter] CurrentStateId: {context.CurrentStateId} PreviousStateId: {context.PreviousStateId}");
+    Assert.AreEqual(StateId.State3, context.CurrentStateId);
     return base.OnEnter(context);
   }
 }

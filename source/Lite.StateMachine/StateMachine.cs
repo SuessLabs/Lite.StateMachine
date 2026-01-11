@@ -349,6 +349,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
     // Set the initial substate's PreviousStateId to NULL, as we already know the parent.
     TStateId? childPrevStateId = null;
+    TStateId? lastChildStateId = null;
 
     // Composite Loop
     while (!ct.IsCancellationRequested)
@@ -385,23 +386,23 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       // Proceed to the next substate
       childPrevStateId = childId;
       childId = nextChildId.Value;
+      lastChildStateId = nextChildId.Value;
     }
 
     // Parent's OnExit decides Ok/Error/Failure; Inform parent of last child's result via Context
     // TODO (2025-12-28 DS): Pass one Context object. Just clear "lastChildResult" after the OnExit.
     var parentExitTcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-    Context.Configure(parentExitTcs, lastChildResult);
+    Context.Configure(parentExitTcs, reg.StateId, reg.PreviousStateId, lastChildStateId, lastChildResult);
 
     // vNext (2025-12-28 DS): Use `OnState` handler to handle children completion instead of OnExit
     ////await instance.OnState(Context).ConfigureAwait(false);
     ////var parentDecision = await WaitForNextOrCancelAsync(parentExitTcs.Task, ct).ConfigureAwait(false);
 
-    // TODO (2025-01-10 DS): Double check the Context's CurrentStateId, NextStates.OnSuccess/Error/Failure match our parent state. Not leftover child garbage
     await instance.OnExit(Context).ConfigureAwait(false);
-
-    // To avoid composite state's OnExit, use the DefaultStateTimeoutMs to auto-cancel wait.
     var parentDecision = await WaitForNextOrCancelAsync(parentExitTcs.Task, ct).ConfigureAwait(false);
+
+    // Clear out the garbage pail kids
+    Context.Configure(parentExitTcs, reg.StateId, reg.PreviousStateId, lastChildStateId: null, lastChildResult: null);
 
     // Optionally cleanup context added by the children; giving the parent a peek at their mess.
     if (!IsContextPersistent)
@@ -442,7 +443,6 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     IDisposable? subscription = null;
     CancellationTokenSource? timeoutCts = null;
 
-    // TODO (2026-01-10 DS): Is is possible for OnMessage to happen before OnEntering/OnEnter?
     if (instance is ICommandState<TStateId> cmd)
     {
       if (_eventAggregator is not null)

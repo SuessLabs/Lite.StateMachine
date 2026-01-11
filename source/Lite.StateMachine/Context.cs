@@ -48,6 +48,9 @@ public sealed class Context<TStateId>
   /// <summary>Gets result emitted by the last child state (for composite parents only).</summary>
   public Result? LastChildResult { get; private set; }
 
+  /// <summary>Gets the last child <see cref="TStateId"/> (for composite parents only).</summary>
+  public TStateId? LastChildStateId { get; private set; }
+
   /// <summary>Gets or sets an arbitrary parameter provided by caller to the current action.</summary>
   public PropertyBag Parameters { get; set; } = [];
 
@@ -65,12 +68,18 @@ public sealed class Context<TStateId>
     PreviousStateId = previousStateId;
   }
 
-  /// <summary>Not for user consumption. Configures Context for composite state transitions.</summary>
+  /// <summary>Not for user consumption. Configures Composite Context state transitions.</summary>
   /// <param name="tcs">Task Completion Source.</param>
-  /// <param name="lastChildResult">State which sent us here.</param>
-  public void Configure(TaskCompletionSource<Result> tcs, Result? lastChildResult)
+  /// <param name="currentStateId">Current state that we're in.</param>
+  /// <param name="previousStateId">State which sent us here.</param>
+  /// <param name="lastChildStateId">Last child state's <see cref="TStateId?"/>.</param>
+  /// <param name="lastChildResult">Last child state's <see cref="Result?"/> which sent us here.</param>
+  public void Configure(TaskCompletionSource<Result> tcs, TStateId currentStateId, TStateId? previousStateId, TStateId? lastChildStateId, Result? lastChildResult)
   {
     _tcs = tcs;
+    CurrentStateId = currentStateId;
+    PreviousStateId = previousStateId;
+    LastChildStateId = lastChildStateId;
     LastChildResult = lastChildResult;
   }
 
