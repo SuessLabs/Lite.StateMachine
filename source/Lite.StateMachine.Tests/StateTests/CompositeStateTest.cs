@@ -274,9 +274,10 @@ public class CompositeStateTest : TestBase
 
     var ctxProperties = new PropertyBag() { { ParameterType.TestExecutionOrder, true } };
     var machine = GenerateStateMachineL3(new StateMachine<CompositeL3>(factory));
+    machine.AddContext(ctxProperties);
 
     // Act
-    await machine.RunAsync(CompositeL3.State1, ctxProperties, null, TestContext.CancellationToken);
+    await machine.RunAsync(CompositeL3.State1, TestContext.CancellationToken);
 
     // Assert
     AssertMachineNotNull(machine);

@@ -34,15 +34,14 @@ public class ContextTests : TestBase
   public void Basic_RegisterState_Executes123_SuccessTest()
   {
     // Assemble
-    var ctxProperties = new PropertyBag() { { "KeyString_ValueInt", 99 } };
-
     var machine = new StateMachine<CtxStateId>();
     machine.RegisterState<CtxState1>(CtxStateId.State1, CtxStateId.State2);
     machine.RegisterState<CtxState2>(CtxStateId.State2, CtxStateId.State3);
     machine.RegisterState<CtxState3>(CtxStateId.State3);
+    machine.AddContext(new() { { "KeyString_ValueInt", 99 } });
 
     // Act - Non async Start your engine!
-    var task = machine.RunAsync(CtxStateId.State1, ctxProperties);
+    var task = machine.RunAsync(CtxStateId.State1);
     task.GetAwaiter().GetResult();
 
     // Assert Results

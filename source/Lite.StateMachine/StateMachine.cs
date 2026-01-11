@@ -29,9 +29,6 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   /// <summary>States registered with system.</summary>
   private readonly Dictionary<TStateId, StateRegistration<TStateId>> _states = [];
 
-  ////private IDisposable? _subscription;
-  ////private CancellationTokenSource? _timeoutCts;
-
   /// <summary>
   ///   Initializes a new instance of the <see cref="StateMachine{TStateId}"/> class.
   ///   Dependency Injection is optional:
@@ -53,20 +50,26 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     _eventAggregator = eventAggregator;
     IsContextPersistent = isContextPersistent;
 
+    Context = new Context<TStateId>(
+      currentStateId: default,
+      nextStates: new StateMap<TStateId> { OnSuccess = null, OnError = null, OnFailure = null },
+      tcs: default!,
+      eventAggregator: _eventAggregator);
+
     // NOTE-1 (2025-12-25):
     //  * Create Precheck Sanitization:
     //    * Verify initial states are set for core and all sub-states.
     //    * Verify any transition exceptions (i.e. DisjointedNextSubStateException)
     //
-    //// OLD-4d3, 4bx:
+    //// OLD-4d3, 4bx 'IServiceResolver' container helper:
     ////  public StateMachine(IServiceResolver? services = null, IEventAggregator? eventAggregator = null, ILogger<StateMachine<TStateId>>? logs = null)
     ////  _services = services;
     ////  _logger = logs;
   }
 
   /// <inheritdoc/>
-  public Context<TStateId> Context { get; private set; } = new Context<TStateId>(default, default, default!, null);
-  ////public Context<TStateId> Context { get; private set; } = default!;
+  ////public Context<TStateId> Context { get; private set; } = new Context<TStateId>(default, default, default!, null);
+  public Context<TStateId> Context { get; private set; } = default!;
 
   /// <inheritdoc/>
   public int DefaultCommandTimeoutMs { get; set; } = 3000;
@@ -79,6 +82,27 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
   /// <inheritdoc/>
   public List<TStateId> States => [.. _states.Keys];
+
+  /// <summary>Preload properties and errors to the context.</summary>
+  /// <param name="parameters">Parameter properties to safely add/update.</param>
+  /// <param name="errors">Error properties to safely add/update.</param>
+  /// <returns>Instance of this class.</returns>
+  public StateMachine<TStateId> AddContext(PropertyBag? parameters = null, PropertyBag? errors = null)
+  {
+    if (parameters is not null)
+    {
+      foreach (var item in parameters)
+        Context.Parameters.SafeAdd(item.Key, item.Value);
+    }
+
+    if (errors is not null)
+    {
+      foreach (var item in errors)
+        Context.Parameters.SafeAdd(item.Key, item.Value);
+    }
+
+    return this;
+  }
 
   /// <inheritdoc/>
   public StateMachine<TStateId> RegisterComposite<TCompositeParent>(
@@ -200,8 +224,6 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   /// <inheritdoc/>
   public async Task<StateMachine<TStateId>> RunAsync(
     TStateId initialStateId,
-    PropertyBag? parameterStack = null,
-    PropertyBag? errorStack = null,
     CancellationToken cancellationToken = default)
   {
     if (!_states.ContainsKey(initialStateId))
@@ -210,31 +232,24 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     TStateId? prevStateId = null;
     var currentStateId = initialStateId;
 
-    // TBD
-    ////Context = new Context<TStateId>(currentStateId, default, default!, null);
+    // Make sure we're always initialized
+    Context ??= new Context<TStateId>(
+      currentStateId: default,
+      nextStates: new StateMap<TStateId> { OnSuccess = null, OnError = null, OnFailure = null },
+      tcs: default!,
+      eventAggregator: _eventAggregator);
 
     while (!cancellationToken.IsCancellationRequested)
     {
       var reg = GetRegistration(currentStateId);
       reg.PreviousStateId = prevStateId;
 
-      // TODO (2025-12-28 DS): Configure context and pass it along
-      ////var tcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
-      ////var ctx = new Context<TStateId>(reg.StateId, tcs, _eventAggregator)
-      ////{
-      ////  Parameters = parameterStack ?? [],
-      ////  Errors = errorStack ?? [],
-      ////};
-
-      ////Context.Parameters = parameterStack ?? [];
-      ////Context.Errors = errorStack ?? [];
-
-      parameterStack ??= [];
-      errorStack ??= [];
+      // Ensure we're always initialized
+      Context.Parameters = Context.Parameters ?? [];
+      Context.Errors = Context.Errors ?? [];
 
       // Run any state (composite or leaf) recursively.
-      var result = await RunAnyStateRecursiveAsync(reg, parameterStack, errorStack, cancellationToken).ConfigureAwait(false);
-      ////var result = await RunAnyStateRecursiveAsync(reg, cancellationToken).ConfigureAwait(false);
+      var result = await RunAnyStateRecursiveAsync(reg, cancellationToken).ConfigureAwait(false);
       if (result is null)
         break;
 
@@ -295,38 +310,24 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
   private async Task<Result?> RunAnyStateRecursiveAsync(
     StateRegistration<TStateId> reg,
-    PropertyBag? parameters,
-    PropertyBag? errors,
     CancellationToken ct)
   {
-    // Ensure we always operate on non-null, shared bags
-    ////parameters ??= [];
-    ////errors ??= [];
-
     // Run Normal or Command State
     if (!reg.IsCompositeParent)
-      ////return await RunLeafAsync(reg, ct).ConfigureAwait(false);
-      return await RunLeafAsync(reg, parameters, errors, ct).ConfigureAwait(false);
+      return await RunLeafAsync(reg, ct).ConfigureAwait(false);
 
     // Composite States
     var instance = GetOrCreateInstance(reg);
 
-    StateMap<TStateId> nextStates = new()
-    {
-      OnSuccess = reg.OnSuccess,
-      OnError = reg.OnError,
-      OnFailure = reg.OnFailure,
-    };
+    Context.Configure(
+      new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously),
+      reg.StateId,
+      reg.PreviousStateId);
+    Context.NextStates.OnSuccess = reg.OnSuccess;
+    Context.NextStates.OnError = reg.OnError;
+    Context.NextStates.OnFailure = reg.OnFailure;
 
-    var parentEnterTcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
-    var parentEnterCtx = new Context<TStateId>(reg.StateId, nextStates, parentEnterTcs, _eventAggregator)
-    {
-      Parameters = parameters,
-      Errors = errors,
-      PreviousStateId = reg.PreviousStateId,
-    };
-
-    await instance.OnEntering(parentEnterCtx).ConfigureAwait(false);
+    await instance.OnEntering(Context).ConfigureAwait(false);
 
     // [IsContextPersistent]
     //  Take snapshot of original Context keys AFTER OnEntering so we can give the state a chance
@@ -334,15 +335,10 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     //
     //  Any new Context keys added via OnEnter are considered "for children consumption only".
     //  After our OnExit, they'll be (optionally) removed.
-    var originalParamKeys = new HashSet<object>(parameters.Keys);
-    var originalErrorKeys = new HashSet<object>(errors.Keys);
+    var originalParamKeys = new HashSet<object>(Context.Parameters.Keys);
+    var originalErrorKeys = new HashSet<object>(Context.Errors.Keys);
 
-    await instance.OnEnter(parentEnterCtx).ConfigureAwait(false);
-
-    // Check for next transition overrides
-    ////reg.OnSuccess = parentEnterCtx.NextStates.OnSuccess;
-    ////reg.OnError = parentEnterCtx.NextStates.OnError;
-    ////reg.OnFailure = parentEnterCtx.NextStates.OnFailure;
+    await instance.OnEnter(Context).ConfigureAwait(false);
 
     // TODO (2025-12-28 DS): Consider StateMachine config param to just move along or throw exception
     if (reg.InitialChildId is null)
@@ -353,6 +349,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
     // Set the initial substate's PreviousStateId to NULL, as we already know the parent.
     TStateId? childPrevStateId = null;
+    TStateId? lastChildStateId = null;
 
     // Composite Loop
     while (!ct.IsCancellationRequested)
@@ -364,18 +361,16 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       if (!Equals(childReg.ParentId, reg.StateId))
         throw new OrphanSubStateException($"Child state '{childId}' must belong to composite '{reg.StateId}'.");
 
-      // Could just call "RunAnyStateRecursiveAsync" but lets not waste cycles
       Result? childResult;
       if (childReg.IsCompositeParent)
-        childResult = await RunAnyStateRecursiveAsync(childReg, parameters, errors, ct).ConfigureAwait(false);
+        childResult = await RunAnyStateRecursiveAsync(childReg, ct).ConfigureAwait(false);
       else
-        childResult = await RunLeafAsync(childReg, parameters, errors, ct).ConfigureAwait(false);
+        childResult = await RunLeafAsync(childReg, ct).ConfigureAwait(false);
 
       // Cancelled or timed out inside child state
       if (childResult is null)
         return null;
 
-      // TODO (#76): Extract the Context.OnSuccess/Error/Failure override (if any)
       lastChildResult = childResult;
       var nextChildId = StateMachine<TStateId>.ResolveNext(childReg, childResult.Value);
 
@@ -391,35 +386,37 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       // Proceed to the next substate
       childPrevStateId = childId;
       childId = nextChildId.Value;
+      lastChildStateId = nextChildId.Value;
     }
 
     // Parent's OnExit decides Ok/Error/Failure; Inform parent of last child's result via Context
     // TODO (2025-12-28 DS): Pass one Context object. Just clear "lastChildResult" after the OnExit.
     var parentExitTcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
-    var parentExitCtx = new Context<TStateId>(reg.StateId, nextStates, parentExitTcs, _eventAggregator, lastChildResult)
-    {
-      Parameters = parameters ?? [],
-      Errors = errors ?? [],
-    };
+    Context.Configure(parentExitTcs, reg.StateId, reg.PreviousStateId, lastChildStateId, lastChildResult);
 
-    await instance.OnExit(parentExitCtx).ConfigureAwait(false);
+    // vNext (2025-12-28 DS): Use `OnState` handler to handle children completion instead of OnExit
+    ////await instance.OnState(Context).ConfigureAwait(false);
+    ////var parentDecision = await WaitForNextOrCancelAsync(parentExitTcs.Task, ct).ConfigureAwait(false);
 
-    // To avoid composite state's OnExit, use the DefaultStateTimeoutMs to auto-cancel wait.
+    await instance.OnExit(Context).ConfigureAwait(false);
     var parentDecision = await WaitForNextOrCancelAsync(parentExitTcs.Task, ct).ConfigureAwait(false);
+
+    // Clear out the garbage pail kids
+    Context.Configure(parentExitTcs, reg.StateId, reg.PreviousStateId, lastChildStateId: null, lastChildResult: null);
 
     // Optionally cleanup context added by the children; giving the parent a peek at their mess.
     if (!IsContextPersistent)
     {
-      if (parameters is not null)
+      if (Context.Parameters is not null)
       {
-        foreach (var k in parameters.Keys)
-          if (!originalParamKeys.Contains(k)) parameters.Remove(k);
+        foreach (var k in Context.Parameters.Keys)
+          if (!originalParamKeys.Contains(k)) Context.Parameters.Remove(k);
       }
 
-      if (errors is not null)
+      if (Context.Errors is not null)
       {
-        foreach (var k in errors.Keys)
-          if (!originalErrorKeys.Contains(k)) errors.Remove(k);
+        foreach (var k in Context.Errors.Keys)
+          if (!originalErrorKeys.Contains(k)) Context.Errors.Remove(k);
       }
     }
 
@@ -430,30 +427,18 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     return parentDecision;
   }
 
-  // Rename: RunSingleStateAsync(...)
+  // Rename (2015-12-28 DS): RunSingleStateAsync(...)
   private async Task<Result?> RunLeafAsync(
     StateRegistration<TStateId> reg,
-    PropertyBag? parameterStack,
-    PropertyBag? errorStack,
     CancellationToken cancellationToken)
   {
     IState<TStateId> instance = GetOrCreateInstance(reg);
 
-    // Next state transitions
-    StateMap<TStateId> nextStates = new()
-    {
-      OnSuccess = reg.OnSuccess,
-      OnError = reg.OnError,
-      OnFailure = reg.OnFailure,
-    };
-
     var tcs = new TaskCompletionSource<Result>(TaskCreationOptions.RunContinuationsAsynchronously);
-    var ctx = new Context<TStateId>(reg.StateId, nextStates, tcs, _eventAggregator)
-    {
-      Parameters = parameterStack ?? [],
-      Errors = errorStack ?? [],
-      PreviousStateId = reg.PreviousStateId,
-    };
+    Context.Configure(tcs, reg.StateId, reg.PreviousStateId);
+    Context.NextStates.OnSuccess = reg.OnSuccess;
+    Context.NextStates.OnError = reg.OnError;
+    Context.NextStates.OnFailure = reg.OnFailure;
 
     IDisposable? subscription = null;
     CancellationTokenSource? timeoutCts = null;
@@ -463,7 +448,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       if (_eventAggregator is not null)
       {
         // Subscribed message types or `Array.Empty<Type>()` for none
-        //// vNext: IReadOnlyCollection<Type> types2 = [.. cmd.SubscribedMessageTypes ?? [], .. reg.SubscribedMessageTypes ?? []];
+        //// vNext (#89): IReadOnlyCollection<Type> types2 = [.. cmd.SubscribedMessageTypes ?? [], .. reg.SubscribedMessageTypes ?? []];
         var types = cmd.SubscribedMessageTypes ?? [];
 
         subscription = _eventAggregator.Subscribe(async (msgObj) =>
@@ -473,7 +458,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
 #pragma warning disable SA1501 // Statement should not be on a single line
           // Swallow to avoid breaking publication loop
-          try { await cmd.OnMessage(ctx, msgObj).ConfigureAwait(false); } catch { }
+          try { await cmd.OnMessage(Context, msgObj).ConfigureAwait(false); } catch { }
 #pragma warning restore SA1501 // Statement should not be on a single line
         },
         [.. types]);   //// [.. types] == types.ToArray()
@@ -488,7 +473,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
             {
               await Task.Delay(timeoutMs, timeoutCts.Token).ConfigureAwait(false);
               if (!tcs.Task.IsCompleted && !timeoutCts.IsCancellationRequested)
-                await cmd.OnTimeout(ctx).ConfigureAwait(false);
+                await cmd.OnTimeout(Context).ConfigureAwait(false);
             }
             catch (TaskCanceledException)
             {
@@ -502,21 +487,20 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
 
     try
     {
-      await instance.OnEntering(ctx).ConfigureAwait(false);
-      await instance.OnEnter(ctx).ConfigureAwait(false);
+      await instance.OnEntering(Context).ConfigureAwait(false);
+      await instance.OnEnter(Context).ConfigureAwait(false);
 
       var result = await WaitForNextOrCancelAsync(tcs.Task, cancellationToken).ConfigureAwait(false);
 
       // TODO (2025-12-28 DS): Potential DefaultStateTimeoutMs. Even leaving OnEnter without NextState(Result.OK), should consider calling `OnExit` to allow states to cleanup.
-      // TODO (2026-01-04 DS): Consider handling "OnTRANSITION" overrides. Passing a single Context would solve this as it's passed by ref.
       if (result is null)
         return null;
 
-      await instance.OnExit(ctx).ConfigureAwait(false);
+      await instance.OnExit(Context).ConfigureAwait(false);
 
-      reg.OnSuccess = ctx.NextStates.OnSuccess;
-      reg.OnError = ctx.NextStates.OnError;
-      reg.OnFailure = ctx.NextStates.OnFailure;
+      reg.OnSuccess = Context.NextStates.OnSuccess;
+      reg.OnError = Context.NextStates.OnError;
+      reg.OnFailure = Context.NextStates.OnFailure;
 
       return result.Value;
     }

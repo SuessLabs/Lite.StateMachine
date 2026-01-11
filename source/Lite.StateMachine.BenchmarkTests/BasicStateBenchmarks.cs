@@ -33,26 +33,26 @@ public class BasicStateBenchmarks
   public async Task BasicStatesRunsAsync()
   {
     var maxCounter = CyclesBeforeExit;
-    PropertyBag parameters = new()
+    _machine.Context.Parameters = new()
     {
       { ParameterType.MaxCounter, maxCounter },
       { ParameterType.Counter, 0 },
     };
 
-    await _machine.RunAsync(BasicStateId.State1, parameters);
+    await _machine.RunAsync(BasicStateId.State1);
   }
 
   [Benchmark]
   public void BasicStatesRunsSync()
   {
     var maxCounter = CyclesBeforeExit;
-    PropertyBag parameters = new()
+    _machine.Context.Parameters = new()
     {
       { ParameterType.MaxCounter, maxCounter },
       { ParameterType.Counter, 0 },
     };
 
-    _machine.RunAsync(BasicStateId.State1, parameters)
+    _machine.RunAsync(BasicStateId.State1)
             .GetAwaiter()
             .GetResult();
   }

@@ -19,16 +19,17 @@ public sealed class Context<TStateId>
 
 #pragma warning restore SA1401 // Fields should be private
 
-  private readonly TaskCompletionSource<Result> _tcs;
+  ////private readonly TaskCompletionSource<Result> _tcs;
+  private TaskCompletionSource<Result> _tcs;
 
   internal Context(
-    TStateId current,
+    TStateId currentStateId,
     StateMap<TStateId> nextStates,
     TaskCompletionSource<Result> tcs,
     IEventAggregator? eventAggregator = null,
     Result? lastChildResult = null)
   {
-    CurrentStateId = current;
+    CurrentStateId = currentStateId;
     NextStates = nextStates;
     _tcs = tcs;
     EventAggregator = eventAggregator;
@@ -36,22 +37,51 @@ public sealed class Context<TStateId>
   }
 
   /// <summary>Gets the current State's Id.</summary>
-  public TStateId CurrentStateId { get; }
+  public TStateId CurrentStateId { get; private set; }
 
   /// <summary>Gets or sets an arbitrary collection of errors to pass along to the next state.</summary>
   public PropertyBag Errors { get; set; } = [];
 
   /// <summary>Gets the Event aggregator for Command states (optional).</summary>
-  public IEventAggregator? EventAggregator { get; }
+  public IEventAggregator? EventAggregator { get; private set; }
 
   /// <summary>Gets result emitted by the last child state (for composite parents only).</summary>
-  public Result? LastChildResult { get; }
+  public Result? LastChildResult { get; private set; }
+
+  /// <summary>Gets the last child <see cref="TStateId"/> (for composite parents only).</summary>
+  public TStateId? LastChildStateId { get; private set; }
 
   /// <summary>Gets or sets an arbitrary parameter provided by caller to the current action.</summary>
   public PropertyBag Parameters { get; set; } = [];
 
   /// <summary>Gets the previous state's enum value.</summary>
   public TStateId? PreviousStateId { get; internal set; }
+
+  /// <summary>Not for user consumption. Configures Context for state transitions.</summary>
+  /// <param name="tcs">Task Completion Source.</param>
+  /// <param name="currentStateId">Current state that we're in.</param>
+  /// <param name="previousStateId">State which sent us here.</param>
+  public void Configure(TaskCompletionSource<Result> tcs, TStateId currentStateId, TStateId? previousStateId)
+  {
+    _tcs = tcs;
+    CurrentStateId = currentStateId;
+    PreviousStateId = previousStateId;
+  }
+
+  /// <summary>Not for user consumption. Configures Composite Context state transitions.</summary>
+  /// <param name="tcs">Task Completion Source.</param>
+  /// <param name="currentStateId">Current state that we're in.</param>
+  /// <param name="previousStateId">State which sent us here.</param>
+  /// <param name="lastChildStateId">Last child state's <see cref="TStateId?"/>.</param>
+  /// <param name="lastChildResult">Last child state's <see cref="Result?"/> which sent us here.</param>
+  public void Configure(TaskCompletionSource<Result> tcs, TStateId currentStateId, TStateId? previousStateId, TStateId? lastChildStateId, Result? lastChildResult)
+  {
+    _tcs = tcs;
+    CurrentStateId = currentStateId;
+    PreviousStateId = previousStateId;
+    LastChildStateId = lastChildStateId;
+    LastChildResult = lastChildResult;
+  }
 
   /// <summary>Signal the machine to move forward (only once per state entry).</summary>
   /// <param name="result">Result to pass to the next state.</param>

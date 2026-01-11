@@ -31,12 +31,15 @@ public class BasicState1() : IState<BasicStateId>
     context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
     context.NextState(Result.Success);
     Console.WriteLine($"[BasicState1][OnEnter] {context.Parameters[ParameterType.Counter]} => OK");
+    Console.WriteLine($"[BasicState1][OnEnter].OnSuccess '{context.NextStates.OnSuccess}'");
+    Console.WriteLine($"[BasicState1][OnEnter].OnError '{context.NextStates.OnError}'");
+    Console.WriteLine($"[BasicState1][OnEnter].OnFailure '{context.NextStates.OnFailure}'");
   }
 
   public Task OnExit(Context<BasicStateId> context)
   {
     context.Parameters[ParameterType.Counter] = context.ParameterAsInt(ParameterType.Counter) + 1;
-    Console.WriteLine($"[BasicState1][OnExit] {context.Parameters[ParameterType.Counter]}");
+    Console.WriteLine($"[BasicState1][OnExit] Params[Counter]: {context.Parameters[ParameterType.Counter]}");
     return Task.CompletedTask;
   }
 }
