@@ -14,7 +14,7 @@ namespace Lite.StateMachine.Tests.TestData.States;
 /// <typeparam name="TStateClass">State class object.</typeparam>
 /// <typeparam name="TStateId">State Id.</typeparam>
 public class CommandStateBase<TStateClass, TStateId>(IMessageService msg, ILogger<TStateClass> logger)
-  : DiStateBase<TStateClass, TStateId>(msg, logger), ICommandState<TStateId>
+  : StateDiBase<TStateClass, TStateId>(msg, logger), ICommandState<TStateId>
   where TStateId : struct, Enum
 {
   //// NEEDS TESTED: public virtual IReadOnlyCollection<ICustomCommand> SubscribedMessageTypes => [];

@@ -77,16 +77,13 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   /// <inheritdoc/>
   public int DefaultStateTimeoutMs { get; set; } = Timeout.Infinite;
 
-  /// <summary>Gets or sets a value indicating whether substate-added context persists when returning to the parent (default: true).</summary>
+  /// <inheritdoc/>
   public bool IsContextPersistent { get; set; } = true;
 
   /// <inheritdoc/>
   public List<TStateId> States => [.. _states.Keys];
 
-  /// <summary>Preload properties and errors to the context.</summary>
-  /// <param name="parameters">Parameter properties to safely add/update.</param>
-  /// <param name="errors">Error properties to safely add/update.</param>
-  /// <returns>Instance of this class.</returns>
+  /// <inheritdoc/>
   public StateMachine<TStateId> AddContext(PropertyBag? parameters = null, PropertyBag? errors = null)
   {
     if (parameters is not null)
@@ -128,10 +125,15 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
   }
 
   /// <inheritdoc/>
-  public StateMachine<TStateId> RegisterState<TStateClass>(TStateId stateId, TStateId? onSuccess = null, TStateId? onError = null, TStateId? onFailure = null)
+  public StateMachine<TStateId> RegisterState<TStateClass>(
+    TStateId stateId,
+    TStateId? onSuccess = null,
+    TStateId? onError = null,
+    TStateId? onFailure = null,
+    IReadOnlyCollection<Type>? subscriptionTypes = null)
     where TStateClass : class, IState<TStateId>
   {
-    return RegisterState<TStateClass>(stateId, onSuccess, onError: null, onFailure: null, parentStateId: null, isCompositeParent: false, initialChildStateId: null);
+    return RegisterState<TStateClass>(stateId, onSuccess, onError: null, onFailure: null, parentStateId: null, isCompositeParent: false, initialChildStateId: null, subscriptionTypes: subscriptionTypes);
   }
 
   /// <inheritdoc/>
@@ -142,7 +144,8 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     TStateId? onFailure,
     TStateId? parentStateId = null,
     bool isCompositeParent = false,
-    TStateId? initialChildStateId = null)
+    TStateId? initialChildStateId = null,
+    IReadOnlyCollection<Type>? subscriptionTypes = null)
     where TStateClass : class, IState<TStateId>
   {
     if (_states.ContainsKey(stateId))
@@ -160,7 +163,7 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       OnSuccess = onSuccess,
       OnError = onError,
       OnFailure = onFailure,
-      //// vNext: SubscribedMessages = cmdMsgs ?? [],
+      SubscribedMessageTypes = subscriptionTypes ?? [],
     };
 
     _states[stateId] = reg;
@@ -201,7 +204,8 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     TStateId parentStateId,
     TStateId? onSuccess = null,
     TStateId? onError = null,
-    TStateId? onFailure = null)
+    TStateId? onFailure = null,
+    IReadOnlyCollection<Type>? subscriptionTypes = null)
     where TChildClass : class, IState<TStateId>
   {
     if (!_states.TryGetValue(parentStateId, out var pr) || !pr.IsCompositeParent)
@@ -218,7 +222,8 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
       onFailure,
       parentStateId,
       isCompositeParent: false,
-      initialChildStateId: null);
+      initialChildStateId: null,
+      subscriptionTypes: subscriptionTypes);
   }
 
   /// <inheritdoc/>
@@ -447,9 +452,18 @@ public sealed partial class StateMachine<TStateId> : IStateMachine<TStateId>
     {
       if (_eventAggregator is not null)
       {
-        // Subscribed message types or `Array.Empty<Type>()` for none
-        //// vNext (#89): IReadOnlyCollection<Type> types2 = [.. cmd.SubscribedMessageTypes ?? [], .. reg.SubscribedMessageTypes ?? []];
-        var types = cmd.SubscribedMessageTypes ?? [];
+        // Apply the Highlander rule!
+        var typeSet = new HashSet<Type>();
+        foreach (var preReg in reg.SubscribedMessageTypes ?? [])
+          typeSet.Add(preReg);
+
+        foreach (var preReg in cmd.SubscribedMessageTypes ?? [])
+          typeSet.Add(preReg);
+
+        IReadOnlyCollection<Type> types = [.. typeSet];
+
+        // The following runs risk of duplicates
+        ////IReadOnlyCollection<Type> types = [.. cmd.SubscribedMessageTypes ?? [], .. reg.SubscribedMessageTypes ?? []];
 
         subscription = _eventAggregator.Subscribe(async (msgObj) =>
         {

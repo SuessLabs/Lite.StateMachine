@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging;
 namespace Lite.StateMachine.Tests.TestData.States.CompositeL3DiStates;
 
 public class CommonDiStateBase<TStateClass, TStateId>(IMessageService msg, ILogger<TStateClass> logger)
-  : DiStateBase<TStateClass, TStateId>(msg, logger)
+  : StateDiBase<TStateClass, TStateId>(msg, logger)
   where TStateId : struct, Enum
 {
   // Helper so we don't have to keep rewriting the same "override Task OnEnter(...)"
@@ -29,7 +29,7 @@ public class CommonDiStateBase<TStateClass, TStateId>(IMessageService msg, ILogg
 }
 
 public class State1(IMessageService msg, ILogger<State1> log)
-  : DiStateBase<State1, CompositeL3>(msg, log)
+  : StateDiBase<State1, CompositeL3>(msg, log)
 {
   public override Task OnEnter(Context<CompositeL3> context)
   {
@@ -154,7 +154,7 @@ public class State2_Sub2_Sub3(IMessageService msg, ILogger<State2_Sub2_Sub3> log
 
 /// <summary>Sublevel-2: Last State.</summary>
 public class State2_Sub3(IMessageService msg, ILogger<State2_Sub3> log)
-  : DiStateBase<State2_Sub3, CompositeL3>(msg, log)
+  : StateDiBase<State2_Sub3, CompositeL3>(msg, log)
 {
   public override Task OnEnter(Context<CompositeL3> context)
   {
@@ -169,7 +169,7 @@ public class State2_Sub3(IMessageService msg, ILogger<State2_Sub3> log)
 
 /// <summary>Make sure not child-created context is there.</summary>
 public class State3(IMessageService msg, ILogger<State3> log)
-  : DiStateBase<State3, CompositeL3>(msg, log)
+  : StateDiBase<State3, CompositeL3>(msg, log)
 {
   public override Task OnEnter(Context<CompositeL3> context)
   {

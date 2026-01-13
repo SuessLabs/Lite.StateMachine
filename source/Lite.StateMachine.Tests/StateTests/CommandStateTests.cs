@@ -47,11 +47,11 @@ public class CommandStateTests : TestBase
 
     machine
       .AddContext(ctxProperties)
-      .RegisterState<State1>(StateId.State1, StateId.State2)
+      .RegisterState<State1>(StateId.State1, StateId.State2, subscriptionTypes: [typeof(UnlockResponse)])
       .RegisterComposite<State2>(StateId.State2, initialChildStateId: StateId.State2_Sub1, onSuccess: StateId.State3)
       .RegisterSubState<State2_Sub1>(StateId.State2_Sub1, parentStateId: StateId.State2, onSuccess: StateId.State2_Sub2)
       .RegisterSubComposite<State2_Sub2>(StateId.State2_Sub2, parentStateId: StateId.State2, initialChildStateId: StateId.State2_Sub2_Sub1, onSuccess: StateId.State2_Sub3)
-      .RegisterSubState<State2_Sub2_Sub1>(StateId.State2_Sub2_Sub1, parentStateId: StateId.State2_Sub2, onSuccess: StateId.State2_Sub2_Sub2)
+      .RegisterSubState<State2_Sub2_Sub1>(StateId.State2_Sub2_Sub1, parentStateId: StateId.State2_Sub2, onSuccess: StateId.State2_Sub2_Sub2, subscriptionTypes: [typeof(UnlockResponse), typeof(CloseResponse)])
       .RegisterSubState<State2_Sub2_Sub2>(StateId.State2_Sub2_Sub2, parentStateId: StateId.State2_Sub2, onSuccess: StateId.State2_Sub2_Sub3)
       .RegisterSubState<State2_Sub2_Sub3>(StateId.State2_Sub2_Sub3, parentStateId: StateId.State2_Sub2, onSuccess: null)
       .RegisterSubState<State2_Sub3>(StateId.State2_Sub3, parentStateId: StateId.State2, onSuccess: null)
@@ -140,7 +140,11 @@ public class CommandStateTests : TestBase
     Assert.AreEqual(100, counter);
   }
 
+#pragma warning disable SA1124 // Do not use regions
+  #region Infinite Loop Test State Classes
+
   private class InfState1 : IState<StateId>
+#pragma warning restore SA1124 // Do not use regions
   {
     public Task OnEnter(Context<StateId> context)
     {
@@ -178,4 +182,6 @@ public class CommandStateTests : TestBase
 
     public Task OnTimeout(Context<StateId> context) => Task.CompletedTask;
   }
+
+  #endregion Infinite Loop Test State Classes
 }
