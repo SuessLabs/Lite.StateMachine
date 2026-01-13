@@ -11,7 +11,7 @@
     <AssemblyVersion>2.3.0</AssemblyVersion>
     <FileVersion>$(AssemblyVersion)</FileVersion>
     <VersionPrefix>$(AssemblyVersion)</VersionPrefix>
-    <VersionSuffix>-alpha2</VersionSuffix>
+    <VersionSuffix></VersionSuffix>
     <Version>$(VersionPrefix)$(VersionSuffix)</Version>
 
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
