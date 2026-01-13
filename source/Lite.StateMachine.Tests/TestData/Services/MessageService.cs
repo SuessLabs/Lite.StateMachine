@@ -11,7 +11,7 @@ public interface IMessageService
 {
   /// <summary
   /// Gets or sets a counter.
-  /// <see cref="DiStateBase{TStateClass, TStateId}"/> uses it as an automatic state transition counter.
+  /// <see cref="StateDiBase{TStateClass, TStateId}"/> uses it as an automatic state transition counter.
   /// </summary>
   int Counter1 { get; set; }
 

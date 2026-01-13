@@ -11,7 +11,7 @@ namespace Lite.StateMachine.Tests.TestData.States;
 
 #pragma warning disable SA1124 // Do not use regions
 
-public class DiStateBase<TStateClass, TStateId>(IMessageService msg, ILogger<TStateClass> logger) : IState<TStateId>
+public class StateDiBase<TStateClass, TStateId>(IMessageService msg, ILogger<TStateClass> logger) : IState<TStateId>
   where TStateId : struct, Enum
 {
   private readonly ILogger<TStateClass> _logger = logger;

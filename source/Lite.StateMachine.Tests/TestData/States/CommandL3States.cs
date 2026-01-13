@@ -31,20 +31,6 @@ public enum StateId
   Error,
 }
 
-public class CommonDiStateBase<TStateClass, TStateId>(IMessageService msg, ILogger<TStateClass> logger)
-  : DiStateBase<TStateClass, TStateId>(msg, logger)
-  where TStateId : struct, Enum
-{
-  // Helper so we don't have to keep rewriting the same "override Task OnEnter(...)"
-  // 8 lines * 9 states.. useless
-  public override Task OnEnter(Context<TStateId> context)
-  {
-    context.Parameters.Add(context.CurrentStateId.ToString(), Guid.NewGuid());
-    MessageService.AddMessage($"[Keys-{context.CurrentStateId}]: {string.Join(",", context.Parameters.Keys)}");
-    return base.OnEnter(context);
-  }
-}
-
 public class State1(IMessageService msg, ILogger<State1> log)
   : CommandStateBase<State1, StateId>(msg, log)
 {
@@ -96,7 +82,7 @@ public class State1(IMessageService msg, ILogger<State1> log)
 
 /// <summary>Level-1: Composite.</summary>
 public class State2(IMessageService msg, ILogger<State2> log)
-  : CommonDiStateBase<State2, StateId>(msg, log)
+  : StateDiMessageBase<State2, StateId>(msg, log)
 {
   #region CodeMaid - Suppress method sorting
 
@@ -127,14 +113,14 @@ public class State2(IMessageService msg, ILogger<State2> log)
 
 /// <summary>Sublevel-2: State.<summary>
 public class State2_Sub1(IMessageService msg, ILogger<State2_Sub1> log)
-  : CommonDiStateBase<State2_Sub1, StateId>(msg, log)
+  : StateDiMessageBase<State2_Sub1, StateId>(msg, log)
 {
   public override Task OnEnter(Context<StateId> context) => base.OnEnter(context);
 }
 
 /// <summary>Sublevel-2: Composite.</summary>
 public class State2_Sub2(IMessageService msg, ILogger<State2_Sub2> log)
-  : CommonDiStateBase<State2_Sub2, StateId>(msg, log)
+  : StateDiMessageBase<State2_Sub2, StateId>(msg, log)
 {
   #region CodeMaid - DoNotReorder
 
@@ -173,7 +159,7 @@ public class State2_Sub2(IMessageService msg, ILogger<State2_Sub2> log)
 
 /// <summary>Sublevel-3: State.</summary>
 public class State2_Sub2_Sub1(IMessageService msg, ILogger<State2_Sub2_Sub1> log)
-  : CommonDiStateBase<State2_Sub2_Sub1, StateId>(msg, log)
+  : StateDiMessageBase<State2_Sub2_Sub1, StateId>(msg, log)
 {
   public override Task OnEnter(Context<StateId> context) => base.OnEnter(context);
 }
@@ -224,14 +210,14 @@ public class State2_Sub2_Sub2(IMessageService msg, ILogger<State2_Sub2_Sub2> log
 
 /// <summary>Sublevel-3: Last State.</summary>
 public class State2_Sub2_Sub3(IMessageService msg, ILogger<State2_Sub2_Sub3> log)
-: CommonDiStateBase<State2_Sub2_Sub3, StateId>(msg, log)
+: StateDiMessageBase<State2_Sub2_Sub3, StateId>(msg, log)
 {
   public override Task OnEnter(Context<StateId> context) => base.OnEnter(context);
 }
 
 /// <summary>Sublevel-2: Last State.</summary>
 public class State2_Sub3(IMessageService msg, ILogger<State2_Sub3> log)
-  : DiStateBase<State2_Sub3, StateId>(msg, log)
+  : StateDiBase<State2_Sub3, StateId>(msg, log)
 {
   public override Task OnEnter(Context<StateId> context)
   {
@@ -250,7 +236,7 @@ public class State2_Sub3(IMessageService msg, ILogger<State2_Sub3> log)
 
 /// <summary>Make sure not child-created context is there.</summary>
 public class State3(IMessageService msg, ILogger<State3> log)
-  : DiStateBase<State3, StateId>(msg, log)
+  : StateDiBase<State3, StateId>(msg, log)
 {
   public override Task OnEnter(Context<StateId> context)
   {
@@ -259,6 +245,20 @@ public class State3(IMessageService msg, ILogger<State3> log)
 
     Log.LogInformation($"[OnEnter] CurrentStateId: {context.CurrentStateId} PreviousStateId: {context.PreviousStateId}");
     Assert.AreEqual(StateId.State3, context.CurrentStateId);
+    return base.OnEnter(context);
+  }
+}
+
+public class StateDiMessageBase<TStateClass, TStateId>(IMessageService msg, ILogger<TStateClass> logger)
+  : StateDiBase<TStateClass, TStateId>(msg, logger)
+  where TStateId : struct, Enum
+{
+  // Helper so we don't have to keep rewriting the same "override Task OnEnter(...)"
+  // 8 lines * 9 states.. useless
+  public override Task OnEnter(Context<TStateId> context)
+  {
+    context.Parameters.Add(context.CurrentStateId.ToString(), Guid.NewGuid());
+    MessageService.AddMessage($"[Keys-{context.CurrentStateId}]: {string.Join(",", context.Parameters.Keys)}");
     return base.OnEnter(context);
   }
 }
