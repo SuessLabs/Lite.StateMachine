@@ -35,6 +35,10 @@ public class State1(IMessageService msg, ILogger<State1> log)
   : CommandStateBase<State1, StateId>(msg, log)
 {
   /// <summary>Gets message types for command state to subscribe to.</summary>
+  /// <remarks>
+  ///   Already subscribed to in StateMachine builder. Defining twice to test that we don't
+  ///   get duplicate messages.
+  /// </remarks>
   public override IReadOnlyCollection<Type> SubscribedMessageTypes => new[]
   {
     //// typeof(OpenCommand),  // <---- NOTE: Not needed
@@ -168,12 +172,13 @@ public class State2_Sub2_Sub1(IMessageService msg, ILogger<State2_Sub2_Sub1> log
 public class State2_Sub2_Sub2(IMessageService msg, ILogger<State2_Sub2_Sub2> log)
   : CommandStateBase<State2_Sub2_Sub2, StateId>(msg, log)
 {
-  /// <summary>Gets message types for command state to subscribe to.</summary>
-  public override IReadOnlyCollection<Type> SubscribedMessageTypes =>
-  [
-    typeof(UnlockResponse),
-    typeof(CloseResponse),
-  ];
+  // Already subscribed to in StateMachine builder
+  /////// <summary>Gets message types for command state to subscribe to.</summary>
+  ////public override IReadOnlyCollection<Type> SubscribedMessageTypes =>
+  ////[
+  ////  typeof(UnlockResponse),
+  ////  typeof(CloseResponse),
+  ////];
 
   public override Task OnEnter(Context<StateId> context)
   {

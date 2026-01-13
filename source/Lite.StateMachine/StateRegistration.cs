@@ -38,6 +38,6 @@ internal sealed class StateRegistration<TStateId>
   /// <summary>Gets the State Id, used by ExportUml for <see cref="RegisterState{TStateClass}(TStateId, TStateId?, TStateId?, TStateId?, Action{StateMachine{TStateId}}?)"./> .</summary>
   public TStateId StateId { get; init; }
 
-  /////// <summary>Gets the messages for <see cref="ICommandState{TStateId}"/> to subscribe to.</summary>
-  ////public System.Collections.Generic.IReadOnlyCollection<Type>? SubscribedMessageTypes { get; init; } = null;
+  /// <summary>Gets the messages for <see cref="ICommandState{TStateId}"/> to subscribe to.</summary>
+  public System.Collections.Generic.IReadOnlyCollection<Type>? SubscribedMessageTypes { get; init; } = null;
 }

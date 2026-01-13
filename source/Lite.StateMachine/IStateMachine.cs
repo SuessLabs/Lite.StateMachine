@@ -24,12 +24,21 @@ public interface IStateMachine<TStateId>
   /// <summary>Gets or sets the default <see cref="IState{TState}"/> timeout in milliseconds (<see cref="Timeout.Infinite"/>ms default). Set timeout to ensure no stuck states (i.e., robotics).</summary>
   int DefaultStateTimeoutMs { get; set; }
 
+  /// <summary>Gets or sets a value indicating whether substate-added context persists when returning to the parent (default: true).</summary>
+  bool IsContextPersistent { get; set; }
+
   /// <summary>Gets the collection of all registered states.</summary>
   /// <remarks>
   ///   Exposed for validations, debugging, etc.
   ///   Previously: <![CDATA[Dictionary<TStateId, IState<TStateId>>]]>.
   /// </remarks>
   List<TStateId> States { get; }
+
+  /// <summary>Preload properties and errors to the context.</summary>
+  /// <param name="parameters">Parameter properties to safely add/update.</param>
+  /// <param name="errors">Error properties to safely add/update.</param>
+  /// <returns>Instance of this class.</returns>
+  StateMachine<TStateId> AddContext(PropertyBag? parameters = null, PropertyBag? errors = null);
 
   /// <summary>
   /// Registers a top-level composite parent state (has no parent state) and explicitly sets:
@@ -63,10 +72,11 @@ public interface IStateMachine<TStateId>
   /// <param name="onSuccess">State Id to transition to on success, or null to denote last state and exit <see cref="StateMachine{TStateId}"/>.</param>
   /// <param name="onError">State Id to transition to on error, or null to denote last state and exit <see cref="StateMachine{TStateId}"/>.</param>
   /// <param name="onFailure">State Id to transition to on failure, or null to denote last state and exit <see cref="StateMachine{TStateId}"/>.</param>
+  /// <param name="commandSubscriptionTypes">Optional <see cref="ICommandState{TStateId}"/> subscription message types.</param>
   /// <returns>Instance of this class.</returns>
   /// <typeparam name="TState">State class.</typeparam>
   /// <remarks>Example: <![CDATA[RegisterState<T>(StateId.State1, StateId.State2);]]>.</remarks>
-  StateMachine<TStateId> RegisterState<TState>(TStateId stateId, TStateId? onSuccess, TStateId? onError, TStateId? onFailure)
+  StateMachine<TStateId> RegisterState<TState>(TStateId stateId, TStateId? onSuccess, TStateId? onError, TStateId? onFailure, IReadOnlyCollection<Type>? commandSubscriptionTypes = null)
     where TState : class, IState<TStateId>;
 
   /// <summary>
@@ -79,6 +89,7 @@ public interface IStateMachine<TStateId>
   /// <param name="parentStateId">The identifier of the parent state if the registered state is part of a composite state; otherwise, null.</param>
   /// <param name="isCompositeParent">true if the registered state is a composite parent state; otherwise, false.</param>
   /// <param name="initialChildStateId">The identifier of the initial child state to activate when entering a composite parent state; otherwise, null.</param>
+  /// <param name="commandSubscriptionTypes">Optional <see cref="ICommandState{TStateId}"/> subscription message types.</param>
   /// <returns>The current <see cref="StateMachine{TStateId}"/> instance, enabling method chaining.</returns>
   /// <typeparam name="TState">The type of the state to register. Must implement <see cref="IState{TStateId}"/>.</typeparam>
   /// <exception cref="InvalidOperationException">Thrown if a state with the specified stateId is already registered or if the state factory returns null.</exception>
@@ -86,7 +97,7 @@ public interface IStateMachine<TStateId>
   ///   Use this method to add states and define their transitions and hierarchy before starting the
   ///   state machine. Registering duplicate state identifiers is not allowed.
   /// </remarks>
-  StateMachine<TStateId> RegisterState<TState>(TStateId stateId, TStateId? onSuccess, TStateId? onError, TStateId? onFailure, TStateId? parentStateId = null, bool isCompositeParent = false, TStateId? initialChildStateId = null)
+  StateMachine<TStateId> RegisterState<TState>(TStateId stateId, TStateId? onSuccess, TStateId? onError, TStateId? onFailure, TStateId? parentStateId = null, bool isCompositeParent = false, TStateId? initialChildStateId = null, IReadOnlyCollection<Type>? commandSubscriptionTypes = null)
     where TState : class, IState<TStateId>;
 
   /// <summary>
@@ -99,8 +110,9 @@ public interface IStateMachine<TStateId>
   /// <param name="onSuccess">The identifier of the state to transition to when the state completes successfully, or null to return to the parent composite state.</param>
   /// <param name="onError">The identifier of the state to transition to when the registered state encounters an error, or null if no transition is defined.</param>
   /// <param name="onFailure">The identifier of the state to transition to when the registered state fails, or null if no transition is defined.</param>
+  /// <param name="commandSubscriptionTypes">Optional <see cref="ICommandState{TStateId}"/> subscription message types.</param>
   /// <returns>The current <see cref="StateMachine{TStateId}"/> instance, enabling method chaining.</returns>
-  StateMachine<TStateId> RegisterSubState<TChildClass>(TStateId stateId, TStateId parentStateId, TStateId? onSuccess = null, TStateId? onError = null, TStateId? onFailure = null)
+  StateMachine<TStateId> RegisterSubState<TChildClass>(TStateId stateId, TStateId parentStateId, TStateId? onSuccess = null, TStateId? onError = null, TStateId? onFailure = null, IReadOnlyCollection<Type>? commandSubscriptionTypes = null)
     where TChildClass : class, IState<TStateId>;
 
   /// <summary>Starts the machine at the initial state.</summary>
@@ -109,7 +121,4 @@ public interface IStateMachine<TStateId>
   /// <returns>Async task of The current <see cref="StateMachine{TStateId}"/> instance, enabling method chaining.</returns>
   /// <exception cref="InvalidOperationException">Thrown if the specified state identifier has not been registered.</exception>
   Task<StateMachine<TStateId>> RunAsync(TStateId initialState, CancellationToken cancellationToken = default);
-  /////// <param name="parameterStack">Parameter stack <see cref="PropertyBag"/>.</param>
-  /////// <param name="errors">Error stack <see cref="PropertyBag"/>.</param>
-  ////Task<StateMachine<TStateId>> RunAsync(TStateId initialState, PropertyBag? parameterStack = null, PropertyBag? errors = null, CancellationToken cancellationToken = default);
 }
