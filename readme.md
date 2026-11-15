@@ -52,7 +52,7 @@ _Thread safe and most customizations can be set on-the-fly!_
     * Allows users to hook to external messaging services (TCP/IP, RabbitMQ, DBus, etc.)
 * State Transition Triggers:
   * Transitions are triggered by setting the context's next state result:
-  * On Success: `context.NextState(Result.Ok);`
+  * On Success: `context.NextState(Result.Success);`
   * On Error: `context.NextState(Result.Error);`
   * On Failure: : `context.NextState(Result.Failure);`
 * State Handlers:
@@ -115,7 +115,7 @@ public class BasicState1() : BaseState
   public async Task OnEnter(Context<BasicStateId> context)
   {
     await Task.Yield(); // Your async work here...
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
   }
 }
 
@@ -124,7 +124,7 @@ public class BasicState2() : BaseState
   public Task OnEnter(Context<StateId> context)
   {
     // Notice, we did not async/await this method
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     return Task.CompletedTask;
   }
 }
@@ -133,7 +133,7 @@ public class BasicState3() : BaseState
 {
   public Task OnEnter(Context<StateId> context)
   {
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     return Task.CompletedTask;
   }
 }
@@ -190,7 +190,7 @@ public class Composite_State1() : BaseState
     var cnt = context.ParameterAsInt(ParameterType.Counter);
     var blank = context.ParameterAsBool(ParameterType.DummyBool);
 
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     return Task.CompletedTask;
   }
 }
@@ -200,14 +200,14 @@ public class Composite_State2() : BaseState
   public override Task OnEnter(Context<CompositeL1StateId> context)
   {
     // Signify we're ready to go to sub-states
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     return Task.CompletedTask;
   }
 
   public override Task OnExit(Context<CompositeL1StateId> context)
   {
     // Signify we're ready to go to next state after composite
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     return Task.CompletedTask;
   }
 }
@@ -219,7 +219,7 @@ public class Composite_State2_Sub1() : BaseState
     // Safely add/update key-value in Context
     context.Parameters.SafeAdd("StringBasedParamKey", SUCCESS);
 
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     return Task.CompletedTask;
   }
 }
@@ -228,7 +228,7 @@ public class Composite_State2_Sub2() : BaseState
 {
   public override Task OnEnter(Context<CompositeL1StateId> context)
   {
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     return Task.CompletedTask;
   }
 }
@@ -237,7 +237,7 @@ public class Composite_State3() : BaseState
 {
   public override Task OnEnter(Context<CompositeL1StateId> context)
   {
-    context.NextState(Result.Ok);
+    context.NextState(Result.Success);
     return Task.CompletedTask;
   }
 }
