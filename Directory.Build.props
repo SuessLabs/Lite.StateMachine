@@ -1,10 +1,10 @@
 <Project>
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
 
-    <AssemblyVersion>2.4.1</AssemblyVersion>
+    <AssemblyVersion>2.4.2</AssemblyVersion>
 
     <BaseOutputPath>../../output/$(MSBuildProjectName)</BaseOutputPath>
     <Deterministic>true</Deterministic>
