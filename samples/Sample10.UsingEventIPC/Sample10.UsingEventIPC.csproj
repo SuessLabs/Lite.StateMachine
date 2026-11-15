@@ -1,10 +1,16 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Lite.EventIpc" />
+    <ProjectReference Include="../../source/Lite.StateMachine/Lite.StateMachine.csproj" />
+    <InternalsVisibleTo Include="Lite.StateMachine.Tests" />
+  </ItemGroup>
 
 </Project>
