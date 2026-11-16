@@ -49,6 +49,93 @@ Build the NuGet package from the repository root:
 dotnet pack source/Lite.StateMachine.DotGraph -c Release
 ```
 
+## Generate diagrams externally with PowerShell
+
+You can load the application's compiled DLL and the renderer DLL from an external
+script. The application does **not** need a reference to the DotGraph NuGet package
+or a rebuild for rendering. This works when an existing public factory or constructor
+exposes the configured state machine, or an existing method returns DOT text.
+The factory should register the topology without running the workflow.
+
+Prepare the script's environment:
+
+* Use PowerShell 7 running a compatible .NET runtime. Check
+  `[System.Environment]::Version`; Windows PowerShell 5.1 cannot load these assemblies.
+  For example, load the `net10.0` renderer with a .NET 10 PowerShell host. Installing
+  a newer .NET SDK does not change the runtime used by an existing PowerShell host.
+* Build the renderer separately with
+  `dotnet build source/Lite.StateMachine.DotGraph -c Release -f net10.0`, or extract
+  `lib/net10.0/Lite.StateMachine.DotGraph.dll` from its `.nupkg` into a tooling folder.
+  No package reference is needed in the application project.
+* Use the application's build/publish output, including its matching
+  `Lite.StateMachine.dll` and other dependencies. Load additional factory dependencies
+  explicitly if needed; applications requiring a custom host or DI container may need
+  that setup in the script too.
+* Install Graphviz, or supply the path to an application-managed `dot` executable.
+
+Save this example as `Export-StateDiagram.ps1`. Replace the example paths, type,
+and method with an **existing** API in your application. This example assumes a
+public static, parameterless `MyApp.WorkflowFactory.Create()` method that returns
+a configured `StateMachine<TStateId>`:
+
+```powershell
+$ErrorActionPreference = 'Stop'
+
+# Paths are relative to this script; adjust to your build output/tooling folder.
+$applicationDll = (Resolve-Path "$PSScriptRoot/app/MyApp.dll").Path
+$rendererDll = (Resolve-Path "$PSScriptRoot/tooling/Lite.StateMachine.DotGraph.dll").Path
+$applicationDirectory = Split-Path $applicationDll
+$outputDirectory = Join-Path $PSScriptRoot 'diagrams'
+
+# Load the application's version of the core library, then the application.
+[void][System.Reflection.Assembly]::LoadFrom(
+  (Join-Path $applicationDirectory 'Lite.StateMachine.dll'))
+$application = [System.Reflection.Assembly]::LoadFrom($applicationDll)
+[void][System.Reflection.Assembly]::LoadFrom($rendererDll)
+
+# Invoke an existing public static factory without starting the application.
+$factoryType = $application.GetType('MyApp.WorkflowFactory', $true)
+$factory = $factoryType.GetMethod('Create', [System.Type]::EmptyTypes)
+if ($null -eq $factory -or -not $factory.IsStatic) {
+  throw 'Expected a public static, parameterless Create() factory.'
+}
+$machine = $factory.Invoke($null, [object[]]@())
+if ($null -eq $machine) {
+  throw 'The factory did not return a configured state machine.'
+}
+$dot = $machine.ExportUml()
+
+# Keep DOT as well as both image formats. No changes to the application project.
+[void][System.IO.Directory]::CreateDirectory($outputDirectory)
+[System.IO.File]::WriteAllText((Join-Path $outputDirectory 'machine.dot'), $dot)
+$renderer = [Lite.StateMachine.DotGraph.GraphvizRenderer]::new(
+  'dot', [TimeSpan]::FromSeconds(30)) # Or an absolute path to dot/dot.exe.
+$token = [System.Threading.CancellationToken]::None
+[void]$renderer.RenderAsync($dot, (Join-Path $outputDirectory 'machine.svg'),
+  [Lite.StateMachine.DotGraph.DotGraphFormat]::Svg, $token).GetAwaiter().GetResult()
+[void]$renderer.RenderAsync($dot, (Join-Path $outputDirectory 'machine.png'),
+  [Lite.StateMachine.DotGraph.DotGraphFormat]::Png, $token).GetAwaiter().GetResult()
+```
+
+Run it in a fresh PowerShell process so previously loaded application assemblies
+do not conflict with another build:
+
+```powershell
+pwsh -NoProfile -File ./Export-StateDiagram.ps1
+```
+
+For an existing public parameterless constructor, replace factory lookup/invocation
+with `$machine = [System.Activator]::CreateInstance($application.GetType('MyApp.Workflow', $true))`.
+If an existing method returns DOT directly, assign that result to `$dot` instead
+of calling `ExportUml()`. If you already have a `.dot` file, skip loading the
+application and core assemblies and call `RenderFileAsync()` on the renderer.
+
+This is API invocation, not automatic extraction from arbitrary compiled code.
+If the application only creates a machine inside a local variable in `Run()` or
+`Main()` and never exposes it, the script cannot recover that object without an
+application API change. Likewise, it cannot infer transitions that have not been
+registered; topology that depends on configuration needs the corresponding setup.
+
 ## Tests
 
 The test project runs against both target frameworks. Set `GRAPHVIZ_DOT` to `dot`

@@ -13,6 +13,7 @@ env:
   BASE_VERSION: "2.1"
   PATH_SLNX: "Lite.StateMachine.slnx"
   PATH_LIB: "source\\Lite.StateMachine\\Lite.StateMachine.csproj"
+  PATH_DOTGRAPH: "source\\Lite.StateMachine.DotGraph\\Lite.StateMachine.DotGraph.csproj"
   PATH_ARTIFACTS: ${{github.workspace}}\artifacts
 
 jobs:
@@ -82,9 +83,16 @@ jobs:
           if ($prerelease) { Write-Host "Version suffix=$prerelease" }
 
       # 7. Pack NuGet
-      - name: 7) Pack NuGet
+      - name: 7) Pack NuGet Packages
         # Optionally, "--include-symbols"
-        run: dotnet pack ${{env.PATH_LIB}} --configuration Release --no-build --output ${{env.PATH_ARTIFACTS}}
+        shell: pwsh
+        run: |
+          foreach ($project in @($env:PATH_LIB, $env:PATH_DOTGRAPH)) {
+            dotnet pack $project --configuration Release --no-build --output $env:PATH_ARTIFACTS -m:1
+            if ($LASTEXITCODE -ne 0) {
+              throw "NuGet packing failed for $project"
+            }
+          }
         #    dotnet pack source/Lite.StateMachine/Lite.StateMachine.csproj --configuration Release --no-build --output ./artifacts
       #- name: Pack NuGet
       #  shell: pwsh
@@ -125,13 +133,13 @@ jobs:
 ##    steps:
 
       ## 10) Publish to NuGet.org (master branch, push events only)
-      - name: 8) NuGet Push Package
+      - name: 8) NuGet Push Packages
         env:
           NUGET_API_URL: "https://api.nuget.org/v3/index.json"
 
         ## Optionally pass, `--skip-duplicate` if a pkg version already exists on NuGet.org
         if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
-        run: dotnet nuget push ${{env.PATH_ARTIFACTS}}\*.nupkg -k ${{secrets.NUGET_AUTH_TOKEN}} -s ${{env.NUGET_API_URL}}
+        run: dotnet nuget push ${{env.PATH_ARTIFACTS}}\*.nupkg -k ${{secrets.NUGET_AUTH_TOKEN}} -s ${{env.NUGET_API_URL}} --skip-duplicate
 
       #- name: Publish to NuGet.org
       #  if: github.ref_name == 'master' && github.event_name == 'push'
