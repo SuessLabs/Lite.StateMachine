@@ -31,7 +31,9 @@ internal static class Program
     foreach (var includeLegend in new[] { false, true })
     {
       var name = includeLegend ? "machine-legend" : "machine";
-      var dot = WorkflowDiagram.ExportDot(includeLegend);
+
+      // Create state machine and export DOT graph without running any states.
+      var dot = SampleStateMachine.ExportDot(includeLegend);
       var dotPath = Path.Combine(outputDirectory, name + ".dot");
 
       await File.WriteAllTextAsync(dotPath, dot);

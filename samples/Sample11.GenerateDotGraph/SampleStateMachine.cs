@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 namespace Sample11.GenerateDotGraph;
 
 /// <summary>Exports the same topology as DiMsTests.Basic_GeneratesExportUml_SuccessTestAsync.</summary>
-public static class WorkflowDiagram
+public static class SampleStateMachine
 {
   /// <summary>Builds the configured machine and exports DOT without running any states.</summary>
   /// <param name="includeLegend">Whether to add the Graphviz legend.</param>

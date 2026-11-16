@@ -14,7 +14,7 @@ public sealed class DiagramSampleTests
   [DataRow(true)]
   public void Sample11MatchesCompositeExportTest(bool includeLegend)
   {
-    var actual = WorkflowDiagram.ExportDot(includeLegend);
+    var actual = SampleStateMachine.ExportDot(includeLegend);
     AssertExtensions.AreEqualIgnoreLines(ExpectedUmlData.CompositeWithErrorFailure(includeLegend), actual);
   }
 }
