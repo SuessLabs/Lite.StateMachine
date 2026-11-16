@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Title>Lite State Machine DOT Graph Rendering</Title>
+    <Description>Optional cross-platform Graphviz wrapper for rendering DOT text and files as SVG or PNG. Requires a Graphviz executable; independent of Lite.StateMachine.</Description>
+    <Version>$(AssemblyVersion)</Version>
+    <IsPackable>true</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageProjectUrl>https://github.com/SuessLabs/Lite.StateMachine</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/SuessLabs/Lite.StateMachine</RepositoryUrl>
+    <PackageTags>graphviz;dot;svg;png;statemachine</PackageTags>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="readme.md" Pack="true" PackagePath="/" />
+    <None Include="../../LICENSE.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+</Project>

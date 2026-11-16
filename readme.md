@@ -142,8 +142,23 @@ public class BasicState3() : BaseState
 ### Generate DOT Graph (GraphViz)
 
 ```cs
-var uml = machine.ExportUml(includeSubmachines: true);
+var uml = machine.ExportUml();
 ```
+
+To generate SVG or PNG files from DOT, use the optional
+[Lite.StateMachine.DotGraph](source/Lite.StateMachine.DotGraph/readme.md) package:
+
+```cs
+using Lite.StateMachine.DotGraph;
+
+var renderer = new GraphvizRenderer();
+await renderer.RenderAsync(machine.ExportUml(), "machine.svg");
+await renderer.RenderFileAsync("machine.dot", "machine.png", DotGraphFormat.Png);
+```
+
+The renderer requires an installed or application-supplied [Graphviz](https://graphviz.org/download/)
+executable. It is independent of the core library and uses portable .NET process APIs
+for Windows, Linux, and macOS. See the package README for deployment requirements.
 
 ![Sample Composite State Image](https://raw.githubusercontent.com/SuessLabs/Lite.StateMachine/develop/docs/SampleGraphviz-1080.png)
 
