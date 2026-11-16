@@ -24,7 +24,7 @@ internal static class Program
 
     var renderer = new GraphvizRenderer(args.Length > 1
       ? args[1]
-      : "dot");
+      : null);
 
     Directory.CreateDirectory(outputDirectory);
 

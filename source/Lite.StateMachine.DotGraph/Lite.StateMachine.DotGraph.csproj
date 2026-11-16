@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Title>Lite State Machine DOT Graph Rendering</Title>
-    <Description>Optional cross-platform Graphviz wrapper for rendering DOT text and files as SVG or PNG. Requires a Graphviz executable; independent of Lite.StateMachine.</Description>
+    <Description>Offline DOT to SVG and PNG rendering with bundled Graphviz. No Graphviz installation required; independent of Lite.StateMachine.</Description>
     <Version>$(AssemblyVersion)</Version>
     <IsPackable>true</IsPackable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -15,6 +15,13 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Wasmtime" />
+    <PackageReference Include="Svg.Skia" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
+    <EmbeddedResource Include="Assets/graphviz.wasm" LogicalName="Lite.StateMachine.DotGraph.graphviz.wasm" />
+    <EmbeddedResource Include="Assets/Tinos-Regular.ttf" LogicalName="Lite.StateMachine.DotGraph.Tinos-Regular.ttf" />
+    <None Include="Assets/*.txt" Pack="true" PackagePath="licenses/" />
     <None Include="readme.md" Pack="true" PackagePath="/" />
     <None Include="../../LICENSE.md" Pack="true" PackagePath="/" />
   </ItemGroup>

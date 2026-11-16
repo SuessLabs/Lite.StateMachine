@@ -11,20 +11,23 @@ using System.Threading.Tasks;
 
 namespace Lite.StateMachine.DotGraph;
 
-/// <summary>Renders DOT using a separately installed or application-supplied Graphviz executable.</summary>
+/// <summary>Renders DOT using bundled Graphviz, or an explicitly supplied executable.</summary>
 public sealed class GraphvizRenderer : IDotGraphRenderer
 {
-  private readonly string _executablePath;
+  private readonly string? _executablePath;
   private readonly TimeSpan _timeout;
 
   /// <summary>Initializes a new instance of the <see cref="GraphvizRenderer"/> class.</summary>
-  /// <param name="executablePath">Graphviz dot executable path, or "dot" to search PATH.</param>
+  /// <param name="executablePath">Null uses bundled Graphviz. Supply a path or "dot" to opt into an external executable.</param>
   /// <param name="timeout">Maximum rendering duration. Defaults to 30 seconds.</param>
-  public GraphvizRenderer(string executablePath = "dot", TimeSpan? timeout = null)
+  public GraphvizRenderer(string? executablePath = null, TimeSpan? timeout = null)
   {
-    ArgumentException.ThrowIfNullOrWhiteSpace(executablePath);
+    if (executablePath is not null)
+      ArgumentException.ThrowIfNullOrWhiteSpace(executablePath);
+
     _executablePath = executablePath;
     _timeout = timeout ?? TimeSpan.FromSeconds(30);
+
     if (_timeout <= TimeSpan.Zero || _timeout.TotalMilliseconds > uint.MaxValue - 1)
       throw new ArgumentOutOfRangeException(nameof(timeout));
   }
@@ -61,7 +64,14 @@ public sealed class GraphvizRenderer : IDotGraphRenderer
       DotGraphFormat.Png => "png",
       _ => throw new ArgumentOutOfRangeException(nameof(format)),
     };
+
     cancellationToken.ThrowIfCancellationRequested();
+
+    if (_executablePath is null)
+    {
+      await BundledGraphviz.RenderAsync(dot, inputPath, outputPath, format, _timeout, cancellationToken).ConfigureAwait(false);
+      return;
+    }
 
     var fullOutputPath = Path.GetFullPath(outputPath);
     var outputDirectory = Path.GetDirectoryName(fullOutputPath)!;

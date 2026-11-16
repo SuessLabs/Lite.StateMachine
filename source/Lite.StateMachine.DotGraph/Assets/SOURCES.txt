@@ -1,0 +1,32 @@
+Bundled assets (downloaded at development time and embedded in the assembly)
+===========================================================================
+
+graphviz.wasm: Graphviz 16.1.1, WASI build from wasi-graphviz v0.1.5
+SHA-256: 37fafda7f34855e7deffcb7317c1970aeea7b82f7cf191b8919501fcb48e9e3a
+Binary: https://github.com/pablormier/wasi-graphviz/releases/download/v0.1.5/graphviz.wasm
+Wrapper and reproducible build scripts: https://github.com/pablormier/wasi-graphviz/tree/v0.1.5
+Graphviz source: https://gitlab.com/graphviz/graphviz/-/tree/16.1.1
+Build instructions: https://github.com/pablormier/wasi-graphviz/blob/v0.1.5/BUILD.md
+Licenses: Graphviz-LICENSE.txt, WasiGraphviz-LICENSE.txt, WasiGraphviz-NOTICE.txt
+The upstream NOTICE references Graphviz 16.1.0; this release's build script and
+release notes identify the actual bundled build as Graphviz 16.1.1.
+The core and dot-layout plugins are linked into the module; there are no external
+Graphviz plugin files. Expat and zlib are disabled in this build.
+
+Tinos-Regular.ttf: Tinos 1.340
+SHA-256: 60a0e8ef0c04dd5dd69ffe91025fa2ae5836cbd35600a82ba031977557e2cb61
+Binary: https://github.com/google/fonts/blob/ba95515f1333efe9342c2ad988b9c2f6bef6dbad/ofl/tinos/Tinos-Regular.ttf
+Source: https://github.com/googlefonts/tinos/tree/3b4482a99b80ea5fc75f187b1be3120a3f5905b3
+License: Tinos-LICENSE.txt (SIL Open Font License 1.1)
+
+The assets are not modified. SHA-256 values are verified by unit tests.
+Updating them requires reviewing the source/release, replacing the binary and
+notices, updating these checksums and tests, and running all rendering/package tests.
+
+Execution dependencies are restored through NuGet, not downloaded at runtime:
+Wasmtime 50.0.1: Apache-2.0 WITH LLVM-exception
+https://github.com/bytecodealliance/wasmtime-dotnet
+Svg.Skia 5.2.3: MIT
+https://github.com/wieslawsoltes/Svg.Skia
+SkiaSharp 4.148.0 and native assets: MIT; native Skia/HarfBuzz notices are supplied
+by their NuGet packages. https://github.com/mono/SkiaSharp

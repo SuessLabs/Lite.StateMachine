@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -68,6 +69,7 @@ public sealed class GraphvizRendererTests
     await renderer.RenderAsync(Graph, output);
     var svg = await File.ReadAllTextAsync(output);
     StringAssert.Contains(svg, "<svg");
+    StringAssert.Contains(svg, "graphviz version 16.1.1");
     StringAssert.Contains(svg, "Prépare");
     StringAssert.Contains(svg, "Child");
     await renderer.RenderAsync("digraph { replacement }", output);
@@ -100,20 +102,20 @@ public sealed class GraphvizRendererTests
     var output = Output("existing.svg");
     await File.WriteAllTextAsync(output, "previous image");
     var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => renderer.RenderAsync("invalid dot", output));
-    StringAssert.Contains(exception.Message, "Graphviz exited with code");
-    StringAssert.Contains(exception.Message, "syntax error");
+    StringAssert.Contains(exception.Message, "Graphviz rendering failed");
+    StringAssert.Contains(exception.Message, "parse DOT");
     Assert.AreEqual("previous image", await File.ReadAllTextAsync(output));
     Assert.HasCount(1, Directory.GetFiles(_directory));
   }
 
   [TestMethod]
   [TestCategory("Graphviz")]
-  public async Task LargeInvalidInputDoesNotMaskDiagnosticsWithBrokenPipeAsync()
+  public async Task LargeInvalidInputReportsBundledDiagnosticsAsync()
   {
     var renderer = CreateRenderer();
     var dot = "invalid dot " + new string('x', 1024 * 1024);
     var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => renderer.RenderAsync(dot, Output("machine.svg")));
-    StringAssert.Contains(exception.Message, "Graphviz exited with code");
+    StringAssert.Contains(exception.Message, "Graphviz rendering failed");
     Assert.IsEmpty(Directory.GetFiles(_directory));
   }
 
@@ -141,14 +143,33 @@ public sealed class GraphvizRendererTests
     Assert.IsEmpty(Directory.GetFiles(_directory));
   }
 
-  private static GraphvizRenderer CreateRenderer(TimeSpan? timeout = null)
+  [TestMethod]
+  public void BundledAssetsMatchPinnedHashes()
+  {
+    using var engine = typeof(GraphvizRenderer).Assembly.GetManifestResourceStream("Lite.StateMachine.DotGraph.graphviz.wasm");
+    using var font = typeof(GraphvizRenderer).Assembly.GetManifestResourceStream("Lite.StateMachine.DotGraph.Tinos-Regular.ttf");
+    Assert.IsNotNull(engine);
+    Assert.IsNotNull(font);
+    Assert.AreEqual("37FAFDA7F34855E7DEFFCB7317C1970AEEA7B82F7CF191B8919501FCB48E9E3A", Convert.ToHexString(SHA256.HashData(engine)));
+    Assert.AreEqual("60A0E8EF0C04DD5DD69FFE91025FA2AE5836CBD35600A82BA031977557E2CB61", Convert.ToHexString(SHA256.HashData(font)));
+  }
+
+  [TestMethod]
+  [TestCategory("ExternalGraphviz")]
+  public async Task ExternalExecutablePreservesBrokenPipeDiagnosticsAsync()
   {
     var executable = Environment.GetEnvironmentVariable("GRAPHVIZ_DOT");
     if (string.IsNullOrWhiteSpace(executable))
-      Assert.Inconclusive("Set GRAPHVIZ_DOT to dot or its full path to run Graphviz integration tests.");
+      Assert.Inconclusive("Optional: set GRAPHVIZ_DOT to test the external executable override.");
 
-    return new GraphvizRenderer(executable, timeout);
+    var renderer = new GraphvizRenderer(executable);
+    var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => renderer.RenderAsync("invalid dot " + new string('x', 1024 * 1024), Output("machine.svg")));
+    StringAssert.Contains(exception.Message, "Graphviz exited with code");
+    StringAssert.Contains(exception.Message, "syntax error");
+    Assert.IsEmpty(Directory.GetFiles(_directory));
   }
+
+  private static GraphvizRenderer CreateRenderer(TimeSpan? timeout = null) => new(timeout: timeout);
 
   private static string LargeGraph()
   {

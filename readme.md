@@ -156,9 +156,9 @@ await renderer.RenderAsync(machine.ExportUml(), "machine.svg");
 await renderer.RenderFileAsync("machine.dot", "machine.png", DotGraphFormat.Png);
 ```
 
-The renderer requires an installed or application-supplied [Graphviz](https://graphviz.org/download/)
-executable. It is independent of the core library and uses portable .NET process APIs
-for Windows, Linux, and macOS. See the package README for deployment requirements.
+The renderer bundles Graphviz and its execution/rasterization dependencies through
+NuGet; no Graphviz installation or PATH setup is required. It is independent of the
+core library. See the package README for supported platforms and backend limitations.
 
 ![Sample Composite State Image](https://raw.githubusercontent.com/SuessLabs/Lite.StateMachine/develop/docs/SampleGraphviz-1080.png)
 

@@ -6,18 +6,22 @@ is unchanged and does not depend on this renderer.
 
 ## Requirements
 
-.NET 10 or 11 and a separately installed or application-supplied
-[Graphviz](https://graphviz.org/download/) `dot` executable. The wrapper uses portable
-.NET process APIs and is intended for Windows, Linux, and macOS desktop/server apps.
-It does not bundle native binaries, install software, or download anything at runtime.
-It is not a browser or mobile rendering backend.
+.NET 10 or 11. Restore the NuGet package and run: **no Graphviz installation,
+PATH setup, executable path, or first-run download is required.**
+
+The assembly embeds Graphviz 16.1.1 compiled to WebAssembly/WASI. Wasmtime executes
+it in-process; Svg.Skia/SkiaSharp encode its SVG output as PNG, using an embedded
+Tinos font. Runtime libraries are delivered as ordinary transitive NuGet assets.
+Windows, macOS, and glibc-based Linux have x64 and ARM64 assets and CI coverage.
+Linux musl/Alpine, browser/mobile hosts, and NativeAOT are not supported by this backend.
+The core state-machine package retains its existing dependencies and AOT behavior.
 
 ## Usage
 
 ```csharp
 using Lite.StateMachine.DotGraph;
 
-IDotGraphRenderer renderer = new GraphvizRenderer(); // dot on PATH
+IDotGraphRenderer renderer = new GraphvizRenderer(); // bundled, offline renderer
 
 // With Lite.StateMachine, pass machine.ExportUml() as the DOT text.
 await renderer.RenderAsync(machine.ExportUml(), "images/machine.svg");
@@ -26,22 +30,35 @@ await renderer.RenderAsync(machine.ExportUml(), "images/machine.png", DotGraphFo
 // Or render an existing DOT file from any source.
 await renderer.RenderFileAsync("machine.dot", "images/machine.svg");
 
-// Optional application-supplied executable and timeout.
+// Optional timeout, still using the bundled renderer.
+renderer = new GraphvizRenderer(timeout: TimeSpan.FromMinutes(1));
+
+// Explicit opt-in to an externally installed/application-supplied Graphviz instead.
 renderer = new GraphvizRenderer("/opt/graphviz/bin/dot", TimeSpan.FromMinutes(1));
 await renderer.RenderFileAsync("machine.dot", "machine.png", DotGraphFormat.Png, cancellationToken);
 ```
 
 Output defaults to SVG; the format argument controls encoding rather than the file
 extension. Parent directories are created automatically. Existing destinations are
-replaced only after a successful render. Rendering errors include Graphviz's exit
-code and diagnostics. Cancellation or the default 30-second timeout terminates the
-Graphviz process and removes temporary output. Input DOT files are never modified.
-Relative image references in DOT resolve from the application's working directory.
+replaced only after a successful render. Errors include Graphviz diagnostics.
+Cancellation or the default 30-second timeout interrupts WASM layout and removes
+temporary output. Initial module compilation and native PNG encoding finish before
+cancellation is observed. Input DOT files are never modified. Concurrent renders
+use isolated engines so cancellation cannot interrupt another request.
 
-`IDotGraphRenderer` keeps consumers independent of executable deployment, leaving
-room for a future backend with bundled or embedded rendering. Cross-platform
-deployment today still requires compatible Graphviz binaries and their dependencies
-on each target OS/architecture.
+The bundled build includes core rendering and layout plugins. It does not load
+host files, external images, or additional Graphviz plugins, and HTML-like labels
+requiring Expat are unsupported. PNG output uses the bundled regular font as a
+fallback for requested families/styles and is limited to 32 million pixels; WASM
+memory is limited to 256 MiB per render. For additional Graphviz plugins, image
+assets, or system-font fidelity, explicitly supply your own Graphviz executable.
+That override uses the original process-based renderer, including its exit-code
+diagnostics and relative-image resolution from the application's working directory.
+
+The bundled binaries, source/build URLs, SHA-256 hashes, and licenses are recorded
+in [Assets/SOURCES.txt](Assets/SOURCES.txt). License notices are also packed under
+`licenses/` in the NuGet package. Graphviz and the font are checked in and embedded
+at build time; the renderer contains no downloader or installer.
 
 Build the NuGet package from the repository root:
 
@@ -63,15 +80,21 @@ Prepare the script's environment:
   `[System.Environment]::Version`; Windows PowerShell 5.1 cannot load these assemblies.
   For example, load the `net10.0` renderer with a .NET 10 PowerShell host. Installing
   a newer .NET SDK does not change the runtime used by an existing PowerShell host.
-* Build the renderer separately with
-  `dotnet build source/Lite.StateMachine.DotGraph -c Release -f net10.0`, or extract
-  `lib/net10.0/Lite.StateMachine.DotGraph.dll` from its `.nupkg` into a tooling folder.
-  No package reference is needed in the application project.
+* Publish a separate tooling project referencing `Lite.StateMachine.DotGraph` into
+  a `tooling` folder, keeping its `.deps.json`, managed dependencies, and `runtimes`
+  folders together. Copying just the renderer DLL is insufficient for the embedded
+  backend. No package reference is needed in the application project. For example,
+  from a directory beside your script:
+
+  ```powershell
+  dotnet new console -f net10.0 -o diagram-tooling
+  dotnet add diagram-tooling package Lite.StateMachine.DotGraph
+  dotnet publish diagram-tooling -c Release --self-contained false -o tooling
+  ```
 * Use the application's build/publish output, including its matching
   `Lite.StateMachine.dll` and other dependencies. Load additional factory dependencies
   explicitly if needed; applications requiring a custom host or DI container may need
   that setup in the script too.
-* Install Graphviz, or supply the path to an application-managed `dot` executable.
 
 Save this example as `Export-StateDiagram.ps1`. Replace the example paths, type,
 and method with an **existing** API in your application. This example assumes a
@@ -86,6 +109,34 @@ $applicationDll = (Resolve-Path "$PSScriptRoot/app/MyApp.dll").Path
 $rendererDll = (Resolve-Path "$PSScriptRoot/tooling/Lite.StateMachine.DotGraph.dll").Path
 $applicationDirectory = Split-Path $applicationDll
 $outputDirectory = Join-Path $PSScriptRoot 'diagrams'
+
+# PowerShell does not automatically use another application's .deps.json.
+# C# callbacks also work when native libraries load on background render threads.
+Add-Type -TypeDefinition @'
+using System;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Runtime.Loader;
+public static class DiagramToolDependencies
+{
+  public static void Load(string toolingApplication)
+  {
+    var resolver = new AssemblyDependencyResolver(toolingApplication);
+    AssemblyLoadContext.Default.Resolving += (context, name) =>
+    {
+      var path = resolver.ResolveAssemblyToPath(name);
+      return path == null ? null : context.LoadFromAssemblyPath(path);
+    };
+    AssemblyLoadContext.Default.ResolvingUnmanagedDll += (assembly, name) =>
+    {
+      var path = resolver.ResolveUnmanagedDllToPath(name);
+      return path == null ? IntPtr.Zero : NativeLibrary.Load(path);
+    };
+  }
+}
+'@
+[DiagramToolDependencies]::Load(
+  (Resolve-Path "$PSScriptRoot/tooling/diagram-tooling.dll").Path)
 
 # Load the application's version of the core library, then the application.
 [void][System.Reflection.Assembly]::LoadFrom(
@@ -108,8 +159,7 @@ $dot = $machine.ExportUml()
 # Keep DOT as well as both image formats. No changes to the application project.
 [void][System.IO.Directory]::CreateDirectory($outputDirectory)
 [System.IO.File]::WriteAllText((Join-Path $outputDirectory 'machine.dot'), $dot)
-$renderer = [Lite.StateMachine.DotGraph.GraphvizRenderer]::new(
-  'dot', [TimeSpan]::FromSeconds(30)) # Or an absolute path to dot/dot.exe.
+$renderer = [Lite.StateMachine.DotGraph.GraphvizRenderer]::new()
 $token = [System.Threading.CancellationToken]::None
 [void]$renderer.RenderAsync($dot, (Join-Path $outputDirectory 'machine.svg'),
   [Lite.StateMachine.DotGraph.DotGraphFormat]::Svg, $token).GetAwaiter().GetResult()
@@ -138,15 +188,17 @@ registered; topology that depends on configuration needs the corresponding setup
 
 ## Tests
 
-The test project runs against both target frameworks. Set `GRAPHVIZ_DOT` to `dot`
-or an executable's full path to enable the real rendering tests:
+The default suite tests the bundled renderer against both target frameworks:
 
 ```powershell
-$env:GRAPHVIZ_DOT = 'dot'
-dotnet test source/Lite.StateMachine.DotGraph.Tests -c Release
+dotnet test source/Lite.StateMachine.DotGraph.Tests -c Release --filter 'TestCategory!=ExternalGraphviz'
+pwsh -NoProfile -File scripts/Test-DotGraphPackage.ps1
 ```
 
-Without this variable, the integration tests are marked inconclusive; argument
-validation and missing-executable tests still run. The DOT rendering CI workflow
-installs Graphviz and runs the full suite on Windows, Linux, and macOS. This workflow
-also builds the NuGet package without publishing it.
+The package smoke test restores a fresh NuGet consumer, publishes its runtime
+dependencies, and generates both images with an empty PATH. CI runs the bundled
+tests, package smoke test, and console/PowerShell samples on all six OS/CPU pairs
+without installing Graphviz. These tests do not publish packages.
+
+The optional `ExternalGraphviz` test retains coverage for the executable override.
+Set `GRAPHVIZ_DOT` to a real executable and omit the filter to include that test.
