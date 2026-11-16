@@ -7,6 +7,7 @@
     <Project Path="samples/Sample05.CommandStates/Sample05.CommandStates.csproj" Id="cd6b33b8-ac4a-4ec7-a3a8-5cdf14c03847" />
     <Project Path="samples/Sample06.PassingEvents/Sample06.PassingEvents.csproj" Id="01a1903a-9da0-4cd2-a811-356822569e03" />
     <Project Path="samples/Sample10.UsingEventIPC/Sample10.UsingEventIPC.csproj" Id="f89325bb-17ff-4db9-9647-92bad4e2f974" />
+    <Project Path="samples/Sample11.GenerateDotGraph/Sample11.GenerateDotGraph.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".github/workflows/build-github.yml" />
