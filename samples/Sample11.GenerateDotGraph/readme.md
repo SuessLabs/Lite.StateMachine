@@ -17,8 +17,8 @@ the topology. Neither generation path runs the workflow.
 ## Requirements
 
 * Install .NET 10 or 11
-* Install [Graphviz](https://graphviz.org/download/).
-* Add Graphviz's `bin` directory to PATH, or pass its `dot`/`dot.exe` path explicitly.
+* No Graphviz installation, PATH changes, or runtime downloads are needed.
+  The renderer embeds Graphviz and a PNG fallback font; NuGet supplies its runtimes.
 
 The project references the local core and renderer projects; it does not reference
 or reuse the unit-test assembly.
@@ -30,7 +30,7 @@ From the repository root:
 ```powershell
 dotnet run --project samples/Sample11.GenerateDotGraph -c Release -f net10.0 -- samples/Sample11.GenerateDotGraph/diagrams
 
-# Optional second argument: the Graphviz executable (quote paths with spaces).
+# Optional opt-in to your own Graphviz executable instead of the bundled engine:
 dotnet run --project samples/Sample11.GenerateDotGraph -c Release -f net10.0 -- samples/Sample11.GenerateDotGraph/diagrams 'C:/Program Files/Graphviz/bin/dot.exe'
 ```
 
@@ -45,15 +45,17 @@ Run a fresh process to avoid conflicts with previously loaded DLL versions:
 ```powershell
 pwsh -NoProfile -File samples/Sample11.GenerateDotGraph/Generate-Diagrams.ps1
 
-# Optional output folder and Graphviz path:
-pwsh -NoProfile -File samples/Sample11.GenerateDotGraph/Generate-Diagrams.ps1 -OutputDirectory ./output/sample11-powershell -DotPath 'C:/Program Files/Graphviz/bin/dot.exe'
+# Optional output folder (still uses bundled Graphviz):
+pwsh -NoProfile -File samples/Sample11.GenerateDotGraph/Generate-Diagrams.ps1 -OutputDirectory ./output/sample11-powershell
 ```
 
 The script builds `net10.0`, loads the sample DLL and its libraries, and calls
-`WorkflowDiagram.ExportDot(bool)` directly. It then renders the returned DOT through
+`SampleStateMachine.ExportDot(bool)` directly. It then renders the returned DOT through
 `GraphvizRenderer`; it does not launch the sample executable. `-SkipBuild` reuses a
 previous build, and `-Configuration Debug` selects Debug output instead of Release.
 By default, the script writes to this sample's `diagrams` directory.
+It uses the sample's `.deps.json` to resolve the renderer's NuGet/native dependencies.
+`-DotPath` is only needed when explicitly opting into an external Graphviz executable.
 
 Both generation paths produce six files, replacing existing images on success:
 
@@ -62,6 +64,6 @@ Both generation paths produce six files, replacing existing images on success:
 | Without legend | `machine.dot` | `machine.svg` | `machine.png` |
 | With legend | `machine-legend.dot` | `machine-legend.svg` | `machine-legend.png` |
 
-The checked-in `diagrams` directory contains generated examples. DOT text is the
-same from both paths; image layout may vary with the installed Graphviz version
-and fonts.
+The generated `diagrams` directory contains both examples. DOT text is the
+same from both paths. Both paths use the same pinned Graphviz engine by default.
+See the renderer README for supported platforms and bundled-backend limitations.

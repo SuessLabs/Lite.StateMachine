@@ -4,6 +4,10 @@
     <!--<CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>-->
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Wasmtime" Version="50.0.1" />
+    <PackageVersion Include="Svg.Skia" Version="5.2.3" />
+    <PackageVersion Include="SkiaSharp" Version="4.148.0" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.148.0" />
     <PackageVersion Include="Lite.EventIpc" Version="1.3.2" />
     <PackageVersion Include="DryIoc" Version="5.4.3" />
     <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.0.0-1.25277.114" />
