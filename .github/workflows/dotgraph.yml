@@ -1,0 +1,42 @@
+name: DOT rendering on Windows, Linux, and macOS
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    branches: [master, develop]
+
+jobs:
+  render:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            10.0.x
+            11.0.x
+      - name: Install Graphviz on Windows
+        if: runner.os == 'Windows'
+        run: choco install graphviz --no-progress -y
+      - name: Install Graphviz on Linux
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y graphviz
+      - name: Install Graphviz on macOS
+        if: runner.os == 'macOS'
+        run: brew install graphviz
+      - name: Test rendering
+        shell: pwsh
+        run: |
+          if ($IsWindows) {
+            $env:GRAPHVIZ_DOT = 'C:\Program Files\Graphviz\bin\dot.exe'
+          } else {
+            $env:GRAPHVIZ_DOT = 'dot'
+          }
+          dotnet test source/Lite.StateMachine.DotGraph.Tests -c Release --verbosity normal
+      - name: Pack standalone renderer
+        run: dotnet pack source/Lite.StateMachine.DotGraph -c Release --no-build

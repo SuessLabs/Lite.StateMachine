@@ -13,6 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Lite.StateMachine\Lite.StateMachine.csproj" />
     <ProjectReference Include="../../samples/Sample10.UsingEventIPC/Sample10.UsingEventIPC.csproj" />
+    <ProjectReference Include="../../samples/Sample11.GenerateDotGraph/Sample11.GenerateDotGraph.csproj" />
   </ItemGroup>
 
   <ItemGroup>
