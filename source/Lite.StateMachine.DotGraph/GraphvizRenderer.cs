@@ -85,6 +85,7 @@ public sealed class GraphvizRenderer : IDotGraphRenderer
     process.StartInfo.ArgumentList.Add("-T" + formatName);
     process.StartInfo.ArgumentList.Add("-o");
     process.StartInfo.ArgumentList.Add(temporaryPath);
+
     if (inputPath is not null)
       process.StartInfo.ArgumentList.Add(inputPath);
 
@@ -102,6 +103,7 @@ public sealed class GraphvizRenderer : IDotGraphRenderer
       // Drain both streams while writing input so large graphs/diagnostics cannot deadlock.
       var diagnosticsTask = process.StandardError.ReadToEndAsync();
       var outputTask = process.StandardOutput.BaseStream.CopyToAsync(Stream.Null);
+
       try
       {
         IOException? inputError = null;
@@ -109,16 +111,15 @@ public sealed class GraphvizRenderer : IDotGraphRenderer
         {
           try
           {
-            await process.StandardInput.BaseStream.WriteAsync(Encoding.UTF8.GetBytes(dot), cancellation.Token).ConfigureAwait(false);
+            // Close the pipe directly: closing the unused text writer can flush
+            // to an already-closed pipe and mask Graphviz's error on Unix.
+            await using var input = process.StandardInput.BaseStream;
+            await input.WriteAsync(Encoding.UTF8.GetBytes(dot), cancellation.Token).ConfigureAwait(false);
           }
           catch (IOException ex)
           {
             // Graphviz may close stdin early on invalid DOT. Prefer its diagnostics.
             inputError = ex;
-          }
-          finally
-          {
-            process.StandardInput.Close();
           }
         }
 
